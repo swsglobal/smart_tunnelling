@@ -470,6 +470,7 @@ class TBM:
         self.cutterheadThickness = tbmData.cutterheadThickness
         self.Slen1 =tbmData.frontShieldLength
 
+        # TODO: aghensi@20160530 attualizzare i valori (4m/ora)
         # penetration rate per ogni decina di rmr: 0, 10, 20, 30.....100
         self.rop= array((1.2904525, 1.2904525,1.540995,1.7915375,1.97058,2.1246225,2.187465,2.2253075,1.97355,1.7217925, 1.7217925)) # m/h metri di scavo all'ora
         self.penetrationPerRevolution = self.rop/60./self.rpm  #in m per rivoluzione
@@ -551,15 +552,15 @@ class TBMSegment:
             self.D = 0.0
         else:
             self.D = 0.2
-        self.HoekBrown = HoekBrown(gamma, ucs, mi, e, self.InSituCondition.Gsi, self.D, self.InSituCondition.SigmaV)
+        #self.HoekBrown = HoekBrown(gamma, ucs, mi, e, self.InSituCondition.Gsi, self.D, self.InSituCondition.SigmaV) #check dove usa i parametri
         self.MohrCoulomb = MohrCoulomb()
-        self.MohrCoulomb.SetRock(self.HoekBrown, ucs)
+        self.MohrCoulomb.SetRock(self.HoekBrown, ucs) # uso setsoil
 
         # print "GSI= %f GSIr= %f " % (self.HoekBrown.gsi, self.HoekBrown.gsir)
 
         self.Excavation = Excavation(excavType, excavArea, excavWidth, excavHeight, refLength, overburden, self.MohrCoulomb.Fir)
         self.InSituCondition.UpdateK0KaKp(self.Excavation.OverburdenType,self.MohrCoulomb.Fi)
-        self.rockBurst = rockBursting(ucs, rmr, self.InSituCondition.SigmaV)
+        #self.rockBurst = rockBursting(ucs, rmr, self.InSituCondition.SigmaV)
         self.Tamez = Tamez('r',overburden, self.Excavation, self.MohrCoulomb, self.InSituCondition, gamma, pi, aunsupported)
         self.frontStability = frontStability(self.InSituCondition.Overburden/(2.0*self.Excavation.Radius), \
                                     self.MohrCoulomb.SigmaCm0, self.InSituCondition.SigmaV, self.InSituCondition.Kp) #, 1.0+math.sin(math.radians(self.MohrCoulomb.Fi)))
@@ -936,6 +937,7 @@ class TBMSegment:
     def LDP_Vlachopoulos_2009(self, x):
         # risultato in m
         # x in m
+         # TODO aghensi cambio con UrPi Panet da Parigi
         umax = self.UrPi_HB(0.0)
         Rt = self.Excavation.Radius # in m
         Rp = self.Rpl
