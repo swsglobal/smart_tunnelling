@@ -78,7 +78,7 @@ insert_geoitems(sDBPath,geoseg_list)
 bprofilo = xlrd.open_workbook(sProfilo_XLS)
 civilReport_sheet = bprofilo.sheet_by_name(u'CivilReport')
 headrow = civilReport_sheet.row(16)  # header
-row = civilReport_sheet.row(17)  # first row
+#row = civilReport_sheet.row(17)  # first row
 """
 from xlrd.sheet import ctype_text
 print('(Column #) type:value')
@@ -95,23 +95,24 @@ for row_idx in range(17, civilReport_sheet.nrows):
     for col_idx in range(1, num_cols):  # Iterate through columns
         cell_obj = civilReport_sheet.cell(row_idx, col_idx)  # Get cell object by row, col
         if col_idx == 1:
-            s1 = cell_obj.value.split(',')
-            dec = int(s1[1])
-            s2 = s1[0].split('+')
-            strVal = ''.join(s2)
-            pkend = float(strVal)
-            if dec == 0 and int(pkend) % 10 == 0:
+            # aghensi@20160531 - con i nuovi export ho dato già formattato e ogni 10m
+#            s1 = cell_obj.value.split(',')
+#            dec = int(s1[1])
+#            s2 = s1[0].split('+')
+#            strVal = ''.join(s2)
+            pkend = float(cell_obj.value)
+            if int(pkend) % 10 == 0:
                 rowvalues.append(prev_prog)
                 keepRow = True
                 rowvalues.append(pkend-10)
                 rowvalues.append(pkend)
                 prev_prog += 1
-        else:
-            if keepRow and col_idx == 2:
+        elif keepRow:
+            if col_idx == 2: #northing
                 rowvalues.append(cell_obj.value)
-            if keepRow and col_idx == 3:
+            if col_idx == 3: #easting
                 rowvalues.append(cell_obj.value)
-            if keepRow and col_idx == 4: #quota altimetrica 1.871,894m
+            if col_idx == 4: #quota altimetrica 1.871,894m
                 s1 = cell_obj.value.split(",")
                 if len(s1) > 1:
                     s2 = s1[0].split('.')
@@ -120,7 +121,7 @@ for row_idx in range(17, civilReport_sheet.nrows):
                     rowvalues.append(he)
                 else:
                     rowvalues.append(0)
-            if keepRow and col_idx == 5: #quota progetto 704,988m
+            if col_idx == 5: #quota progetto 704,988m
                 s1 = cell_obj.value.split(",")
                 if len(s1) > 1:
                     s2 = s1[0].split('.')
@@ -129,7 +130,7 @@ for row_idx in range(17, civilReport_sheet.nrows):
                     rowvalues.append(hp)
                 else:
                     rowvalues.append(0)
-            if keepRow and col_idx == 6: #copertura 1.166,906m
+            if col_idx == 6: #copertura 1.166,906m
                 s1 = cell_obj.value.split(",")
                 if len(s1) > 1:
                     s2 = s1[0].split('.')
@@ -138,7 +139,7 @@ for row_idx in range(17, civilReport_sheet.nrows):
                     rowvalues.append(co)
                 else:
                     rowvalues.append(0)
-            if keepRow and col_idx == 7:
+            if col_idx == 7:
                 rowvalues.append(cell_obj.value)
     if rowvalues:
         bbtpro = BbtProfilo(*rowvalues)

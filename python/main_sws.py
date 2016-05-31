@@ -22,6 +22,7 @@ if not os.path.isfile(sDBPath):
 # mi connetto al database
 conn = sqlite3.connect(sDBPath)
 
+# TODO aghensi: aggiungo profondità acqua!
 # definisco il tipo di riga che vado a leggere, la funzione bbtmyparameter_factory serve per spiegare al modulo del db dove metterte i valori delle colonne
 BbtMyParameter =  namedtuple('BbtMyParameter',['descr','inizio','fine','length','he','hp','co','gamma','sci','mi','ei','gsi','rmr', 'sti', 'k0_min', 'k0_max'])
 def bbtmyparameter_factory(cursor, row):
@@ -40,7 +41,7 @@ res=bbtresults.fetchall()
 fiRi = .5
 frictionCoeff = .15
 
-
+# TODO aghensi: cambio con mio tracciato
 #inizializzo le info sul tracciato
 alnCE=InfoAlignment('Cunicolo esplorativo direzione Nord', 'CE', 13290., 27217., fiRi, frictionCoeff) # gabriele@20151114 friction parametrica
 alnGLNORD=InfoAlignment('Galleria di linea direzione Nord', 'GLNORD', 44191.75, 32088., fiRi, frictionCoeff) # gabriele@20151114 friction parametrica
@@ -55,7 +56,7 @@ pkMaxCurr = max(alnCurr.pkStart, alnCurr.pkEnd)
 resMatrix=[]
 resMatrix.append(['Alignment', 'TBM', 'SCORE', 'P1', 'P2', 'P3', 'P4', 'P5', 'P6', \
                     'G1', 'G2', 'G5', 'G6', 'G7', 'G8', 'G11', 'G12', 'G13', \
-                    'V1', 'V2', 'V3', 'V4', 'V5', 'V6']) 
+                    'V1', 'V2', 'V3', 'V4', 'V5', 'V6'])
 
 # leggo le tbm
 # ora la prendo secca ma andrebbero prese tutte quelle che in cui (vedi riga commentata sotto
@@ -93,8 +94,8 @@ for tbmName in tbms:
         V4 = PerformanceIndex('Deviazione traiettoria')
         V5 = PerformanceIndex('Integrita\' conci')
         V6 = PerformanceIndex('Complessita\' TBM')
-        
-        
+
+
         tbm = TBM(tbmData, 'V')
 
         #definisco impatto montaggio e smontaggio
@@ -102,7 +103,7 @@ for tbmName in tbms:
         tbm.P2.defineImpact(tProductionMin)
         tbm.P6.defineImpact(tProductionMin, tbm.type,  alnCurr.tbmKey)
 
-        #posso subito definire gli indicatori vari 
+        #posso subito definire gli indicatori vari
         pCur=1.
 
         iCur=tbm.P2.impact
@@ -149,16 +150,16 @@ for tbmName in tbms:
 
         i=0
         for p in res:
-            
+
             #verifico che il segmento ricada entro le progressive del tracciato corrente alnCurr
             pkMinSegm=min(p.inizio, p.fine)
             pkMaxSegm=max(p.inizio, p.fine)
-            
+
             segmToAnalize = pkMinSegm<=pkMaxCurr and pkMaxSegm>=pkMinCurr
-            
+
             if segmToAnalize:
                 tbmsect = tbmsect = TBMSegment(p, tbm, alnCurr.fiRi, alnCurr.frictionCoeff)
-                
+
                 # aggiorno indici produzione. l'impatto medio dovra' poi essere diviso per la lunghezza del tracciato
 
                 pCur=tbmsect.P1.probability
@@ -176,16 +177,16 @@ for tbmName in tbms:
                 pCur=tbmsect.P5.probability
                 iCur=tbmsect.P5.impact
                 P5.updateIndex(pCur, iCur, p.length)
-                
+
                 # aggiorno indici geotecnici
                 pCur=tbmsect.G1.probability
                 iCur=tbmsect.G1.impact
                 G1.updateIndex(pCur, iCur, p.length)
-                
+
                 pCur=tbmsect.G2.probability
                 iCur=tbmsect.G2.impact
                 G2.updateIndex(pCur, iCur, p.length)
-                
+
                 pCur=tbmsect.G5.probability
                 iCur=tbmsect.G5.impact
                 G5.updateIndex(pCur, iCur, p.length)
@@ -237,9 +238,9 @@ for tbmName in tbms:
                 pCur=tbmsect.G13.probability
                 iCur=tbmsect.G13.impact
                 G13.updateIndex(pCur, iCur, p.length)
-            
+
             # accedo ai valori tramite le properties definite con BbtParameterEval in bbtnamedtuples.py
-            #print p.fine, p.sci, p.sti, p.k0_min, p.k0_max  
+            #print p.fine, p.sci, p.sti, p.k0_min, p.k0_max
             i += 1
         conn.close()
 
@@ -259,7 +260,7 @@ for tbmName in tbms:
         G11.finalizeIndex(alnCurr.length)
         G12.finalizeIndex(alnCurr.length)
         G13.finalizeIndex(alnCurr.length)
-        
+
         score =  P1.totalImpact+P2.totalImpact+ P3.totalImpact+ P4.totalImpact+ P5.totalImpact+ P6.totalImpact+ \
                     G1.totalImpact+ G2.totalImpact+ G5.totalImpact+ G6.totalImpact+ G7.totalImpact+ G8.totalImpact+ G11.totalImpact+ G12.totalImpact+ G13.totalImpact+ \
                     V1.totalImpact+ V2.totalImpact+ V3.totalImpact+ V4.totalImpact+ V5.totalImpact+ V6.totalImpact
@@ -269,7 +270,7 @@ for tbmName in tbms:
                     G1.totalImpact, G2.totalImpact, G5.totalImpact, G6.totalImpact, G7.totalImpact, G8.totalImpact, G11.totalImpact, G12.totalImpact, G13.totalImpact, \
                     V1.totalImpact, V2.totalImpact, V3.totalImpact, V4.totalImpact, V5.totalImpact, V6.totalImpact]
         resMatrix.append(resRow)
-        
+
 
 #        #stampo a video i risultati
 #        G1.printOut()

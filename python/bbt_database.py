@@ -180,6 +180,8 @@ def insert_eval4Geo(sDBPath, bbt_evalparameters):
         conn.commit()
         conn.close()
 
+
+# TODO: aghensi aggiusto con quel che serve
 def insert_eval4Iter(sDBPath, bbt_evalparameters, bbttbmkpis):
     if len(bbt_evalparameters) > 0 and len(bbttbmkpis) > 0:
         conn = getDBConnection(sDBPath)

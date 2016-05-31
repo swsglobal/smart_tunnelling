@@ -1,5 +1,5 @@
 
-import sys, getopt, logging, datetime , sqlite3
+import sys, getopt, logging, datetime, sqlite3
 from TunnelSegment import *
 from tbmconfig import *
 from pylab import *
@@ -60,7 +60,7 @@ def createLogger(indx=0,name="main_loop"):
     mainfh = handlers.RotatingFileHandler("%s_%02d.log" % (name,indx),maxBytes=500000, backupCount=5)
     mainfh.setFormatter(formatter)
     main_logger.addHandler(mainfh)
-    return main_logger;
+    return main_logger
 
 
 # danzi.tn@20151114 gestione main e numero di iterazioni da linea comando
@@ -78,16 +78,10 @@ def mp_producer(parms):
     #with plock:
     #    print "[%d]############################# Starts at %s" % (idWorker,strnow)
 
-
+# TODO: aghensi - utilizzo GLEST come unico tunnel
     #inizializzo le info sui tracciati dai file di configurazione
     inizio_GLEST = bbtConfig.getfloat('Import','inizio_GLEST')
     fine_GLEST = bbtConfig.getfloat('Import','fine_GLEST')
-    inizio_GLSUD = bbtConfig.getfloat('Import','inizio_GLSUD')
-    fine_GLSUD = bbtConfig.getfloat('Import','fine_GLSUD')
-    inizio_CE = bbtConfig.getfloat('Import','inizio_CE')
-    fine_CE = bbtConfig.getfloat('Import','fine_CE')
-    #differenza tra CE e GLEST in modo tale che GLNORD = delta_GLEST_CE - CE
-    delta_GLEST_CE =  bbtConfig.getfloat('Import','delta_GLEST_CE')
     projectRefCost =  bbtConfig.getfloat('Import','project_ref_cost') # mln di euro
 
     # danzi.tn@20151115 recepimento modifiche su InfoAlignment fatte da Garbriele
@@ -106,16 +100,13 @@ def mp_producer(parms):
     fcCutter =  FrictionCoeff(fCCutterdMin,fCCutterMode,fCCutterMax)
 
     alnAll = []
-    aln=InfoAlignment('Galleria di linea direzione Sud', 'GLSUD', inizio_GLSUD, fine_GLSUD,fCCutterMode, fCShiledMode)
+    aln=InfoAlignment('Galleria', 'GLNORD',inizio_GLEST, fine_GLEST, fCCutterMode, fCShiledMode)
     alnAll.append(aln)
-    aln=InfoAlignment('Cunicolo esplorativo direzione Nord', 'CE', delta_GLEST_CE - fine_CE, delta_GLEST_CE - inizio_CE , fCCutterMode, fCShiledMode)
-    alnAll.append(aln)
-    aln=InfoAlignment('Galleria di linea direzione Nord', 'GLNORD',inizio_GLEST, fine_GLEST, fCCutterMode, fCShiledMode)
-    alnAll.append(aln)
+
     kpiTbmList = []
-    main_logger.debug("[%d]############################# Inizia a recuperare le itarazioni di %s dalla %d alla %d" % (idWorker,sKey,idWorker*nIter, (idWorker+1)*nIter))
-    bbt_bbtparameterseval = get_mainbbtparameterseval(sDBPath,sKey,idWorker*nIter, (idWorker+1)*nIter)
-    main_logger.debug("[%d]############################# ...recuperate %d iterazioni, memoria totale" % (idWorker,len(bbt_bbtparameterseval)))
+    main_logger.debug("[%d]############################# Inizia a recuperare le itarazioni di %s dalla %d alla %d", idWorker, sKey, idWorker*nIter, (idWorker+1)*nIter)
+    bbt_bbtparameterseval = get_mainbbtparameterseval(sDBPath, sKey, idWorker*nIter, (idWorker+1)*nIter)
+    main_logger.debug("[%d]############################# ...recuperate %d iterazioni, memoria totale", idWorker, len(bbt_bbtparameterseval))
     for iIterationNo in range(nIter):
         mainIterationNo = idWorker*nIter + iIterationNo
         tbmSegmentCum = 0
@@ -125,7 +116,7 @@ def mp_producer(parms):
         iCheckEvalparameters = 0
         iCheckBbttbmkpis = 0
         # Per tutti i Tunnel
-        main_logger.info("[%d]########### iteration %d - %d" % (idWorker, iIterationNo, mainIterationNo))        #with plock:
+        main_logger.info("[%d]########### iteration %d - %d", idWorker, iIterationNo, mainIterationNo)      #with plock:
         #    print "[%d]########### iteration %d - %d" % (idWorker, iIterationNo, mainIterationNo)
         for alnCurr in alnAll:
             for tbmKey in loopTbms:
@@ -162,6 +153,7 @@ def mp_producer(parms):
                             continue
                         kpiTbm.setKPI4SEG(alnCurr,tbmsect,bbtparameter4seg)
                         #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
+                        # TODO aghensi - toglo e aggiungo quello che serve
                         bbt_evalparameters.append((strnow, mainIterationNo,alnCurr.description, tbmKey, bbt_parameter.fine,bbt_parameter.he,bbt_parameter.hp,bbt_parameter.co,bbtparameter4seg.gamma,\
                                                         bbtparameter4seg.sci,bbtparameter4seg.mi,bbtparameter4seg.ei,bbtparameter4seg.cai,bbtparameter4seg.gsi,bbtparameter4seg.rmr,\
                                                         tbmsect.pkCe2Gl(bbt_parameter.fine),\
@@ -263,7 +255,6 @@ if __name__ == "__main__":
             bGeorandom = False
         elif opt in ("-t", "--tbmcode"):
             sTbmCode = arg
-
             loopTbms[sTbmCode] = tbms[sTbmCode]
     if nIter > 0:
         number_of_threads = bbtConfig.getint('MAIN_LOOP','number_of_threads')

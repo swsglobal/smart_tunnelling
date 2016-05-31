@@ -529,9 +529,9 @@ class TBMSegment:
         e = segment.ei*1000.
         ucs = segment.sci
         st = segment.sti
-        mi = segment.mi
+        #mi = segment.mi
         overburden = segment.co
-        groundwaterdepth = segment.co
+        groundwaterdepth = segment.co # TODO: aghensi - qui devo ottenere livello acqua (profondità da dem)
         k0min = segment.k0_min
         k0max = segment.k0_max
         gsi = segment.gsi
@@ -889,6 +889,7 @@ class TBMSegment:
             ur = (S0_r-Picr_r)/(2.*G_r)*Rpl**2/R
         return ur
 
+
     def UrPi(self, pi):
         # ur in m
         # pi in MPa (1 MPa = 1000 kN/m2)
@@ -900,17 +901,19 @@ class TBMSegment:
         fi = math.radians(self.MohrCoulomb.Fi)
         fi = math.atan(math.tan(fi)/coefTanFi)
         #c = self.MohrCoulomb.C / 1000.0 / coefC # MPa
-        psi = math.radians(self.Rock.Psi)
+        psi = math.radians(self.MohrCoulomb.Psi) # (fi - fir)/1,5 = 0
 
         fir = math.radians(self.MohrCoulomb.Fir)
         fir = math.atan(math.tan(fir)/coefTanFi)
+        c = self.MohrCoulomb.C / 1000. / coefC # MPa
         cr = self.MohrCoulomb.Cr / 1000.0 / coefC # MPa
 
-        p0 = self.P0
-        pcr = self.Pcr # in MPa
-        pocp = self.Pocp
-        pocr = self.Pocr
-        Nfir = self.Nfir
+        # TODO: aghensi - check con CCG - p_wt dove lo metto???
+        p0 = self.InSituCondition.SigmaV - p_wt # in MPa #self.P0
+        pcr = p0 * (1.-math.sin(fi)) - c * math.cos(fi) # in MPa #self.Pcr # in MPa
+        pocp = p0 + c / math.tan(fi) #self.Pocp
+        pocr = p0 + cr / math.tan(fir) #self.Pocr
+        Nfir = (1.+math.sin(fir)) / (1.-math.sin(fir)) #self.Nfir
         uremax = (1.0+ni)/E*(p0-pi)*R
         if pcr < p0:
             Ki = (1.0+math.sin(psi))/(1.0-math.sin(psi))
@@ -926,19 +929,22 @@ class TBMSegment:
             urplmax = 0.0
         return max(urplmax, uremax)
 
+
     def LDP_Panet_1995(self, x):
         # risultato in m
         # x in m
-        urmax = self.UrPi_HB(0.0)
+        # aghensi@20160531 cambiato UrPi_HB con UrPi
+        urmax = self.UrPi(0.0)
         R = self.Excavation.Radius # in m
         urx=urmax*(0.25+0.75*(1.0-(0.75/(0.75+x/R))**2)) # convergenza del cavo in m alla distanza x dal fronte
         return urx
 
+
     def LDP_Vlachopoulos_2009(self, x):
         # risultato in m
         # x in m
-         # TODO aghensi cambio con UrPi Panet da Parigi
-        umax = self.UrPi_HB(0.0)
+        # aghensi@20160531 cambiato UrPi_HB con UrPi
+        umax = self.UrPi(0.0)
         Rt = self.Excavation.Radius # in m
         Rp = self.Rpl
         Rstar = Rp/Rt
@@ -946,6 +952,7 @@ class TBMSegment:
         xstar = x/Rt
         ustar = 1-(1.0-u0star)*math.exp(-3.0*xstar/2.0/Rstar)
         return umax*ustar # convergenza del cavo in m alla distanza x dal fronte
+
 
     def CavityConvergence(self, x):
         # risultato in m
@@ -957,10 +964,12 @@ class TBMSegment:
         else:
             return self.LDP_Vlachopoulos_2009(x)
 
+
     def TunnelClosure(self, x):
         # risultato in m
         # x in m
         return self.CavityConvergence(x) - self.CavityConvergence(0.0)
+
 
     def PiUr(self, dur):
         # restituisce il valore di pressione equivalente a una convergenza del cavo pari a dur
@@ -975,6 +984,7 @@ class TBMSegment:
                 return pi
         return pi
 
+
     def xLim(self, urlim):
         # risultato in m
         # urlim in m
@@ -983,10 +993,13 @@ class TBMSegment:
             x += 0.005 # incremento di 5 mm
         return x
 
+
     def pkCe2Gl(self, pkCe):
         #semplice conversione tra pk del cunicolo con la pk della galleria di linea (vale per la tratta nord)
         pkGl = 59230.0-pkCe
         return pkGl
+
+
 
 class StabilizationMeasure:
     def __init__(self, pkFrom, pkTo, type, len):
@@ -994,6 +1007,8 @@ class StabilizationMeasure:
         self.pkTo = pkTo
         self.type = type
         self.len = len
+
+
 
 class G1:
     def __init__(self, tbmType, lambdae, availableTorque):
@@ -1021,6 +1036,8 @@ class G1:
             # rimedio con la coppia e quindi annullo l'impatto
             self.impact = 0.
 
+
+
 class G2:
     def __init__(self, tbmType, cavityStabilityPar, tailCavityStabilityPar, contactType): #, whichShield):
         self.definition='Cavity stability'
@@ -1043,6 +1060,8 @@ class G2:
             imax=2.
             self.probability = 1.
             self.impact = imax
+
+
 
 class G5:
     def __init__(self, tbmType, mat, lambdae):
@@ -1070,6 +1089,8 @@ class G5:
             self.probability = 0.
             self.impact = 0.
 
+
+
 class G6:
     def __init__(self, tbmType):
         self.definition='Cavities'
@@ -1085,6 +1106,8 @@ class G6:
         self.probability = 1.
         self.impact = imax
 
+
+
 class G7:
     def __init__(self, tbmType):
         self.definition='Water overflow'
@@ -1098,6 +1121,8 @@ class G7:
             raise ValueError("Errore: tipo TBM (%s) inesistente." % tbmType)
         self.probability = 1.
         self.impact = imax
+
+
 
 class G8:
     def __init__(self, tbmType):
@@ -1113,6 +1138,7 @@ class G8:
 
         self.probability = 1.
         self.impact = imax
+
 
 
 class G11:
@@ -1137,6 +1163,8 @@ class G11:
         else:
             self.probability = 0.
             self.impact = 0.
+
+
 
 class G12:
     def __init__(self, tbmType, mat, lambdae, availableTorque):
@@ -1168,6 +1196,8 @@ class G12:
             self.probability = 0.
             self.impact = 0.
 
+
+
 class G13:
     def __init__(self, tbmType, rockBurstingPar, availableTorque):
         self.definition='Rockburst'
@@ -1193,16 +1223,22 @@ class G13:
             # rimedio con la coppia e quindi annullo l'impatto
             self.impact = 0.
 
+
+
 # i parametri di produzione possono essere applicati solo alla fine sommando tutti i segmenti
 class P0: #tempo di scavo effettivo
     def __init__(self, par,  length):
         self.probability = 1.
         self.impact = par/length
 
+
+
 class P1: #tempo di scavo in condizioni standard si applica sempre
     def __init__(self, par):
         self.probability = 1.
         self.impact = par
+
+
 
 class P2: #tempo di montaggio e smontaggio lo si puo' associare direttamente alla tbm e lo spalmo su tutto il tracciato
     def __init__(self, tbmType):
@@ -1220,6 +1256,7 @@ class P2: #tempo di montaggio e smontaggio lo si puo' associare direttamente all
         self.impact=0.
         self.probability=0.
 
+
     def defineImpact(self, tRef):
         #calcolo l'impatto come produzione pesata sul tempo minimo di produzione possibile
         # la produzione e' inversamente proporzionale al tempo di produzine
@@ -1234,6 +1271,7 @@ class P2: #tempo di montaggio e smontaggio lo si puo' associare direttamente all
             self.impact = 0.
 
 
+
 class P3: #tempo extra in giorni per scavo in rocce dure
     def __init__(self, par):
         if par > 0.:
@@ -1242,6 +1280,8 @@ class P3: #tempo extra in giorni per scavo in rocce dure
         else:
             self.probability = 0.
             self.impact = 0.
+
+
 
 class P4:
     def __init__(self, tbmType,  par, refProductivity, length ):
@@ -1265,6 +1305,7 @@ class P4:
         else:
             self.probability = 0.
             self.impact = 0.
+
 
 
 class P5:
@@ -1302,6 +1343,8 @@ class P5:
             self.impact = 0.
             self.duration = 0.
 
+
+
 class P6: #realizzaqzione del rivestimento . Si applica solo a tbm aperta direzione sud
     def __init__(self):
         self.definition='Lining execution'
@@ -1329,6 +1372,7 @@ class P6: #realizzaqzione del rivestimento . Si applica solo a tbm aperta direzi
             self.impact = 0.
 
 
+
 # i parametri vari si applicano genericamente alla tbm e sono indipendenti dai punti del tracciato
 class V1:
     def __init__(self, tbmType):
@@ -1343,6 +1387,8 @@ class V1:
         else:
             raise ValueError("Errore: tipo TBM (%s) inesistente." % tbmType)
         self.impact=imax
+
+
 
 class V2:
     def __init__(self, tbmType, tbmName):
@@ -1372,6 +1418,7 @@ class V2:
                 raise ValueError("Errore: tipo TBM (%s) inesistente." % tbmType)
         self.impact=0.
 
+
     def defineImpact(self, costRef):
         impact = impactOnCost(self.cost, costRef)
         if impact>0.:
@@ -1380,6 +1427,7 @@ class V2:
         else:
             self.probability = 0.
             self.impact = 0.
+
 
 
 class V3:
@@ -1397,6 +1445,8 @@ class V3:
             raise ValueError("Errore: tipo TBM (%s) inesistente." % tbmType)
         self.impact=imax*(1.-dotation)
 
+
+
 class V4:
     def __init__(self, tbmType):
         self.definition='Alignment'
@@ -1410,6 +1460,8 @@ class V4:
         else:
             raise ValueError("Errore: tipo TBM (%s) inesistente." % tbmType)
         self.impact=imax
+
+
 
 class V5:
     def __init__(self, tbmType):
@@ -1425,6 +1477,8 @@ class V5:
             raise ValueError("Errore: tipo TBM (%s) inesistente." % tbmType)
         self.impact=imax
 
+
+
 class V6:
     def __init__(self, tbmType):
         self.definition='TBM complexity'
@@ -1439,6 +1493,8 @@ class V6:
             raise ValueError("Errore: tipo TBM (%s) inesistente." % tbmType)
         self.impact=imax
 
+
+
 class PerformanceIndex:
     def __init__(self, definition):
         self.definition=definition
@@ -1450,6 +1506,7 @@ class PerformanceIndex:
         self.totalImpact=0.
         self.probabilityScore=0.
 
+
     def updateIndex(self, pCur, iCur, length):
         if pCur >0.:
             if self.minImpact>0.:
@@ -1460,6 +1517,7 @@ class PerformanceIndex:
             self.avgImpact+=length*pCur*iCur
             self.appliedLength+=length*pCur
 
+
     def convertDaysToImpactAndFinalizeIndex(self, refLength):
         days = self.avgImpact
         self.avgImpact = impactOfProductionDaysAftes2012(days)
@@ -1469,6 +1527,7 @@ class PerformanceIndex:
         self.probabilityScore = probabilityAftes2012(self.percentOfApplication)
         self.totalImpact=self.avgImpact*self.probabilityScore
 
+
     def finalizeIndex(self, refLength):
         if self.appliedLength >0.:
             self.avgImpact/=self.appliedLength
@@ -1476,9 +1535,12 @@ class PerformanceIndex:
         self.probabilityScore = probabilityAftes2012(self.percentOfApplication)
         self.totalImpact=self.avgImpact*self.probabilityScore
 
+
     def printOut(self):
         print '%s: min impact=%f; max impact=%f; avg impact=%f; applied length=%f; percent of application=%f; probability score=%f; total impact=%f' \
             % (self.definition, self.minImpact, self.maxImpact, self.avgImpact, self.appliedLength, self.percentOfApplication, self.probabilityScore, self.totalImpact)
+
+
 
 class InfoAlignment:
     # gabriele@20151114 friction parametrica
