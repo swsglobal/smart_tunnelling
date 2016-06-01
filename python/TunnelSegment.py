@@ -200,7 +200,8 @@ class InSituCondition:
 # caratteristiche dell'ammasso e stato tensionale locale
     def __init__(self, overburden, h_2, groundwaterdepth, gamma, k0min, k0max, gsi, rmr):
         self.Overburden = overburden #copertura netta
-        self.Groundwaterdepth = groundwaterdepth #copertura netta
+        # aghensi@20160601 - aggiunta profondita acqua se falda sopra profilo di progetto
+        self.Groundwaterdepth = min([groundwaterdepth, overburden])
         self.K0 = 1.0
         self.K0min = k0min
         self.K0max = k0max
@@ -470,16 +471,17 @@ class TBM:
         self.cutterheadThickness = tbmData.cutterheadThickness
         self.Slen1 =tbmData.frontShieldLength
 
-        # TODO: aghensi@20160530 attualizzare i valori (4m/ora)
+        # aghensi@20160530 impostato rmr 50 con 80mm/min = 4.8m/h e ufDS a 0.217 => dar di 25m/giorno
+        # TODO: HRK ha 100mm/min = 6m/h, dovrei dare uf di 0.174 ma ho RMR fisso, come faccio?)
         # penetration rate per ogni decina di rmr: 0, 10, 20, 30.....100
-        self.rop= array((1.2904525, 1.2904525,1.540995,1.7915375,1.97058,2.1246225,2.187465,2.2253075,1.97355,1.7217925, 1.7217925)) # m/h metri di scavo all'ora
+        self.rop= array((1.2904525, 1.2904525,1.540995,1.7915375,4.8, 4.8 ,4.8, 2.2253075,1.97355,1.7217925, 1.7217925)) # m/h metri di scavo all'ora
         self.penetrationPerRevolution = self.rop/60./self.rpm  #in m per rivoluzione
         # definisco l'Utilization Factor
         uf0=array((0.110166666666667, 0.110166666666667,0.159111111111111,0.208055555555556,0.288194444444445,0.368333333333333,0.4335, \
                     0.498666666666667, 0.498666666666667,0.498666666666667,0.498666666666667))
         ufS=array((0.154166666666667,0.154166666666667,0.189583333333333,0.225,0.285416666666667,0.345833333333333, \
                     0.377083333333333,0.408333333333333,0.408333333333333,0.408333333333333,0.408333333333333))
-        ufDS=array((0.15,0.15,0.219166666666667,0.288333333333333,0.354722222222222,0.421111111111111,0.442361111111111, \
+        ufDS=array((0.15,0.15,0.219166666666667,0.288333333333333, 0.217, 0.217, 0.217, \
                     0.463611111111111,0.463611111111111,0.463611111111111,0.463611111111111))
         if self.type == 'O': # per ogni decina di rmr: 0, 10, 20, 30.....100
             self.uf = uf0
@@ -531,7 +533,7 @@ class TBMSegment:
         st = segment.sti
         #mi = segment.mi
         overburden = segment.co
-        groundwaterdepth = segment.co # TODO: aghensi - qui devo ottenere livello acqua (profondità da dem)
+        groundwaterdepth = segment.wdepth
         k0min = segment.k0_min
         k0max = segment.k0_max
         gsi = segment.gsi
@@ -707,8 +709,8 @@ class TBMSegment:
 
         i_1 = int(math.floor(RMR/10.0))
         i = i_1+1
-        locpBase = rate[i_1]+(rate[i]-rate[i-1])/10.0*(RMR-i_1*10)
-        locuf = uf[i_1]+(uf[i]-uf[i-1])/10.0*(RMR-i_1*10)
+        locpBase = rate[i_1]+(rate[i]-rate[i_1])/10.0*(RMR-i_1*10)
+        locuf = uf[i_1]+(uf[i]-uf[i_1])/10.0*(RMR-i_1*10)
         locfi = math.acos((self.Tbm.CutterRadius-locpBase)/self.Tbm.CutterRadius)
         locP0 = 2.12*math.pow((self.Tbm.CutterSpacing*(ucs**2)*sigmat/(locfi*math.sqrt(self.Tbm.CutterRadius*self.Tbm.CutterThickness))), 1.0/3.0)
         locFt = 1000.0*locP0*locfi*self.Tbm.CutterRadius*self.Tbm.CutterThickness/(1.0+psi) # in kN
@@ -908,12 +910,12 @@ class TBMSegment:
         c = self.MohrCoulomb.C / 1000. / coefC # MPa
         cr = self.MohrCoulomb.Cr / 1000.0 / coefC # MPa
 
-        # TODO: aghensi - check con CCG - p_wt dove lo metto???
-        p0 = self.InSituCondition.SigmaV - p_wt # in MPa #self.P0
-        pcr = p0 * (1.-math.sin(fi)) - c * math.cos(fi) # in MPa #self.Pcr # in MPa
-        pocp = p0 + c / math.tan(fi) #self.Pocp
-        pocr = p0 + cr / math.tan(fir) #self.Pocr
-        Nfir = (1.+math.sin(fir)) / (1.-math.sin(fir)) #self.Nfir
+        # aghensi@20160601 aggiunto pressione acqua
+        p0 = self.InSituCondition.Overburden*(self.Rock.Gamma-10.0)+self.InSituCondition.Groundwaterdepth*10 # in MPa
+        pcr = p0 * (1.-math.sin(fi)) - c * math.cos(fi) # in MPa
+        pocp = p0 + c / math.tan(fi)
+        pocr = p0 + cr / math.tan(fir)
+        Nfir = (1.+math.sin(fir)) / (1.-math.sin(fir))
         uremax = (1.0+ni)/E*(p0-pi)*R
         if pcr < p0:
             Ki = (1.0+math.sin(psi))/(1.0-math.sin(psi))
@@ -972,14 +974,16 @@ class TBMSegment:
 
 
     def PiUr(self, dur):
-        # restituisce il valore di pressione equivalente a una convergenza del cavo pari a dur
-        # iol risultato e' in MPa (1 MPa = 1000 kN/m2)
+        '''
+        restituisce il valore di pressione equivalente a una convergenza del cavo pari a dur
+        il risultato e' in MPa (1 MPa = 1000 kN/m2)
+        '''
         p0 = self.InSituCondition.SigmaV
         ur = self.CavityConvergence(0.0) + dur
         pi = 0.0
         for i in range(0, int(math.floor(p0*200.0))):
             pi = i / 200.0
-            urcur = self.UrPi_HB(pi)
+            urcur = self.UrPi(pi)
             if urcur <= ur:
                 return pi
         return pi

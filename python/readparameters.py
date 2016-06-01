@@ -1,17 +1,15 @@
 import sqlite3, os, csv
 import sys, getopt
-from tbmconfig import tbms
-from bbtutils import *
-from bbtnamedtuples import *
 import matplotlib.mlab as mlab
-from readkpis import *
 from collections import defaultdict
-from bbt_database import load_tbm_table, getDBConnection
-from matplotlib.ticker import FuncFormatter
-
 import numpy as np
 import matplotlib.pyplot as plt
 
+from tbmconfig import tbms
+from bbtutils import *
+from bbtnamedtuples import *
+from readkpis import *
+from bbt_database import getDBConnection
 
 
 # qui vedi come leggere i parametri dal Database bbt_mules_2-3.db
@@ -93,13 +91,13 @@ def main(argv):
             #bGroupTypes = True
 
     if len(sTypeToGroup) >0 and sTypeToGroup not in ('DS','S','O'):
-        print "Wrong TBM Type -m=%s!\nreadparameters.py -p <parameter> [-t <tbmcode>] [-rkai]\r\n where\r\n %s" % (sTypeToGroup,sParm)
+        print "Wrong TBM Type -m=%s!\nreadparameters.py -p <parameter> [-t <tbmcode>] [-rkai]\r\n where\r\n %s" % (sTypeToGroup, sParm)
         sys.exit(2)
     if len(sParameterToShow) >0 and sParameterToShow not in parmDict:
-        print "Wrong parameter -p=%s!\nreadparameters.py -p <parameter> [-t <tbmcode>] [-rkai]\r\n where\r\n %s" % (sParameterToShow,sParm)
+        print "Wrong parameter -p=%s!\nreadparameters.py -p <parameter> [-t <tbmcode>] [-rkai]\r\n where\r\n %s" % (sParameterToShow, sParm)
         sys.exit(2)
     if len(sTbmCode) >0 and sTbmCode not in tbms:
-        print "Wrong TBM Code -t=%s!\nreadparameters.py -p <parameter> -t <tbmcode> [-rkai]\r\n where\r\n %s" % (sTbmCode,sParm)
+        print "Wrong TBM Code -t=%s!\nreadparameters.py -p <parameter> -t <tbmcode> [-rkai]\r\n where\r\n %s" % (sTbmCode, sParm)
         sys.exit(2)
     # mi metto nella directory corrente
     path = os.path.dirname(os.path.realpath(__file__))
@@ -107,7 +105,7 @@ def main(argv):
 
     ########## File vari: DB
     sDBName = bbtConfig.get('Database','dbname')
-    sDBPath = os.path.join(os.path.abspath('..'), bbtConfig.get('Database','dbfolder'), sDBName)
+    sDBPath = os.path.join(os.path.abspath('..'), bbtConfig.get('Database', 'dbfolder'), sDBName)
     if not os.path.isfile(sDBPath):
         print "Errore! File %s inesistente!" % sDBPath
         exit(1)
@@ -122,17 +120,13 @@ def main(argv):
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     # quante iterazioni?
-    sSql = "select max(BbtParameterEval.iteration_no) as max_iter from BbtParameterEval"
+    sSql = "SELECT MAX(BbtParameterEval.iteration_no) AS max_iter FROM BbtParameterEval"
     cur.execute(sSql)
     bbtresult = cur.fetchone()
     M_Max = float(bbtresult[0]) + 1.0
     print "Numero massimo di iterazioni presenti %d" % M_Max
     # Legge tutti i Tunnell
-    sSql = """SELECT distinct
-            bbtTbmKpi.tunnelName
-            FROM
-            bbtTbmKpi
-            ORDER BY bbtTbmKpi.tunnelName"""
+    sSql = "SELECT DISTINCT bbtTbmKpi.tunnelName FROM bbtTbmKpi ORDER BY bbtTbmKpi.tunnelName"
     cur.execute(sSql)
     bbtresults = cur.fetchall()
     print "Sono presenti %d diverse Gallerie" % len(bbtresults)
@@ -141,17 +135,15 @@ def main(argv):
         tunnelArray.append(bbtr[0])
     # Legge tutte le TBM solo per associare i colori in maniera univoca
     sSql = """SELECT bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer, count(*) as cnt
-            FROM
-            bbtTbmKpi
-			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
+            FROM bbtTbmKpi
+            JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+            GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
             ORDER BY bbtTbmKpi.tbmName"""
     if bGroupTypes:
         sSql = """SELECT BbtTbm.type, count(*) as cnt
-                FROM
-                bbtTbmKpi
-    			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-    			GROUP BY BbtTbm.type
+                FROM bbtTbmKpi
+                JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+                GROUP BY BbtTbm.type
                 ORDER BY BbtTbm.type"""
     cur.execute(sSql)
     bbtresults = cur.fetchall()
@@ -164,8 +156,7 @@ def main(argv):
         allTbmData = []
         print "\r\n%s" % tun
         sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
-                FROM
-                bbtTbmKpi
+                FROM bbtTbmKpi
                 JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
                 WHERE bbtTbmKpi.tunnelName = '"""+tun+"""'
                 GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
@@ -173,33 +164,30 @@ def main(argv):
         # Filtro sulla eventuale TBM passata come parametro
         if len(sTbmCode) > 0:
             sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
-                    FROM
-                    bbtTbmKpi
-        			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""' AND BbtTbm.name = '"""+sTbmCode+"""'
-        			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
+                    FROM bbtTbmKpi
+                   JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""'
+                        AND BbtTbm.name = '"""+sTbmCode+"""'
+                   GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
                     ORDER BY bbtTbmKpi.tbmName"""
         # Filtro sulla eventuale Tipologia passata come parametro
         elif len(sTypeToGroup) > 0:
             sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
-                    FROM
-                    bbtTbmKpi
-        			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""' AND BbtTbm.type = '"""+sTypeToGroup+"""'
-        			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
+                    FROM bbtTbmKpi
+                   JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""'
+                        AND BbtTbm.type = '"""+sTypeToGroup+"""'
+                   GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
                     ORDER BY bbtTbmKpi.tbmName"""
         # Raggruppamento per Tipo TBM
         elif bGroupTypes:
             sSql = """SELECT BbtTbm.type, count(*) as cnt_tbmtype
-                    FROM
-                    BbtTbm
-					WHERE
-					BbtTbm.name IN (
-                    SELECT DISTINCT BbtTbmKpi.tbmName
-					FROM bbtTbmKpi
-                    WHERE
-                    bbtTbmKpi.tunnelName = '"""+tun+"""')
-        			GROUP BY BbtTbm.type
+                    FROM BbtTbm
+               WHERE BbtTbm.name IN (
+                        SELECT DISTINCT BbtTbmKpi.tbmName
+                 FROM bbtTbmKpi
+                        WHERE bbtTbmKpi.tunnelName = '"""+tun+"""')
+                   GROUP BY BbtTbm.type
                     ORDER BY BbtTbm.type"""
         cur.execute(sSql)
         bbtresults = cur.fetchall()
@@ -210,9 +198,23 @@ def main(argv):
             if len(segmentsToShow) > 0:
                 for sCriteria, sProg in segmentsToShow:
                     # danzi.tn@20151123 calcolo iterazioni per la TBM corrente (non e' detto che siano tutte uguali)
-                    sSql = "SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3 +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv FROM BbtParameter, BBtParameterEval  WHERE  BbtParameter.profilo_id = BBtParameterEval.profilo_id  AND BbtParameter.fine = "+sCriteria+" AND BBtParameterEval.tunnelNAme = '"+tun+"' AND tbmNAme='"+tbmKey+"'"
+                    sSql = """SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3
+                            +BBtParameterEval.t4 +BBtParameterEval.t5 AS tsum, 1 AS adv
+                            FROM BbtParameter, BBtParameterEval
+                            WHERE BbtParameter.profilo_id = BBtParameterEval.profilo_id
+                                AND BbtParameter.fine = """+sCriteria+"""
+                                AND BBtParameterEval.tunnelNAme = '"""+tun+"""'
+                                AND tbmNAme='"""+tbmKey+""""'"""
                     if bGroupTypes:
-                        sSql = "SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3 +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv FROM BbtParameter, BBtParameterEval, BbtTbm  WHERE BbtParameter.profilo_id = BBtParameterEval.profilo_id  AND BbtParameter.fine = "+sCriteria+" AND  BbtTbm.name = BBtParameterEval.tbmName AND BbtParameter.profilo_id = BBtParameterEval.profilo_id  AND BBtParameterEval.tunnelNAme = '"+tun+"' AND BbtTbm.type='"+tbmKey+"'"
+                        sSql = """SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3
+                                +BBtParameterEval.t4 +BBtParameterEval.t5 AS tsum, 1 AS adv
+                                FROM BbtParameter, BBtParameterEval, BbtTbm
+                                WHERE BbtParameter.profilo_id = BBtParameterEval.profilo_id
+                                  AND BbtParameter.fine = """+sCriteria+"""
+                                  AND  BbtTbm.name = BBtParameterEval.tbmName
+                                  AND BbtParameter.profilo_id = BBtParameterEval.profilo_id
+                                  AND BBtParameterEval.tunnelNAme = '"""+tun+"""'
+                                  AND BbtTbm.type='"""+tbmKey+"""'"""
                     cur.execute(sSql)
                     bbtresults = cur.fetchall()
                     pValues = []
@@ -237,23 +239,39 @@ def main(argv):
                         ax1.set_ylabel("Probabilita'(%)")
                         ax1.axvline(tbmMean, color='r', linewidth=2)
                         ax1.yaxis.grid(True)
-                        sFileNAme = "bbt_%s_%s_%s_%s_hist.svg" % ( tun.replace (" ", "_"), replaceTBMName(tbmKey),sParameterToShow,sProg)
+                        sFileNAme = "bbt_%s_%s_%s_%s_hist.svg" % (tun.replace(" ", "_"), replaceTBMName(tbmKey), sParameterToShow, sProg)
                         outputFigure(sDiagramsFolderPath, sFileNAme, format="svg")
                         print "Output su %s disponibile" % sFileNAme
                         plt.close(fig)
             elif bShowProfile:
                 # danzi.tn@20151118 calcolo iterazioni per la TBM corrente (non e' detto che siano tutte uguali)
-                sSql = "select max(BbtParameterEval.iteration_no) as max_iter from BbtParameterEval WHERE BbtParameterEval.tbmName ='%s'" % tbmKey
+                sSql = """SELECT MAX(BbtParameterEval.iteration_no) AS max_iter
+                          FROM BbtParameterEval
+                          WHERE BbtParameterEval.tbmName ='"""+ tbmKey + """'"""
                 if bGroupTypes:
-                    sSql = "select max(BbtParameterEval.iteration_no) as max_iter from BbtParameterEval JOIN BbtTbm on BbtTbm.name = BbtParameterEval.tbmName WHERE BbtTbm.type ='%s'" % tbmKey
+                    sSql = """select max(BbtParameterEval.iteration_no) as max_iter
+                              from BbtParameterEval
+                              JOIN BbtTbm on BbtTbm.name = BbtParameterEval.tbmName
+                              WHERE BbtTbm.type ='"""+ tbmKey +""""'"""
                 cur.execute(sSql)
                 bbtresult = cur.fetchone()
                 M = float(bbtresult[0]) + 1.0
                 if M_Max > M:
                     print "Numero massimo di iterazioni per %s sono %d" % (tbmKey, M)
-                sSql = "SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3 +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv FROM BBtParameterEval  WHERE BBtParameterEval.tunnelNAme = '"+tun+"' AND tbmNAme='"+tbmKey+"' order by BBtParameterEval.iteration_no, BBtParameterEval.fine"
+                sSql = """SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3
+                          +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv
+                          FROM BBtParameterEval
+                          WHERE BBtParameterEval.tunnelNAme = '"""+tun+"""'
+                              AND tbmNAme='"""+tbmKey+"""'
+                          order by BBtParameterEval.iteration_no, BBtParameterEval.fine"""
                 if bGroupTypes:
-                    sSql = "SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3 +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv FROM BBtParameterEval JOIN BbtTbm on BbtTbm.name = BBtParameterEval.tbmName WHERE BBtParameterEval.tunnelNAme = '"+tun+"' AND BbtTbm.type='"+tbmKey+"' order by BBtParameterEval.iteration_no, BBtParameterEval.fine, BbtTbm.type"
+                    sSql = """SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3
+                              +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv
+                              FROM BBtParameterEval
+                              JOIN BbtTbm on BbtTbm.name = BBtParameterEval.tbmName
+                              WHERE BBtParameterEval.tunnelNAme = '"""+tun+"""'
+                                  AND BbtTbm.type='"""+tbmKey+"""'
+                              order by BBtParameterEval.iteration_no, BBtParameterEval.fine, BbtTbm.type"""
                 cur.execute(sSql)
                 bbtresults = cur.fetchall()
                 # recupero tutti i parametri e li metto in una lista
@@ -270,8 +288,8 @@ def main(argv):
                 pj = 0
                 prev = 0.0
                 outValues =[]
-                if tun not in ('Galleria di linea direzione Sud'):
-                    bbtresults.reverse()
+#                if tun not in ('Galleria di linea direzione Sud'):
+#                    bbtresults.reverse()
                 for bbt_parametereval in bbtresults:
                     j = int(bbt_parametereval['iteration_no'])
                     if pj != j:
@@ -291,12 +309,15 @@ def main(argv):
                         pVal = tti[i][j]
                         if bGroupTypes:
                             pVal = pVal/tbmCount
-                    outValues.append([int(bbt_parametereval['iteration_no']),float(bbt_parametereval['fine']), float(bbt_parametereval['he']),float(bbt_parametereval['hp']),pVal])
+                    outValues.append([int(bbt_parametereval['iteration_no']),
+                                      float(bbt_parametereval['fine']),
+                                      float(bbt_parametereval['he']),
+                                      float(bbt_parametereval['hp']),pVal])
                     parm2show[i][j] = pVal
                     i += 1
                 for i in range(int(N)):
                     pki_mean = np.nanmean(parm2show[i,:])
-					# gabriele@20151124 rimosso 95o percentile sui grafi
+                    # gabriele@20151124 rimosso 95o percentile sui grafi
                     #pki_std = np.nanstd(parm2show[i,:])
                     #mean2Show[i][0] = pki_mean - 2*pki_std
                     mean2Show[i][1] = pki_mean

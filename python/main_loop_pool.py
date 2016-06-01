@@ -28,36 +28,48 @@ def insert_georandom(sDBPath,nIter, bbt_parameters,sKey):
     for idx, bbt_parameter in enumerate(bbt_parameters):
         mynorms = build_normfunc_dict(bbt_parameter,nIter)
         for n in range(nIter):
+            '''
+            'g_med', 'g_stddev', 'phimin', 'phimax', 'ei_med', 'ei_stdev', 'c_med', 'c_stdev',
+            'rmr_med',
+            'rmr_stdev', 'k0_min', 'k0_max', 'w_inflow_min', 'w_inflow_max', 'UCS_matrix',
+            'UCS_pebble', 'UCS_clasts'
+            '''
             gamma = mynorms['gamma'].rvs()
-            sci = mynorms['sci'].rvs()
-            mi = mynorms['mi'].rvs()
+            phi = mynorms['phi'].rvs()
             ei = mynorms['ei'].rvs()
-            cai = mynorms['cai'].rvs()
-            gsi = mynorms['gsi'].rvs()
+            c = mynorms['c'].rvs()
             rmr =  mynorms['rmr'].rvs()
-            sti = mynorms['sti'].rvs()
             k0 = mynorms['k0'].rvs()
-            ppv = bbt_parameter + (gamma,sci,mi,ei,cai,rmr,gsi, sti, k0, n,strnow)
-            bbtParameterEvalMain_item = BbtParameterEvalMain(*ppv)
-            bbt_insertval.append((strnow, n,sKey, sKey , bbt_parameter.fine,bbt_parameter.he,bbt_parameter.hp,bbt_parameter.co,\
-                                        gamma,sci,mi,ei,cai,gsi,rmr,\
-                                        0,0 ,0,0,0,0,0 ,0, 0, 0, 0, 0, 0, bbt_parameter.profilo_id, bbt_parameter.geoitem_id, bbt_parameter.title,  sti, k0, \
-                                        0,0, 0, 0,0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0, 0, 0, 0, 0,0, 0,0, 0,  ) )
+            winflow = mynorms['winflow'].rvs()
+#            ucs_matrix  = mynorms['ucs_matrix'].rvs()
+#            ucs_pebble = mynorms['ucs_pebble'].rvs()
+#            ucs_clasts  = mynorms['ucs_clasts'].rvs()
+            #ppv = bbt_parameter + (gamma, phi, ei, c, rmr, winflow, n, strnow)
+            #bbtParameterEvalMain_item = BbtParameterEvalMain(*ppv)
+
+            bbt_insertval.append((strnow, n, sKey, sKey, bbt_parameter.fine, bbt_parameter.he,
+                                  bbt_parameter.hp, bbt_parameter.co,  bbt_parameter.hw,
+                                  bbt_parameter.wdepth, gamma, phi, ei, c, rmr,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                  bbt_parameter.profilo_id, bbt_parameter.geoitem_id,
+                                  bbt_parameter.title, k0, winflow,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
         if (idx+1) % 100 == 0:
-            insert_eval4Geo(sDBPath,bbt_insertval)
+            insert_eval4Geo(sDBPath, bbt_insertval)
             bbt_insertval = []
     if len(bbt_insertval) > 0:
         print "ultimi %d da inserire" % len(bbt_insertval)
-        insert_eval4Geo(sDBPath,bbt_insertval)
+        insert_eval4Geo(sDBPath, bbt_insertval)
 
 # danzi.tn@20151119 profiling logging ed ottimizzazione con Pool
 def createLogger(indx=0,name="main_loop"):
-    log_level = bbtConfig.get('MAIN_LOOP','log_level')
+    log_level = bbtConfig.get('MAIN_LOOP', 'log_level')
     logging.basicConfig(level=eval("logging.%s"%log_level))
     formatter = logging.Formatter('%(levelname)s - %(asctime)s: %(message)s')
-    main_logger = logging.getLogger("%s_%02d" % (name,indx))
+    main_logger = logging.getLogger("%s_%02d" % (name, indx))
     main_logger.propagate = False
-    mainfh = handlers.RotatingFileHandler("%s_%02d.log" % (name,indx),maxBytes=500000, backupCount=5)
+    mainfh = handlers.RotatingFileHandler("%s_%02d.log" % (name, indx), maxBytes=500000, backupCount=5)
     mainfh.setFormatter(formatter)
     main_logger.addHandler(mainfh)
     return main_logger
@@ -154,51 +166,44 @@ def mp_producer(parms):
                         kpiTbm.setKPI4SEG(alnCurr,tbmsect,bbtparameter4seg)
                         #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
                         # TODO aghensi - toglo e aggiungo quello che serve
-                        bbt_evalparameters.append((strnow, mainIterationNo,alnCurr.description, tbmKey, bbt_parameter.fine,bbt_parameter.he,bbt_parameter.hp,bbt_parameter.co,bbtparameter4seg.gamma,\
-                                                        bbtparameter4seg.sci,bbtparameter4seg.mi,bbtparameter4seg.ei,bbtparameter4seg.cai,bbtparameter4seg.gsi,bbtparameter4seg.rmr,\
-                                                        tbmsect.pkCe2Gl(bbt_parameter.fine),\
-                                                        tbmsect.TunnelClosureAtShieldEnd*100. ,\
-                                                        tbmsect.rockBurst.Val,\
-                                                        tbmsect.frontStability.Ns,\
-                                                        tbmsect.frontStability.lambdae,\
-                                                        tbmsect.penetrationRate*1000. ,\
-                                                        tbmsect.penetrationRateReduction*1000. ,\
-                                                        tbmsect.contactThrust, \
-                                                        tbmsect.torque, \
-                                                        tbmsect.frictionForce, \
-                                                        tbmsect.requiredThrustForce, \
-                                                        tbmsect.availableThrust, \
-                                                        tbmsect.dailyAdvanceRate, \
-                                                        bbt_parameter.profilo_id, \
-                                                        bbt_parameter.geoitem_id, \
-                                                        bbt_parameter.title, \
-                                                        bbtparameter4seg.sti, \
-                                                        bbtparameter4seg.k0, \
-                                                        tbmsect.t0, \
-                                                        tbmsect.t1, \
-                                                        tbmsect.t3, \
-                                                        tbmsect.t4, \
-                                                        tbmsect.t5, \
-                                                        tbmsect.InSituCondition.SigmaV, \
-                                                        tbmsect.Excavation.Radius, \
-                                                        tbmsect.Rock.E, \
-                                                        tbmsect.MohrCoulomb.psi, \
-                                                        tbmsect.Rock.Ucs, \
-                                                        tbmsect.InSituCondition.Gsi, \
-                                                        tbmsect.HoekBrown.Mi, \
-                                                        tbmsect.HoekBrown.D, \
-                                                        tbmsect.HoekBrown.Mb, \
-                                                        tbmsect.HoekBrown.S, \
-                                                        tbmsect.HoekBrown.A, \
-                                                        tbmsect.HoekBrown.Mr, \
-                                                        tbmsect.HoekBrown.Sr, \
-                                                        tbmsect.HoekBrown.Ar, \
-                                                        tbmsect.UrPi_HB(0.), \
-                                                        tbmsect.Rpl, \
-                                                        tbmsect.Picr, \
-                                                        tbmsect.LDP_Vlachopoulos_2009(0.), \
-                                                        tbmsect.LDP_Vlachopoulos_2009(tbm.Slen), \
-                                                         ) )
+
+                        bbt_evalparameters.append((strnow, mainIterationNo, alnCurr.description,
+                                                   tbmKey, bbt_parameter.fine, bbt_parameter.he,
+                                                   bbt_parameter.hp, bbt_parameter.co,
+                                                   bbt_parameter.hw, bbt_parameter.wdepth,
+                                                   bbtparameter4seg.gamma, bbtparameter4seg.phi,
+                                                   #bbtparameter4seg.sci,bbtparameter4seg.mi,
+                                                   bbtparameter4seg.ei, bbtparameter4seg.c,
+                                                   #bbtparameter4seg.gsi,
+                                                   bbtparameter4seg.rmr,
+                                                   tbmsect.pkCe2Gl(bbt_parameter.fine),
+                                                   tbmsect.TunnelClosureAtShieldEnd*100.,
+                                                   tbmsect.rockBurst.Val,
+                                                   tbmsect.frontStability.Ns,
+                                                   tbmsect.frontStability.lambdae,
+                                                   tbmsect.penetrationRate*1000.,
+                                                   tbmsect.penetrationRateReduction*1000.,
+                                                   tbmsect.contactThrust, tbmsect.torque,
+                                                   tbmsect.frictionForce,
+                                                   tbmsect.requiredThrustForce,
+                                                   tbmsect.availableThrust,
+                                                   tbmsect.dailyAdvanceRate,
+                                                   bbt_parameter.profilo_id,
+                                                   bbt_parameter.geoitem_id,
+                                                   bbt_parameter.title, bbtparameter4seg.sti,
+                                                   bbtparameter4seg.k0, bbtparameter4seg.winflow,
+                                                   tbmsect.t0, tbmsect.t1, tbmsect.t3, tbmsect.t4,
+                                                   tbmsect.t5, tbmsect.InSituCondition.SigmaV,
+                                                   tbmsect.Excavation.Radius, tbmsect.Rock.E,
+                                                   tbmsect.MohrCoulomb.psi, tbmsect.Rock.Ucs,
+                                                   tbmsect.InSituCondition.Gsi,
+                                                   tbmsect.HoekBrown.Mi, tbmsect.HoekBrown.D,
+                                                   tbmsect.HoekBrown.Mb, tbmsect.HoekBrown.S,
+                                                   tbmsect.HoekBrown.A, tbmsect.HoekBrown.Mr,
+                                                   tbmsect.HoekBrown.Sr, tbmsect.HoekBrown.Ar,
+                                                   tbmsect.UrPi_HB(0.), tbmsect.Rpl, tbmsect.Picr,
+                                                   tbmsect.LDP_Vlachopoulos_2009(0.),
+                                                   tbmsect.LDP_Vlachopoulos_2009(tbm.Slen)))
                     kpiTbm.updateKPI(alnCurr)
                     bbttbmkpis += kpiTbm.getBbtTbmKpis()
                     sys.stdout.flush()
@@ -276,11 +281,11 @@ if __name__ == "__main__":
         if len(bbt_parameters) == 0:
             main_logger.error( "Attenzione! Nel DB %s non ci sono i dati necessari!" % sDBPath)
 
-        main_logger.info("Ci sono %d pk" % len(bbt_parameters) )
+        main_logger.info("Ci sono %d pk" % len(bbt_parameters))
         totIterations = mp_np*nIter
         if bGeorandom:
             geo_start_time = ttime()
-            insert_georandom(sDBPath,totIterations, bbt_parameters,sKey)
+            insert_georandom(sDBPath,totIterations, bbt_parameters, sKey)
             geo_tot_time = ttime() - geo_start_time
             main_logger.info("Generazione dei parametri geotecnici per %d iterazioni su %d segmenti ha richiesto %d secondi" % (totIterations,len(bbt_parameters) ,geo_tot_time ) )
         else:
@@ -303,14 +308,14 @@ if __name__ == "__main__":
         if len(loopTbms) == 0:
             loopTbms = tbms
         deleteEval4Tbm(sDBPath,loopTbms)
-        main_logger.info("Analisi per %d TBM" % len(loopTbms) )
+        main_logger.info("Analisi per %d TBM" % len(loopTbms))
         for tbk in loopTbms:
             main_logger.info( tbk )
         list_a = range(mp_np)
         start_time = ttime()
         job_args = [(i, nIter, sDBPath, loopTbms, sKey) for i, item_a in enumerate(list_a)]
         workers = Pool(processes=mp_np)
-        main_logger.info("Istanziati %d processi" % mp_np  )
+        main_logger.info("Istanziati %d processi" % mp_np)
         results = workers.map(mp_producer, job_args)
         workers.close()
         workers.join()

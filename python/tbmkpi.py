@@ -1,9 +1,9 @@
+from scipy.stats import triang
+
 from TunnelSegment import PerformanceIndex
 from bbtutils import *
 from bbtnamedtuples import *
 from bbt_database import getDBConnection
-from scipy.stats import triang
-import sqlite3, os
 
 # danzi.tn@20151113 distribuzione triangolare per friction on Shield e on Cutter Head
 # danzi.tn@20151115 recepimento modifiche gabriele
@@ -236,17 +236,20 @@ class KpiTbm4Tunnel:
             print '%s;%s;%d;%s;%s;%f;%f;%f;%f;%f;%f;%f' \
                 % (self.tunnelName, self.tbmName,self.iterationNo,key, _kpi.definition, _kpi.minImpact, _kpi.maxImpact, _kpi.avgImpact, _kpi.appliedLength, _kpi.percentOfApplication, _kpi.probabilityScore, _kpi.totalImpact)
 
-def build_normfunc_dict(bbt_parameter,nIter=1000):
-    gamma = get_my_norm(bbt_parameter.g_med,bbt_parameter.g_stddev,'gamma',nIter)
-    sci = get_my_norm(bbt_parameter.sigma_ci_avg,bbt_parameter.sigma_ci_stdev,'sigma',nIter)
-    mi = get_my_norm(bbt_parameter.mi_med,bbt_parameter.mi_stdev,'mi',nIter)
-    ei = get_my_norm(bbt_parameter.ei_med,bbt_parameter.ei_stdev,'ei',nIter)
-    cai = get_my_norm(bbt_parameter.cai_med,bbt_parameter.cai_stdev,'cai',nIter)
-    gsi = get_my_norm(bbt_parameter.gsi_med,bbt_parameter.gsi_stdev,'gsi',nIter)
-    rmr =  get_my_norm(bbt_parameter.rmr_med,bbt_parameter.rmr_stdev,'rmr')
-    sti = get_my_norm_min_max(bbt_parameter.sigma_ti_min,bbt_parameter.sigma_ti_max,'sigma_ti',nIter)
-    k0 = get_my_norm_min_max(bbt_parameter.k0_min,bbt_parameter.k0_max,'k0',nIter)
-    return {'gamma':gamma,'sci':sci,'mi':mi,'ei':ei,'cai':cai,'gsi':gsi,'rmr':rmr,'sti':sti,'k0':k0}
+def build_normfunc_dict(bbt_parameter, nIter=1000):
+    return {
+        'gamma': get_my_norm(bbt_parameter.g_med, bbt_parameter.g_stddev, 'gamma', nIter),
+        'phi': get_my_norm_min_max(bbt_parameter.phimin, bbt_parameter.phimax, 'phi', nIter),
+        'ei': get_my_norm(bbt_parameter.ei_med, bbt_parameter.ei_stdev, 'ei', nIter),
+        'c': get_my_norm(bbt_parameter.c_med, bbt_parameter.c_stdev, 'c', nIter),
+        'rmr': get_my_norm(bbt_parameter.rmr_med, bbt_parameter.rmr_stdev, 'rmr'),
+        'k0': get_my_norm_min_max(bbt_parameter.k0_min, bbt_parameter.k0_max, 'k0', nIter),
+        'winflow': get_my_norm_min_max(bbt_parameter.w_inflow_min, bbt_parameter.w_inflow_max,
+                                       'winflow', nIter),
+        #gsi = get_my_norm(bbt_parameter.gsi_med, bbt_parameter.gsi_stdev, 'gsi', nIter)
+        #sti = get_my_norm_min_max(bbt_parameter.sigma_ti_min, bbt_parameter.sigma_ti_max,
+        #                          'sigma_ti', nIter)
+        }
 
 
 def build_bbtparameter4seg(bbt_parameter, bbtparametereval):
@@ -288,5 +291,5 @@ def build_bbtparameter4seg_from_bbt_parameter(bbt_parameter, normfunc_dict):
     rmr =  normfunc_dict['rmr'].rvs()
     sti = normfunc_dict['sti'].rvs()
     k0 = normfunc_dict['k0'].rvs()
-    bbtparameter4seg = BbtParameter4Seg(bbt_parameter.inizio,bbt_parameter.fine,length,bbt_parameter.he,bbt_parameter.hp,bbt_parameter.co,gamma,sci,mi,ei,cai ,gsi, rmr, bbt_parameter.profilo_id ,bbt_parameter.geoitem_id, bbt_parameter.title, sti, k0, bbt_parameter.k0_min, bbt_parameter.k0_max )
+    bbtparameter4seg = BbtParameter4Seg(bbt_parameter.inizio,bbt_parameter.fine,length,bbt_parameter.he,bbt_parameter.hp,bbt_parameter.co,gamma,sci,mi,ei,cai ,gsi, rmr, bbt_parameter.profilo_id ,bbt_parameter.geoitem_id, bbt_parameter.title, sti, k0, bbt_parameter.k0_min, bbt_parameter.k0_max)
     return bbtparameter4seg
