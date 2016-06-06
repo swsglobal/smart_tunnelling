@@ -278,14 +278,14 @@ def main(argv):
                 bbtresults = cur.fetchall()
                 # recupero tutti i parametri e li metto in una lista
                 N = len(bbtresults)/M # No di segmenti
-                pi = zeros(shape=(N,), dtype=float)
-                he = zeros(shape=(N,), dtype=float)
-                hp = zeros(shape=(N,), dtype=float)
-                ti = zeros(shape=(N,), dtype=float)
-                parm2show = zeros(shape=(N,M), dtype=float)
-                mean2Show = zeros(shape=(N,3), dtype=float)
-                tti = zeros(shape=(N,M), dtype=float)
-                xti = zeros(shape=(N,M), dtype=float)
+                pi = zeros(shape=(N,))
+                he = zeros(shape=(N,))
+                hp = zeros(shape=(N,))
+                ti = zeros(shape=(N,))
+                parm2show = zeros(shape=(N,M))
+                mean2Show = zeros(shape=(N,3))
+                tti = zeros(shape=(N,M))
+                xti = zeros(shape=(N,M))
                 i = 0
                 pj = 0
                 prev = 0.0

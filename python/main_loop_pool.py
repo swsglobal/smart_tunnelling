@@ -6,6 +6,7 @@ from collections import namedtuple
 from pprint import pprint
 from multiprocessing import cpu_count, Pool
 import logging
+import logging.handlers
 from time import time as ttime
 from time import sleep as tsleep
 import matplotlib.pyplot as plt
@@ -88,6 +89,7 @@ def destroy_logger(logger):
 def mp_producer(parms):
     idWorker, nIter, sDBPath, loopTbms, sKey = parms
     # ritardo per evitare conflitti su DB
+    # aghensi@20160606 commentato per velocizzare debug
     tsleep(idWorker*10+1)
     start_time = ttime()
     now = datetime.datetime.now()
@@ -118,7 +120,7 @@ def mp_producer(parms):
     fcCutter = FrictionCoeff(fCCutterdMin, fCCutterMode, fCCutterMax)
 
     alnAll = []
-    aln = InfoAlignment('Galleria', 'XXX', inizio, fine, fCCutterMode, fCShiledMode)
+    aln = InfoAlignment('Galleria', 'GLEST', inizio, fine, fCCutterMode, fCShiledMode)
     alnAll.append(aln)
 
     kpiTbmList = []
@@ -327,7 +329,7 @@ if __name__ == "__main__":
         results = workers.map(mp_producer, job_args)
         workers.close()
         workers.join()
-
+#
 #        # aghensi@20160603 singolo thread per debug
 #        for ja in job_args:
 #            mp_producer(ja)

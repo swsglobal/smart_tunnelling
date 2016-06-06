@@ -183,8 +183,22 @@ def solve(f, x0, nu, a, so, h):
     return nextX
 
 class Rock:
-    # definisce le caratteristiche della roccia intatta
+    '''definisce le caratteristiche della roccia intatta'''
     def __init__(self, gamma, ni, e, ucs, st):
+        '''
+        inizializza la classe
+
+        :param gamma: densità in kN/m^3
+        :param ni: ni
+        :param e: modulo elastico in GPa
+        :param ucs: UCS in MPa
+        :param st: resistenza a trazione in MPa
+        :type gamma: float
+        :type ni: float
+        :type e: float
+        :type ucs: float
+        :type st: float
+        '''
         self.Gamma = gamma
         self.Ni = ni
         self.E = e
@@ -538,7 +552,7 @@ class TBMSegment:
         #ucs = segment.sci
         ucs = segment.ucs
         #st = segment.sti
-        st = 0
+        st = -1
         #mi = segment.mi
         overburden = segment.co
         groundwaterdepth = segment.wdepth
