@@ -184,7 +184,7 @@ def solve(f, x0, nu, a, so, h):
 
 class Rock:
     # definisce le caratteristiche della roccia intatta
-    def __init__(self, gamma, ni, e, ucs,  st):
+    def __init__(self, gamma, ni, e, ucs, st):
         self.Gamma = gamma
         self.Ni = ni
         self.E = e
@@ -264,6 +264,8 @@ class MohrCoulomb:
         self.C = 0. #in KPa
         self.Cr = 0. #in KPa
         self.SigmaCm0 = 0.
+        self.SigmaCm0r = 0.
+        self.psi = 0.
 
     # inizializzazione per rocce
     def SetRock(self, hb, ucs):
@@ -288,6 +290,10 @@ class MohrCoulomb:
         self.C = c
         self.Fir = fir
         self.SigmaCm0 = 2.0*c*math.cos(math.radians(fi))/(1.0-math.sin(math.radians(fi)))/1000.0
+        # HACK aghensi@20160603 - imposto anche i parametri residui per non avere errori nelle altre funzioni
+        self.Cr = c
+        self.SigmaCm0r = 2.0*c*math.cos(math.radians(fir))/(1.0-math.sin(math.radians(fir)))/1000.0
+        self.psi = (self.Fi-self.Fir)/1.5
 
 class Excavation:
     # caratteristiche legate allo scavo
@@ -528,15 +534,18 @@ class TBMSegment:
     def __init__(self, segment, tbm, fiRi, frictionCoeff): # gabriele@20151114 friction parametrica
         gamma = segment.gamma
         ni = .2
-        e = segment.ei*1000.
-        ucs = segment.sci
-        st = segment.sti
+        e = segment.ei*1000. # MPa
+        #ucs = segment.sci
+        ucs = segment.ucs
+        #st = segment.sti
+        st = 0
         #mi = segment.mi
         overburden = segment.co
         groundwaterdepth = segment.wdepth
         k0min = segment.k0_min
         k0max = segment.k0_max
-        gsi = segment.gsi
+        #gsi = segment.gsi
+        gsi = 0
         rmr = segment.rmr
         self.segmentLength = segment.length
         excavArea = (tbm.excavationDiam**2)*math.pi/4.
@@ -548,7 +557,7 @@ class TBMSegment:
         pi = 0.
         if ucs <= 1.0:
             print "gamma= %f E= %f ucs= %f" % (gamma, e, ucs)
-        self.Rock = Rock(gamma, ni, e, ucs,  st)	#importo definizione di Rock
+        self.Rock = Rock(gamma, ni, e, ucs, st)	#importo definizione di Rock
         self.InSituCondition = InSituCondition(overburden, excavHeight/2., groundwaterdepth, gamma, k0min, k0max, gsi, rmr)	#importo defizione di stato in situ
         if excavType == 'Mech':
             self.D = 0.0
@@ -556,16 +565,18 @@ class TBMSegment:
             self.D = 0.2
         #self.HoekBrown = HoekBrown(gamma, ucs, mi, e, self.InSituCondition.Gsi, self.D, self.InSituCondition.SigmaV) #check dove usa i parametri
         self.MohrCoulomb = MohrCoulomb()
-        self.MohrCoulomb.SetRock(self.HoekBrown, ucs) # uso setsoil
-
+        #self.MohrCoulomb.SetRock(self.HoekBrown, ucs) # uso setsoil
+        # aghensi@20160603 - giusto?
+        self.MohrCoulomb.SetSoil(segment.phi, segment.c, segment.phi)
         # print "GSI= %f GSIr= %f " % (self.HoekBrown.gsi, self.HoekBrown.gsir)
 
         self.Excavation = Excavation(excavType, excavArea, excavWidth, excavHeight, refLength, overburden, self.MohrCoulomb.Fir)
         self.InSituCondition.UpdateK0KaKp(self.Excavation.OverburdenType,self.MohrCoulomb.Fi)
         #self.rockBurst = rockBursting(ucs, rmr, self.InSituCondition.SigmaV)
         self.Tamez = Tamez('r',overburden, self.Excavation, self.MohrCoulomb, self.InSituCondition, gamma, pi, aunsupported)
-        self.frontStability = frontStability(self.InSituCondition.Overburden/(2.0*self.Excavation.Radius), \
-                                    self.MohrCoulomb.SigmaCm0, self.InSituCondition.SigmaV, self.InSituCondition.Kp) #, 1.0+math.sin(math.radians(self.MohrCoulomb.Fi)))
+        self.frontStability = frontStability(self.InSituCondition.Overburden/(2.0*self.Excavation.Radius),
+                                             self.MohrCoulomb.SigmaCm0, self.InSituCondition.SigmaV,
+                                             self.InSituCondition.Kp) #, 1.0+math.sin(math.radians(self.MohrCoulomb.Fi)))
         # definisco il breakawayTorque per l'instabilita' del fronte
         bat = Breakaway()
         if self.frontStability.lambdae > 0.6:
@@ -584,23 +595,24 @@ class TBMSegment:
         self.frontStabilityBreakawayTorque = bat.torque
 
         # definisco il breakawayTorque per il rockburst
-        bat = Breakaway()
-        if self.rockBurst.Val < .3:
-            self.rockburstBreakawayTorque = 0.
-        elif self.rockBurst.Val < .4:
-            # tra 0.3 e 0.6 ipotizzo che aumenti progressivamente il diametro di base
-            dEq = self.Excavation.Radius*2.*(self.rockBurst.Val-0.3)/.1
-            bat.setupRockburst(self.MohrCoulomb, gamma, dEq)
-            bat.calculate(tbm.openingRatio, tbm.cutterheadThickness, fiRi)
-#            print 'Breakaway torque for rockbursting mid = %f' % (bat.torque)
-        else:
-            dEq=self.Excavation.Radius*2.
-            bat.setupRockburst(self.MohrCoulomb, gamma, dEq)
-            bat.calculate(tbm.openingRatio, tbm.cutterheadThickness, fiRi)
-#            print 'Breakaway torque for rockbursting full = %f' % (bat.torque)
-        self.rockburstBreakawayTorque = bat.torque
+#        bat = Breakaway()
+#        if self.rockBurst.Val < .3:
+#            self.rockburstBreakawayTorque = 0.
+#        elif self.rockBurst.Val < .4:
+#            # tra 0.3 e 0.6 ipotizzo che aumenti progressivamente il diametro di base
+#            dEq = self.Excavation.Radius*2.*(self.rockBurst.Val-0.3)/.1
+#            bat.setupRockburst(self.MohrCoulomb, gamma, dEq)
+#            bat.calculate(tbm.openingRatio, tbm.cutterheadThickness, fiRi)
+##            print 'Breakaway torque for rockbursting mid = %f' % (bat.torque)
+#        else:
+#            dEq=self.Excavation.Radius*2.
+#            bat.setupRockburst(self.MohrCoulomb, gamma, dEq)
+#            bat.calculate(tbm.openingRatio, tbm.cutterheadThickness, fiRi)
+##            print 'Breakaway torque for rockbursting full = %f' % (bat.torque)
+#        self.rockburstBreakawayTorque = bat.torque
         # definisco il breakawayTorque come il massimo tra quello richiesto per instabilita' del fronte e quello richesto dal rockbursting
-        self.breakawayTorque = max(self.frontStabilityBreakawayTorque, self.rockburstBreakawayTorque)
+#        self.breakawayTorque = max(self.frontStabilityBreakawayTorque, self.rockburstBreakawayTorque)
+        self.breakawayTorque = self.frontStabilityBreakawayTorque
 
         #gabriele@20151114 info fuorviante
 #        R = self.Excavation.Radius # in m
@@ -693,7 +705,7 @@ class TBMSegment:
             self.cavityStabilityPar = (0.25-ratio)*4. # varia da 0 a 1 passando da ratio = 0.25 a 0
         else:
             self.cavityStabilityPar = 1.
-        #considerao anche il blocco dello scudo posteriore
+        #considero anche il blocco dello scudo posteriore
         if self.Tbm.installedAuxiliaryThrustForce>self.tailFrictionForce:
             self.tailCavityStabilityPar = 0.
         else:
@@ -772,7 +784,7 @@ class TBMSegment:
         self.G8 = G8(self.Tbm.type)
         self.G11 = G11(self.Tbm.type, segment.descr, self.cavityStabilityPar)
         self.G12 = G12(self.Tbm.type, segment.descr, self.frontStability.lambdae, self.availableBreakawayTorque-self.frontStabilityBreakawayTorque)
-        self.G13 = G13(self.Tbm.type, self.rockBurst.Val, self.availableBreakawayTorque-self.rockburstBreakawayTorque)
+        #self.G13 = G13(self.Tbm.type, self.rockBurst.Val, self.availableBreakawayTorque-self.rockburstBreakawayTorque)
 
     def UrPi_HB(self, pi):
         #curva caratteristica con parametri di H-B secondo Carranza torres del 2006
@@ -902,8 +914,7 @@ class TBMSegment:
         E = self.Rock.E
         fi = math.radians(self.MohrCoulomb.Fi)
         fi = math.atan(math.tan(fi)/coefTanFi)
-        #c = self.MohrCoulomb.C / 1000.0 / coefC # MPa
-        psi = math.radians(self.MohrCoulomb.Psi) # (fi - fir)/1,5 = 0
+        psi = math.radians(self.MohrCoulomb.psi) # (fi - fir)/1,5 = 0
 
         fir = math.radians(self.MohrCoulomb.Fir)
         fir = math.atan(math.tan(fir)/coefTanFi)
@@ -911,7 +922,7 @@ class TBMSegment:
         cr = self.MohrCoulomb.Cr / 1000.0 / coefC # MPa
 
         # aghensi@20160601 aggiunto pressione acqua
-        p0 = self.InSituCondition.Overburden*(self.Rock.Gamma-10.0)+self.InSituCondition.Groundwaterdepth*10 # in MPa
+        p0 = (self.InSituCondition.Overburden*(self.Rock.Gamma-10.0)+self.InSituCondition.Groundwaterdepth*10)/1000 # in MPa
         pcr = p0 * (1.-math.sin(fi)) - c * math.cos(fi) # in MPa
         pocp = p0 + c / math.tan(fi)
         pocr = p0 + cr / math.tan(fir)

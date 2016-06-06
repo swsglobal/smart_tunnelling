@@ -1,4 +1,4 @@
-import sqlite3, os #, csv
+import sqlite3, os, csv
 import sys #, getopt
 from tbmconfig import tbms
 from bbtutils import *
@@ -37,7 +37,7 @@ def main(argv):
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    # Legge tutti i Tunnell
+    # Legge tutti i Tunnel
     sSql = """SELECT distinct
             bbtTbmKpi.tunnelName
             FROM
@@ -71,16 +71,20 @@ def main(argv):
         tbm = tbms[tbmName]
         thrustLim[tbm.name]=tbm.auxiliaryThrustForce
         torqueLim[tbm.name]=tbm.breakawayTorque
+
+
+# TODO: cambio select leggendo cavityStabilityPar >0 e tailCavityStabilityPar = 1
+
     # carico tutti i segmenti ordinati dove posso avere blocco scudo o testa
     sSql = """SELECT  BbtParameterEval.tunnelName, BbtParameterEval.tbmName, BbtParameterEval.fine, count(*) as cnt
         FROM BbtParameterEval
         JOIN BbtTbm on BbtTbm.name = BbtParameterEval.tbmName
         WHERE BbtParameterEval.tbmName !='XXX'
         AND (
-        (BbtParameterEval.tbmName LIKE 'CE%' and BbtParameterEval.availableThrust< 3000) OR (BbtParameterEval.tbmName LIKE 'GL%' and BbtParameterEval.availableThrust< 5000)
-        OR
-        (BbtParameterEval.torque> BbtTbm.breakawayTorque)
-        )
+            BbtParameterEval.cavityStabilityPar > 0
+            OR
+            BbtParameterEval.tailCavityStabilityPar = 1
+            )
         GROUP BY BbtParameterEval.tunnelName, BbtParameterEval.tbmName, BbtParameterEval.fine
         ORDER BY BbtParameterEval.tunnelName, BbtParameterEval.tbmName ASC, cnt DESC"""
     cur.execute(sSql)
@@ -104,21 +108,24 @@ def main(argv):
             tbmRef=tbm
         pkOrder[tunnel+tbm+pk]=pos
         impRid = res[3]
-        if res[0]=='Cunicolo esplorativo direzione Nord' and pos<48:
-            impRid = 0
-        elif res[0]=='Galleria di linea direzione Nord' and pos<38:
-            impRid = 0
-            
-        overallBlockArray.append((res[0], res[1], res[2], M, pkCountDict[res[0]], M*pkCountDict[res[0]], res[3], res[3]/M/pkCountDict[res[0]], res[3]/M, impRid, impRid/M/pkCountDict[res[0]], impRid/M))
+#        if res[0]=='Cunicolo esplorativo direzione Nord' and pos<48:
+#            impRid = 0
+#        elif res[0]=='Galleria di linea direzione Nord' and pos<38:
+#            impRid = 0
 
-    # carico in memoria tutti i record di BbtParmetersEval dove posso avere blocco scudo
+        overallBlockArray.append((res[0], res[1], res[2], M, pkCountDict[res[0]], M*pkCountDict[res[0]], res[3], res[3]/M/pkCountDict[res[0]], res[3]/M, impRid, impRid/M/pkCountDict[res[0]], impRid/M))
+    with open('blocco.csv', 'wb') as f:
+        writer = csv.writer(f,delimiter=";")
+        writer.writerows(overallBlockArray)
+
+
+
+    # carico in memoria tutti i record di BbtParmetersEval dove posso avere blocco coda scudo
     sSql = """SELECT  BbtParameterEval.tunnelName, BbtParameterEval.tbmName, BbtParameterEval.fine, count(*) as cnt
         FROM BbtParameterEval
         JOIN BbtTbm on BbtTbm.name = BbtParameterEval.tbmName
         WHERE BbtParameterEval.tbmName !='XXX'
-        AND (
-        (BbtParameterEval.tbmName LIKE 'CE%' and BbtParameterEval.availableThrust< 3000) OR (BbtParameterEval.tbmName LIKE 'GL%' and BbtParameterEval.availableThrust< 5000)
-        )
+        AND BbtParameterEval.tailCavityStabilityPar = 1
         GROUP BY BbtParameterEval.tunnelName, BbtParameterEval.tbmName, BbtParameterEval.fine
         ORDER BY BbtParameterEval.tunnelName, BbtParameterEval.tbmName ASC, cnt DESC"""
     cur.execute(sSql)
@@ -128,36 +135,66 @@ def main(argv):
     for res in bbtresults:
         pos = pkOrder[res[0]+res[1]+str(res[2])]
         impRid = res[3]
-        if res[0]=='Cunicolo esplorativo direzione Nord' and pos<48:
-            impRid = 0
-        elif res[0]=='Galleria di linea direzione Nord' and pos<38:
-            impRid = 0
-            
-        shieldBlockArray.append((res[0], res[1], res[2], M, pkCountDict[res[0]], M*pkCountDict[res[0]], res[3], res[3]/M/pkCountDict[res[0]], res[3]/M, impRid, impRid/M/pkCountDict[res[0]], impRid/M))
+#        if res[0]=='Cunicolo esplorativo direzione Nord' and pos<48:
+#            impRid = 0
+#        elif res[0]=='Galleria di linea direzione Nord' and pos<38:
+#            impRid = 0
 
-    # carico in memoria tutti i record di BbtParmetersEval dove posso avere blocco testa
+        shieldBlockArray.append((res[0], res[1], res[2], M, pkCountDict[res[0]], M*pkCountDict[res[0]], res[3], res[3]/M/pkCountDict[res[0]], res[3]/M, impRid, impRid/M/pkCountDict[res[0]], impRid/M))
+    with open('bloccoCodaScudo.csv', 'wb') as f:
+        writer = csv.writer(f,delimiter=";")
+        writer.writerows(shieldBlockArray)
+
+
+        # carico in memoria tutti i record di BbtParmetersEval dove posso avere blocco scudo
     sSql = """SELECT  BbtParameterEval.tunnelName, BbtParameterEval.tbmName, BbtParameterEval.fine, count(*) as cnt
         FROM BbtParameterEval
         JOIN BbtTbm on BbtTbm.name = BbtParameterEval.tbmName
         WHERE BbtParameterEval.tbmName !='XXX'
-        AND (
-        (BbtParameterEval.torque> BbtTbm.breakawayTorque)
-        )
+        AND BbtParameterEval.cavityStabilityPar > 0
         GROUP BY BbtParameterEval.tunnelName, BbtParameterEval.tbmName, BbtParameterEval.fine
         ORDER BY BbtParameterEval.tunnelName, BbtParameterEval.tbmName ASC, cnt DESC"""
     cur.execute(sSql)
     bbtresults = cur.fetchall()
-    frontBlockArray = []
-    frontBlockArray.append(('Tunnel', 'TBM', 'PK', 'sim x segm', 'tot segmenti', 'sim tot tunnel', 'no blocchi',  'no blocchi/sim tot tunnel',  'no blocchi/sim segmento', 'no blocchi dc',  'no blocchi dc/sim tot tunnel',  'no blocchi dc/sim segmento'))
+    shieldBlockArray = []
+    shieldBlockArray.append(('Tunnel', 'TBM', 'PK', 'sim x segm', 'tot segmenti', 'sim tot tunnel', 'no blocchi',  'no blocchi/sim tot tunnel',  'no blocchi/sim segmento', 'no blocchi dc',  'no blocchi dc/sim tot tunnel',  'no blocchi dc/sim segmento'))
     for res in bbtresults:
         pos = pkOrder[res[0]+res[1]+str(res[2])]
         impRid = res[3]
-        if res[0]=='Cunicolo esplorativo direzione Nord' and pos<48:
-            impRid = 0
-        elif res[0]=='Galleria di linea direzione Nord' and pos<38:
-            impRid = 0
-            
-        frontBlockArray.append((res[0], res[1], res[2], M, pkCountDict[res[0]], M*pkCountDict[res[0]], res[3], res[3]/M/pkCountDict[res[0]], res[3]/M, impRid, impRid/M/pkCountDict[res[0]], impRid/M))
+#        if res[0]=='Cunicolo esplorativo direzione Nord' and pos<48:
+#            impRid = 0
+#        elif res[0]=='Galleria di linea direzione Nord' and pos<38:
+#            impRid = 0
+
+        shieldBlockArray.append((res[0], res[1], res[2], M, pkCountDict[res[0]], M*pkCountDict[res[0]], res[3], res[3]/M/pkCountDict[res[0]], res[3]/M, impRid, impRid/M/pkCountDict[res[0]], impRid/M))
+    with open('bloccoScudo.csv', 'wb') as f:
+        writer = csv.writer(f,delimiter=";")
+        writer.writerows(shieldBlockArray)
+
+    # carico in memoria tutti i record di BbtParmetersEval dove posso avere blocco testa
+#    sSql = """SELECT  BbtParameterEval.tunnelName, BbtParameterEval.tbmName, BbtParameterEval.fine, count(*) as cnt
+#        FROM BbtParameterEval
+#        JOIN BbtTbm on BbtTbm.name = BbtParameterEval.tbmName
+#        WHERE BbtParameterEval.tbmName !='XXX'
+#        AND BbtParameterEval.torque> BbtTbm.breakawayTorque
+#        GROUP BY BbtParameterEval.tunnelName, BbtParameterEval.tbmName, BbtParameterEval.fine
+#        ORDER BY BbtParameterEval.tunnelName, BbtParameterEval.tbmName ASC, cnt DESC"""
+#    cur.execute(sSql)
+#    bbtresults = cur.fetchall()
+#    frontBlockArray = []
+#    frontBlockArray.append(('Tunnel', 'TBM', 'PK', 'sim x segm', 'tot segmenti', 'sim tot tunnel', 'no blocchi',  'no blocchi/sim tot tunnel',  'no blocchi/sim segmento', 'no blocchi dc',  'no blocchi dc/sim tot tunnel',  'no blocchi dc/sim segmento'))
+#    for res in bbtresults:
+#        pos = pkOrder[res[0]+res[1]+str(res[2])]
+#        impRid = res[3]
+##        if res[0]=='Cunicolo esplorativo direzione Nord' and pos<48:
+##            impRid = 0
+##        elif res[0]=='Galleria di linea direzione Nord' and pos<38:
+##            impRid = 0
+#
+#        frontBlockArray.append((res[0], res[1], res[2], M, pkCountDict[res[0]], M*pkCountDict[res[0]], res[3], res[3]/M/pkCountDict[res[0]], res[3]/M, impRid, impRid/M/pkCountDict[res[0]], impRid/M))
+#    with open('bloccoFronte.csv', 'wb') as f:
+#        writer = csv.writer(f,delimiter=";")
+#        writer.writerows(frontBlockArray)
 
 ##    # interrogo DB per vedere dove il torque e' maggiore di quello di base richiesto
 ##    sSql = """SELECT  BbtParameterEval.tunnelName, BbtParameterEval.tbmName, BbtParameterEval.fine, BbtParameterEval.torque
@@ -203,17 +240,11 @@ def main(argv):
 ##            frontBlockArray.append((tunnel, tbm, pk, cntOut, M, pkCountDict[res[0]], M*pkCountDict[res[0]], cntOut/M/pkCountDict[res[0]], cntOut/M))
     conn.close()
     # esposrto in csv
-    with open('bloccoFronte.csv', 'wb') as f:
-        writer = csv.writer(f,delimiter=",")
-        writer.writerows(frontBlockArray)
-        
-    with open('bloccoScudo.csv', 'wb') as f:
-        writer = csv.writer(f,delimiter=",")
-        writer.writerows(shieldBlockArray)
 
-    with open('blocco.csv', 'wb') as f:
-        writer = csv.writer(f,delimiter=",")
-        writer.writerows(overallBlockArray)
+
+
+
+
 
 if __name__ == "__main__":
    main(sys.argv[1:])

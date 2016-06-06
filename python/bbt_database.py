@@ -1,4 +1,6 @@
 import sqlite3
+from collections import defaultdict
+
 from bbtnamedtuples import *
 # aghensi@20160601 modificato per db filippine
 # danzi.tn@20151120 entry point per connessione db
@@ -11,11 +13,11 @@ def get_bbtparameterseval(sDBPath):
     conn = getDBConnection(sDBPath)
     conn.row_factory = bbtparametereval_factory
     cur = conn.cursor()
-    cur.execute("SELECT insertdate,iteration_no,fine,he,hp,co,hw,wdepth,gamma,sigma,mi,ei,cai,gsi,\
+    cur.execute("SELECT insertdate,iteration_no,fine,he,hp,co,hw,wdepth,gamma,phi,ei,c,\
                 rmr,pkgl,closure,rockburst,front_stability_ns,front_stability_lambda,\
                 penetrationRate,penetrationRateReduction,contactThrust,torque,frictionForce,\
                 requiredThrustForce,availableThrust,dailyAdvanceRate,profilo_id,geoitem_id,title,\
-                sigma_ti,k0 FROM BbtParameterEval ORDER BY iteration_no, profilo_id")
+                k0,winflow FROM BbtParameterEval ORDER BY iteration_no, profilo_id")
     bbtresults = cur.fetchall()
     bbt_bbtparameterseval = []
     for bbt_parametereval in bbtresults:
@@ -29,12 +31,41 @@ def get_bbtparameterseval4iter(sDBPath, nIter, sKey):
     conn.row_factory = bbtParameterEvalMin_factory
     cur = conn.cursor()
     bbt_bbtparameterseval = {}
-    cur.execute("SELECT gamma,sigma,mi,ei,cai,rmr, gsi, sigma_ti, k0 , profilo_id\
-                 FROM BbtParameterEval WHERE iteration_no = ?AND tunnelName = ? \
+    cur.execute("SELECT gamma, phi, ei, c, rmr, k0 , winflow, profilo_id \
+                 FROM BbtParameterEval WHERE iteration_no = ? AND tunnelName = ? \
                  ORDER BY profilo_id", (nIter, sKey))
     bbtresults = cur.fetchall()
     for bbt_parametereval in bbtresults:
         bbt_bbtparameterseval[bbt_parametereval.profilo_id] = bbt_parametereval
+    conn.close()
+    return bbt_bbtparameterseval
+
+
+def get_mainbbtparameterseval(sDBPath, sKey, iterMin, iterMax):
+    conn = getDBConnection(sDBPath)
+    conn.row_factory = bbtParameterEvalMain_factory
+    cur = conn.cursor()
+    bbt_bbtparameterseval = defaultdict(list)
+    cur.execute("SELECT BbtParameter.inizio,BbtParameter.fine,BbtParameter.est,BbtParameter.nord,\
+                 BbtParameter.he,BbtParameter.hp,BbtParameter.co,BbtParameter.hw,\
+                 BbtParameter.wdepth,BbtParameter.g_med,BbtParameter.g_stddev,\
+                 BbtParameter.phimin,BbtParameter.phimax,\
+                 BbtParameter.ei_med,BbtParameter.ei_stdev,BbtParameter.c_med,BbtParameter.c_stdev,\
+                 BbtParameter.rmr_med,BbtParameter.rmr_stdev,BbtParameter.profilo_id,\
+                 BbtParameter.geoitem_id,BbtParameter.title,BbtParameter.k0_min,\
+                 BbtParameter.k0_max,BbtParameter.w_inflow_min,BbtParameter.w_inflow_max,\
+                 BbtParameterEval.gamma,BbtParameterEval.phi,BbtParameterEval.ei,\
+                 BbtParameterEval.c,BbtParameterEval.rmr,BbtParameterEval.k0,\
+                 BbtParameterEval.winflow,BbtParameterEval.ucs,BbtParameterEval.iteration_no,\
+                 BbtParameterEval.insertdate \
+                 FROM BbtParameterEval \
+                 JOIN BbtParameter ON BbtParameter.profilo_id = BbtParameterEval.profilo_id \
+                 WHERE BbtParameterEval.tunnelName = ?  AND BbtParameterEval.iteration_no>=? \
+                 AND BbtParameterEval.iteration_no < ? ORDER BY BbtParameterEval.profilo_id",
+                 (sKey, iterMin, iterMax))
+    bbtresults = cur.fetchall()
+    for bbt_parametereval in bbtresults:
+        bbt_bbtparameterseval[bbt_parametereval.iteration_no].append(bbt_parametereval)
     conn.close()
     return bbt_bbtparameterseval
 
@@ -162,7 +193,7 @@ def insert_eval4Geo(sDBPath, bbt_evalparameters):
         conn = getDBConnection(sDBPath)
         c = conn.cursor()
         c.executemany("INSERT INTO BbtParameterEval (insertdate, iteration_no, tunnelName, tbmName,\
-                       fine, he, hp, co, hw, wdepth, gamma, phi, ei, c, rmr, pkgl, closure,\
+                       inizio, fine, he, hp, co, hw, wdepth, gamma, phi, ei, c, rmr, pkgl, closure,\
                        rockburst, front_stability_ns, front_stability_lambda, penetrationRate,\
                        penetrationRateReduction, contactThrust, torque, frictionForce,\
                        requiredThrustForce, availableThrust, dailyAdvanceRate, profilo_id,\
@@ -170,9 +201,9 @@ def insert_eval4Geo(sDBPath, bbt_evalparameters):
                        inSituConditionSigmaV, tunnelRadius, rockE, mohrCoulombPsi, rockUcs,\
                        inSituConditionGsi, hoekBrownMi, hoekBrownD, hoekBrownMb, hoekBrownS,\
                        hoekBrownA, hoekBrownMr, hoekBrownSr, hoekBrownAr, urPiHB, rpl, picr,\
-                       ldpVlachBegin, ldpVlachEnd\
-                       ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
-                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbt_evalparameters)
+                       ldpVlachBegin, ldpVlachEnd, ucs\
+                       ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
+                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbt_evalparameters)
         conn.commit()
         conn.close()
 
@@ -186,7 +217,7 @@ def insert_eval4Iter(sDBPath, bbt_evalparameters, bbttbmkpis):
                        probabilityScore,totalImpact) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", bbttbmkpis)
         conn.commit()
         c.executemany("INSERT INTO BbtParameterEval (insertdate, iteration_no, tunnelName, tbmName,\
-                       fine, he, hp, co, hw, wdepth, gamma, phi, ei, c, rmr, pkgl, closure,\
+                       inizio, fine, he, hp, co, hw, wdepth, gamma, phi, ei, c, rmr, pkgl, closure,\
                        rockburst, front_stability_ns, front_stability_lambda, penetrationRate,\
                        penetrationRateReduction, contactThrust, torque, frictionForce,\
                        requiredThrustForce, availableThrust, dailyAdvanceRate, profilo_id,\
@@ -194,8 +225,8 @@ def insert_eval4Iter(sDBPath, bbt_evalparameters, bbttbmkpis):
                        inSituConditionSigmaV, tunnelRadius, rockE, mohrCoulombPsi, rockUcs,\
                        inSituConditionGsi, hoekBrownMi, hoekBrownD, hoekBrownMb, hoekBrownS,\
                        hoekBrownA, hoekBrownMr, hoekBrownSr, hoekBrownAr, urPiHB, rpl, picr,\
-                       ldpVlachBegin, ldpVlachEnd\
-                       ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
+                       ldpVlachBegin, ldpVlachEnd, cavityStabilityPar, tailCavityStabilityPar\
+                       ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
                        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbt_evalparameters)
         conn.commit()
         conn.close()
@@ -211,7 +242,7 @@ def insert_bbtparameterseval(sDBPath, bbt_evalparameters, iteration_no=0):
         c.execute("delete from BbtParameterEval WHERE iteration_no = %d AND tunnelName ='%s' \
                    AND tbmName='%s'" % (bbtpar[1], bbtpar[2], bbtpar[3]))
         c.executemany("INSERT INTO BbtParameterEval (insertdate, iteration_no, tunnelName, tbmName,\
-                       fine, he, hp, co, hw, wdepth, gamma, phi, ei, c, rmr, pkgl, closure,\
+                       inizio, fine, he, hp, co, hw, wdepth, gamma, phi, ei, c, rmr, pkgl, closure,\
                        rockburst, front_stability_ns, front_stability_lambda, penetrationRate,\
                        penetrationRateReduction, contactThrust, torque, frictionForce,\
                        requiredThrustForce, availableThrust, dailyAdvanceRate, profilo_id,\
@@ -220,19 +251,19 @@ def insert_bbtparameterseval(sDBPath, bbt_evalparameters, iteration_no=0):
                        inSituConditionGsi, hoekBrownMi, hoekBrownD, hoekBrownMb, hoekBrownS,\
                        hoekBrownA, hoekBrownMr, hoekBrownSr, hoekBrownAr, urPiHB, rpl, picr,\
                        ldpVlachBegin, ldpVlachEnd\
-                       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
+                       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
                        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbt_evalparameters)
         conn.commit()
     conn.close()
 
 
 def insert_one_bbtparameterseval(cur, bbtpar):
-    cur.execute("INSERT INTO BbtParameterEval (insertdate, iteration_no, fine, he, hp, co, hw,\
+    cur.execute("INSERT INTO BbtParameterEval (insertdate, iteration_no, inizio, fine, he, hp, co, hw,\
                  wdepth, gamma, phi, ei, c, rmr, pkgl, closure, rockburst, front_stability_ns,\
                  front_stability_lambda, penetrationRate, penetrationRateReduction, contactThrust,\
                  torque, frictionForce, requiredThrustForce, availableThrust, dailyAdvanceRate,\
                  profilo_id, geoitem_id, title, k0, winflow) VALUES \
-                 (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbtpar)
+                 (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbtpar)
 
 
 # danzi.tn@20151116 pulizia delle valutazioni

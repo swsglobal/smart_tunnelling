@@ -1,8 +1,8 @@
 from scipy.stats import triang
 
 from TunnelSegment import PerformanceIndex
-from bbtutils import *
-from bbtnamedtuples import *
+from bbtutils import get_my_norm, get_my_norm_min_max
+from bbtnamedtuples import BbtTbmKpi, BbtParameter4Seg
 from bbt_database import getDBConnection
 
 # danzi.tn@20151113 distribuzione triangolare per friction on Shield e on Cutter Head
@@ -56,7 +56,7 @@ class KpiTbm4Tunnel:
         self.kpis['G8'] = PerformanceIndex('Presenza gas')
         self.kpis['G11'] = PerformanceIndex('Rigonfiamento')
         self.kpis['G12'] = PerformanceIndex('Distacco blocchi al fronte')
-        self.kpis['G13'] = PerformanceIndex('Rockburst')
+        #self.kpis['G13'] = PerformanceIndex('Rockburst')
 
         #indicatori vari
         self.kpis['V1'] = PerformanceIndex('Ambiente di lavoro')
@@ -65,6 +65,7 @@ class KpiTbm4Tunnel:
         self.kpis['V4'] = PerformanceIndex('Deviazione traiettoria')
         self.kpis['V5'] = PerformanceIndex('Integrita\' conci')
         self.kpis['V6'] = PerformanceIndex('Complessita\' TBM')
+
 
     def setKPI4TBM(self,alnCurr,tbmName, tbm, projectRefCost):
         self.tbmName = tbmName
@@ -108,7 +109,6 @@ class KpiTbm4Tunnel:
         iCur=tbm.V6.impact
         self.kpis['V6'].updateIndex(0.005, iCur, alnCurr.length)
         self.kpis['V6'].finalizeIndex(alnCurr.length)
-
 
 
     def setKPI4SEG(self,alnCurr, tbmsect, p):
@@ -186,9 +186,10 @@ class KpiTbm4Tunnel:
         iCur=tbmsect.G12.impact
         self.kpis['G12'].updateIndex(pCur, iCur, p.length)
 
-        pCur=tbmsect.G13.probability
-        iCur=tbmsect.G13.impact
-        self.kpis['G13'].updateIndex(pCur, iCur, p.length)
+        #pCur=tbmsect.G13.probability
+        #iCur=tbmsect.G13.impact
+        #self.kpis['G13'].updateIndex(pCur, iCur, p.length)
+
 
     def updateKPI(self, alnCurr):
         self.kpis['P1'].finalizeIndex(alnCurr.length)
@@ -204,7 +205,8 @@ class KpiTbm4Tunnel:
         self.kpis['G8'].finalizeIndex(alnCurr.length)
         self.kpis['G11'].finalizeIndex(alnCurr.length)
         self.kpis['G12'].finalizeIndex(alnCurr.length)
-        self.kpis['G13'].finalizeIndex(alnCurr.length)
+        #self.kpis['G13'].finalizeIndex(alnCurr.length)
+
 
     def getBbtTbmKpis(self):
         bbttbmkpis =[]
@@ -213,6 +215,7 @@ class KpiTbm4Tunnel:
             bbttbmkpi = BbtTbmKpi(self.tunnelName, self.tbmName,self.iterationNo,key, _kpi.definition, _kpi.minImpact, _kpi.maxImpact, _kpi.avgImpact, _kpi.appliedLength, _kpi.percentOfApplication, _kpi.probabilityScore, _kpi.totalImpact)
             bbttbmkpis.append(bbttbmkpi)
         return bbttbmkpis
+
 
     def saveBbtTbmKpis(self,sDBPath):
         bbttbmkpis =[]
@@ -230,11 +233,14 @@ class KpiTbm4Tunnel:
         conn.close()
         return bbttbmkpis
 
+
     def printoutKPI(self):
         for key in self.kpis:
             _kpi = self.kpis[key]
             print '%s;%s;%d;%s;%s;%f;%f;%f;%f;%f;%f;%f' \
                 % (self.tunnelName, self.tbmName,self.iterationNo,key, _kpi.definition, _kpi.minImpact, _kpi.maxImpact, _kpi.avgImpact, _kpi.appliedLength, _kpi.percentOfApplication, _kpi.probabilityScore, _kpi.totalImpact)
+
+
 
 def build_normfunc_dict(bbt_parameter, nIter=1000):
     return {
@@ -246,6 +252,7 @@ def build_normfunc_dict(bbt_parameter, nIter=1000):
         'k0': get_my_norm_min_max(bbt_parameter.k0_min, bbt_parameter.k0_max, 'k0', nIter),
         'winflow': get_my_norm_min_max(bbt_parameter.w_inflow_min, bbt_parameter.w_inflow_max,
                                        'winflow', nIter),
+        'ucs': get_my_norm(bbt_parameter.UCS_matrix, 0, 'ucs'),
         #gsi = get_my_norm(bbt_parameter.gsi_med, bbt_parameter.gsi_stdev, 'gsi', nIter)
         #sti = get_my_norm_min_max(bbt_parameter.sigma_ti_min, bbt_parameter.sigma_ti_max,
         #                          'sigma_ti', nIter)
@@ -253,43 +260,36 @@ def build_normfunc_dict(bbt_parameter, nIter=1000):
 
 
 def build_bbtparameter4seg(bbt_parameter, bbtparametereval):
-    length = abs(bbt_parameter.fine - bbt_parameter.inizio)
-    gamma = bbtparametereval.gamma
-    sci = bbtparametereval.sigma
-    mi = bbtparametereval.mi
-    ei = bbtparametereval.ei
-    cai = bbtparametereval.cai
-    rmr =  bbtparametereval.rmr
-    gsi = bbtparametereval.gsi
-    sti = bbtparametereval.sigma_ti
-    k0 = bbtparametereval.k0
-    bbtparameter4seg = BbtParameter4Seg(bbt_parameter.inizio,bbt_parameter.fine,length,bbt_parameter.he,bbt_parameter.hp,bbt_parameter.co,gamma,sci,mi,ei,cai ,gsi, rmr, bbt_parameter.profilo_id ,bbt_parameter.geoitem_id, bbt_parameter.title, sti, k0, bbt_parameter.k0_min, bbt_parameter.k0_max )
-    return bbtparameter4seg
+    return BbtParameter4Seg(bbt_parameter.inizio, bbt_parameter.fine,
+                            abs(bbt_parameter.fine - bbt_parameter.inizio),
+                            bbt_parameter.he, bbt_parameter.hp, bbt_parameter.co,
+                            bbtparametereval.gamma, bbtparametereval.phi, bbtparametereval.ei,
+                            bbtparametereval.c, bbtparametereval.rmr, bbt_parameter.profilo_id,
+                            bbt_parameter.geoitem_id, bbt_parameter.title, bbtparametereval.k0,
+                            bbt_parameter.winflow, bbt_parameter.ucs, bbt_parameter.wdepth,
+                            bbt_parameter.k0_min, bbt_parameter.k0_max)
+
 
 def build_bbtparameterVal4seg(bbt_parameterVal):
-    length = abs(bbt_parameterVal.fine - bbt_parameterVal.inizio)
-    gamma = bbt_parameterVal.gamma
-    sci = bbt_parameterVal.sigma
-    mi = bbt_parameterVal.mi
-    ei = bbt_parameterVal.ei
-    cai = bbt_parameterVal.cai
-    rmr =  bbt_parameterVal.rmr
-    gsi = bbt_parameterVal.gsi
-    sti = bbt_parameterVal.sigma_ti
-    k0 = bbt_parameterVal.k0
-    bbtparameter4seg = BbtParameter4Seg(bbt_parameterVal.inizio,bbt_parameterVal.fine,length,bbt_parameterVal.he,bbt_parameterVal.hp,bbt_parameterVal.co,gamma,sci,mi,ei,cai ,gsi, rmr, bbt_parameterVal.profilo_id ,bbt_parameterVal.geoitem_id, bbt_parameterVal.title, sti, k0, bbt_parameterVal.k0_min, bbt_parameterVal.k0_max )
-    return bbtparameter4seg
+    return BbtParameter4Seg(bbt_parameterVal.inizio, bbt_parameterVal.fine,
+                            abs(bbt_parameterVal.fine - bbt_parameterVal.inizio),
+                            bbt_parameterVal.he, bbt_parameterVal.hp, bbt_parameterVal.co,
+                            bbt_parameterVal.gamma, bbt_parameterVal.phi, bbt_parameterVal.ei,
+                            bbt_parameterVal.c, bbt_parameterVal.rmr, bbt_parameterVal.profilo_id,
+                            bbt_parameterVal.geoitem_id, bbt_parameterVal.title,
+                            bbt_parameterVal.k0, bbt_parameterVal.winflow, bbt_parameterVal.ucs,
+                            bbt_parameterVal.wdepth, bbt_parameterVal.k0_min,
+                            bbt_parameterVal.k0_max)
+
 
 def build_bbtparameter4seg_from_bbt_parameter(bbt_parameter, normfunc_dict):
-    length = abs(bbt_parameter.fine - bbt_parameter.inizio)
-    gamma = normfunc_dict['gamma'].rvs()
-    sci = normfunc_dict['sci'].rvs()
-    mi = normfunc_dict['mi'].rvs()
-    ei = normfunc_dict['ei'].rvs()
-    cai = normfunc_dict['cai'].rvs()
-    gsi = normfunc_dict['gsi'].rvs()
-    rmr =  normfunc_dict['rmr'].rvs()
-    sti = normfunc_dict['sti'].rvs()
-    k0 = normfunc_dict['k0'].rvs()
-    bbtparameter4seg = BbtParameter4Seg(bbt_parameter.inizio,bbt_parameter.fine,length,bbt_parameter.he,bbt_parameter.hp,bbt_parameter.co,gamma,sci,mi,ei,cai ,gsi, rmr, bbt_parameter.profilo_id ,bbt_parameter.geoitem_id, bbt_parameter.title, sti, k0, bbt_parameter.k0_min, bbt_parameter.k0_max)
-    return bbtparameter4seg
+    return BbtParameter4Seg(bbt_parameter.inizio, bbt_parameter.fine,
+                            abs(bbt_parameter.fine - bbt_parameter.inizio),
+                            bbt_parameter.he, bbt_parameter.hp, bbt_parameter.co,
+                            normfunc_dict['gamma'].rvs(), normfunc_dict['phi'].rvs(),
+                            normfunc_dict['ei'].rvs(), normfunc_dict['c'].rvs(),
+                            normfunc_dict['rmr'].rvs(), bbt_parameter.profilo_id,
+                            bbt_parameter.geoitem_id, bbt_parameter.title,
+                            normfunc_dict['k0'].rvs(), normfunc_dict['winflow'].rvs(),
+                            bbt_parameter.ucs, bbt_parameter.wdepth, bbt_parameter.k0_min,
+                            bbt_parameter.k0_max)

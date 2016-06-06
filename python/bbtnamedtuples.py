@@ -15,9 +15,20 @@ BbtParameter = namedtuple('BbtParameter', ['inizio', 'fine', 'est', 'nord', 'he'
                                            'UCS_matrix', 'UCS_pebble', 'UCS_clasts'])
 BbtReliability = namedtuple('BbtReliability', ['id', 'inizio', 'fine', 'gmr_class', 'gmr_val',
                                                'reliability', 'eval_var'])
-BbtParameterEvalMin = namedtuple('BbtParameterEvalMin', ['gamma', 'sigma', 'mi', 'ei', 'cai',
-                                                         'rmr', 'gsi', 'sigma_ti', 'k0',
-                                                         'profilo_id'])
+BbtParameterEvalMin = namedtuple('BbtParameterEvalMin', ['gamma', 'phi', 'ei', 'c', 'rmr', 'k0',
+                                                         'winflow', 'profilo_id'])
+
+BbtParameterEvalMain = namedtuple('BbtParameterEvalMain', ['inizio', 'fine', 'est', 'nord', 'he',
+                                                           'hp', 'co', 'hw', 'wdepth', 'g_med',
+                                                           'g_stddev', 'phimin', 'phimax',
+                                                           'ei_med', 'ei_stdev', 'c_med',
+                                                           'c_stdev', 'rmr_med', 'rmr_stdev',
+                                                           'profilo_id', 'geoitem_id', 'title',
+                                                           'k0_min', 'k0_max', 'w_inflow_min',
+                                                           'w_inflow_max', 'gamma', 'phi', 'ei',
+                                                           'c', 'rmr', 'k0', 'winflow', 'ucs',
+                                                           'iteration_no', 'insertdate'])
+
 #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
 BbtParameterEval = namedtuple('BbtParameterEval', ['insertdate', 'iteration_no', 'fine', 'he', 'hp',
                                                    'co', 'hw', 'wdepth', 'gamma', 'phi', 'ei', 'c',
@@ -28,7 +39,6 @@ BbtParameterEval = namedtuple('BbtParameterEval', ['insertdate', 'iteration_no',
                                                    'requiredThrustForce', 'availableThrust',
                                                    'dailyAdvanceRate', 'profilo_id', 'geoitem_id',
                                                    'title', 'k0', 'winflow',
-                                                   # 'UCS_matrix', 'UCS_pebble', 'UCS_clasts,
                                                    't0', 't1', 't3', 't4', 't5',
                                                    'inSituConditionSigmaV', 'tunnelRadius',
                                                    'rockE', 'mohrCoulombPsi', 'rockUcs',
@@ -36,12 +46,12 @@ BbtParameterEval = namedtuple('BbtParameterEval', ['insertdate', 'iteration_no',
                                                    'hoekBrownD', 'hoekBrownMb', 'hoekBrownS',
                                                    'hoekBrownA', 'hoekBrownMr', 'hoekBrownSr',
                                                    'hoekBrownAr', 'urPiHB', 'rpl', 'picr',
-                                                   'ldpVlachBegin', 'ldpVlachEnd'])
+                                                   'ldpVlachBegin', 'ldpVlachEnd','ucs'])
 
 BbtParameter4Seg = namedtuple('BbtParameter4Seg', ['inizio', 'fine', 'length', 'he', 'hp', 'co',
-                                                   'gamma', 'sci', 'mi', 'ei', 'cai', 'gsi', 'rmr',
-                                                   'profilo_id', 'geoitem_id', 'descr', 'sti',
-                                                   'k0', 'k0_min', 'k0_max'])
+                                                   'gamma', 'phi', 'ei', 'c', 'rmr', 'profilo_id',
+                                                   'geoitem_id', 'descr', 'k0', 'winflow', 'ucs',
+                                                   'wdepth', 'k0_min', 'k0_max'])
 BbtTbmKpi = namedtuple('BbtTbmKpi', ['tunnelName', 'tbmName', 'iterationNo', 'kpiKey', 'kpiDescr',
                                      'minImpact', 'maxImpact', 'avgImpact', 'appliedLength',
                                      'percentOfApplication', 'probabilityScore', 'totalImpact'])
@@ -63,6 +73,9 @@ def bbttbmkpi_factory(cursor, row):
 
 def bbtParameterEvalMin_factory(cursor, row):
     return BbtParameterEvalMin(*row)
+
+def bbtParameterEvalMain_factory(cursor, row):
+    return BbtParameterEvalMain(*row)
 
 bbtClassReliabilityList = []
 BbtClassReliability = namedtuple('BbtClassReliability', ['code', 'reliability', 'gmr_min',

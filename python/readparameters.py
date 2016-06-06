@@ -114,6 +114,8 @@ def main(argv):
     ########### Outupt Folder
     sDiagramsFolder = bbtConfig.get('Diagrams','folder')
     sDiagramsFolderPath = os.path.join(os.path.abspath('..'), sDiagramsFolder)
+    if not os.path.exists(sDiagramsFolderPath):
+        os.makedirs(sDiagramsFolderPath)
     # mi connetto al database
     conn = getDBConnection(sDBPath)
     # definisco il tipo di riga che vado a leggere, bbtparametereval_factory viene definita in bbtnamedtuples
