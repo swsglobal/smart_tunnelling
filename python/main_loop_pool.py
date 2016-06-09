@@ -32,8 +32,8 @@ def insert_georandom(sDBPath, nIter, bbt_parameters, sKey):
         for n in range(nIter):
 #            'g_med', 'g_stddev', 'phimin', 'phimax', 'ei_med', 'ei_stdev', 'c_med', 'c_stdev',
 #            'rmr_med',
-#            'rmr_stdev', 'k0_min', 'k0_max', 'w_inflow_min', 'w_inflow_max', 'UCS_matrix',
-#            'UCS_pebble', 'UCS_clasts'
+#            'rmr_stdev', 'k0_min', 'k0_max', 'w_inflow_min', 'w_inflow_max', 'UCS_min',
+#            'UCS_max'
             gamma = mynorms['gamma'].rvs()
             phi = mynorms['phi'].rvs()
             ei = mynorms['ei'].rvs()

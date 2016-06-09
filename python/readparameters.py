@@ -20,7 +20,6 @@ from bbt_database import getDBConnection
 # danzi.tn@20151118 filtro per tipologia TBM
 # danzi.tn@20151124 generazione delle distribuzioni per pk
 # danzi.tn@20151124 formattazione in percentuale per istogrammi
-# danzi.tn@20151124 replaceTBMName
 def main(argv):
     sParm = "p,parameter in \n"
     sParameterToShow = ""
@@ -230,7 +229,7 @@ def main(argv):
                         num_bins = 50
                         fig = plt.figure(figsize=(32, 20), dpi=100)
                         ax1 = fig.add_subplot(111)
-                        title("%s - %s" % (tun,replaceTBMName(tbmKey)))
+                        title("%s - %s" % (tun,tbmKey))
                         weights = np.ones_like(pValues)/float(len(pValues))
                         n, bins, patches = ax1.hist(pValues,num_bins , normed=1, histtype ='stepfilled', weights=weights , color=tbmColors[tbmKey], alpha=0.3)
                         tbmMean = np.mean(pValues)
@@ -241,8 +240,11 @@ def main(argv):
                         ax1.set_ylabel("Probabilita'(%)")
                         ax1.axvline(tbmMean, color='r', linewidth=2)
                         ax1.yaxis.grid(True)
-                        sFileNAme = "bbt_%s_%s_%s_%s_hist.svg" % (tun.replace(" ", "_"), replaceTBMName(tbmKey), sParameterToShow, sProg)
-                        outputFigure(sDiagramsFolderPath, sFileNAme, format="svg")
+#                        sFileNAme = "%s_%s_%s_%s_hist.svg" % (tun.replace(" ", "_"), tbmKey, sParameterToShow, sProg)
+#                        outputFigure(sDiagramsFolderPath, sFileNAme, format="svg")
+#                        print "Output su %s disponibile" % sFileNAme
+                        sFileNAme = "%s_%s_%s_%s_hist.png" % (tun.replace(" ", "_"), tbmKey, sParameterToShow, sProg)
+                        outputFigure(sDiagramsFolderPath, sFileNAme)
                         print "Output su %s disponibile" % sFileNAme
                         plt.close(fig)
             elif bShowProfile:
@@ -339,7 +341,7 @@ def main(argv):
                     fig = plt.figure(figsize=(32, 20), dpi=100)
                     ax1 = fig.add_subplot(111)
                     ax1.set_ylim(0,max(he)+100)
-                    title("%s - %s" % (tun,replaceTBMName(tbmKey)))
+                    title("%s - %s" % (tun,tbmKey))
                     ax1.plot(pi,he,'b-', linewidth=1)
                     if bShowlTunnel:
                         ax1.plot(pi,hp,'k-', linewidth=1)
@@ -356,17 +358,18 @@ def main(argv):
                     #ax2.plot(pi,mean2Show[:,0],'m-',linewidth=0.5, alpha=0.4)
                     ax2.plot(pi,mean2Show[:,1],'g-',linewidth=2, alpha=0.6)
                     #ax2.plot(pi,mean2Show[:,2],'c-',linewidth=0.5, alpha=0.4)
-                    ax2.set_ylabel("%s (%s)" % (parmDict[sParameterToShow][0],parmDict[sParameterToShow][1]), color='r')
+                    ax2.set_ylabel("%s (%s)" % (parmDict[sParameterToShow][0], parmDict[sParameterToShow][1]), color='r')
                     for tl in ax2.get_yticklabels():
                         tl.set_color('r')
-                    outputFigure(sDiagramsFolderPath,"bbt_%s_%s_%s.svg" % ( tun.replace (" ", "_") , replaceTBMName(tbmKey),sParameterToShow), format="svg")
+                    #outputFigure(sDiagramsFolderPath,"%s_%s_%s.svg" % (tun.replace(" ", "_"), tbmKey, sParameterToShow), "svg")
+                    outputFigure(sDiagramsFolderPath,"%s_%s_%s.png" % (tun.replace(" ", "_"), tbmKey, sParameterToShow))
                     plt.close(fig)
                     # esposrto in csv i valori di confronto
-                    csvfname=os.path.join(sDiagramsFolderPath,"bbt_%s_%s_%s.csv" % ( tun.replace (" ", "_") , replaceTBMName(tbmKey),sParameterToShow))
-                    with open(csvfname, 'wb') as f:
-                        writer = csv.writer(f,delimiter=";")
-                        writer.writerow(('iterazione','fine','he','hp',sParameterToShow,'media','min95' ,'max95' ))
-                        writer.writerows(outValues)
+#                    csvfname=os.path.join(sDiagramsFolderPath,"%s_%s_%s.csv" % ( tun.replace(" ", "_"), tbmKey, sParameterToShow))
+#                    with open(csvfname, 'wb') as f:
+#                        writer = csv.writer(f,delimiter=";")
+#                        writer.writerow(('iterazione','fine','he','hp',sParameterToShow,'media','min95' ,'max95' ))
+#                        writer.writerows(outValues)
 
 
 
@@ -387,11 +390,11 @@ def main(argv):
                 dictKPI[key].append( item[1:-1] )
                 listToExport.append(item[:4])
             # esposrto in csv i valori di confronto
-            csvfname=os.path.join(sDiagramsFolderPath,"bbt_%s_all_data.csv" %  tun.replace (" ", "_") )
-            with open(csvfname, 'wb') as f:
-                writer = csv.writer(f,delimiter=";")
-                writer.writerow(('kpi','tbm','medie','sigma'  ))
-                writer.writerows(listToExport)
+#            csvfname=os.path.join(sDiagramsFolderPath,"%s_all_data.csv" %  tun.replace (" ", "_") )
+#            with open(csvfname, 'wb') as f:
+#                writer = csv.writer(f,delimiter=";")
+#                writer.writerow(('kpi','tbm','medie','sigma'  ))
+#                writer.writerows(listToExport)
             for key in dictKPI:
                 keyDescr = dictDescr[key]
                 allTbmData = dictKPI[key]
@@ -411,7 +414,7 @@ def main(argv):
                 tbmHiddenNames = []
                 for tk in tbmNames:
                     plotColors.append(tbmColors[tk])
-                    tbmHiddenNames.append(replaceTBMName(tk))
+                    tbmHiddenNames.append(tk)
                 if len(tbmDatas[0]) < 3:
                     #Stampa per quando len(tbmDatas) < 3
                     width = 0.35
@@ -438,7 +441,8 @@ def main(argv):
                         plt.bar(xind, tbmMeans, width,color=plotColors, yerr=tbmSigmas)
                         plt.xticks(xind + width/2., tbmHiddenNames)
 
-                outputFigure(sDiagramsFolderPath,"bbt_%s_%s_comp.svg" % (tun.replace (" ", "_") , key), format="svg")
+                #outputFigure(sDiagramsFolderPath,"%s_%s_comp.svg" % (tun.replace (" ", "_") , key), format="svg")
+                outputFigure(sDiagramsFolderPath,"%s_%s_comp.png" % (tun.replace (" ", "_") , key))
                 plt.close(fig)
 
 

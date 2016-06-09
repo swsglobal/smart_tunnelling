@@ -252,7 +252,7 @@ def build_normfunc_dict(bbt_parameter, nIter=1000):
         'k0': get_my_norm_min_max(bbt_parameter.k0_min, bbt_parameter.k0_max, 'k0', nIter),
         'winflow': get_my_norm_min_max(bbt_parameter.w_inflow_min, bbt_parameter.w_inflow_max,
                                        'winflow', nIter),
-        'ucs': get_my_norm(bbt_parameter.UCS_matrix, 0, 'ucs'),
+        'ucs': get_my_norm_min_max(bbt_parameter.UCS_min, bbt_parameter.UCS_max, 'ucs'),
         #gsi = get_my_norm(bbt_parameter.gsi_med, bbt_parameter.gsi_stdev, 'gsi', nIter)
         #sti = get_my_norm_min_max(bbt_parameter.sigma_ti_min, bbt_parameter.sigma_ti_max,
         #                          'sigma_ti', nIter)

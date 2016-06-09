@@ -4,7 +4,7 @@ BbtGeoitem = namedtuple('BbtGeoitem', ['id', 'inizio', 'fine', 'l', 'perc', 'typ
                                        'g_stddev', 'phimin', 'phimax', 'ei_med', 'ei_stdev',
                                        'c_med', 'c_stdev', 'rmr_med', 'rmr_stdev', 'title',
                                        'k0_min', 'k0_max', 'w_inflow_min', 'w_inflow_max',
-                                       'UCS_matrix', 'UCS_pebble', 'UCS_clasts'])
+                                       'UCS_min', 'UCS_max'])
 BbtProfilo = namedtuple('BbtProfilo', ['id', 'inizio', 'fine', 'est', 'nord', 'he', 'hp', 'co',
                                        'hw', 'wdepth'])
 BbtParameter = namedtuple('BbtParameter', ['inizio', 'fine', 'est', 'nord', 'he', 'hp', 'co', 'hw',
@@ -12,7 +12,7 @@ BbtParameter = namedtuple('BbtParameter', ['inizio', 'fine', 'est', 'nord', 'he'
                                            'ei_med', 'ei_stdev', 'c_med', 'c_stdev', 'rmr_med',
                                            'rmr_stdev', 'profilo_id', 'geoitem_id', 'title',
                                            'k0_min', 'k0_max', 'w_inflow_min', 'w_inflow_max',
-                                           'UCS_matrix', 'UCS_pebble', 'UCS_clasts'])
+                                           'UCS_min', 'UCS_max'])
 BbtReliability = namedtuple('BbtReliability', ['id', 'inizio', 'fine', 'gmr_class', 'gmr_val',
                                                'reliability', 'eval_var'])
 BbtParameterEvalMin = namedtuple('BbtParameterEvalMin', ['gamma', 'phi', 'ei', 'c', 'rmr', 'k0',
@@ -120,8 +120,8 @@ parmDict = {
     'contactThrust':("xxx", "GPa", 0, 0),
     'torque':("xxx", "GPa", 0, 0),
     'frictionForce':("xxx", "GPa", 0, 0),
-    'requiredThrustForce':("xxx", "GPa", 0, 0),
-    'availableThrust':("xxx", "GPa", 0, 0),
+    'requiredThrustForce':("Required thrust force", "kN", 0, 0),
+    'availableThrust':("Available thrust force", "kN", 0, 0),
     'dailyAdvanceRate':("Avanzamento giornaliero", "m/die", 0, 0),
     't1':("Tempo di produzione teorico", "gg", 0, 0),
     't2':("Tempo di montaggio/smontaggio/spostamento", "gg", 0, 0),

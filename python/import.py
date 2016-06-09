@@ -191,7 +191,7 @@ for k in geoitems:
                       geosec.ei_stdev, geosec.c_med, geosec.c_stdev, geosec.rmr_med,
                       geosec.rmr_stdev, pk.id, geosec.id, geosec.title, geosec.k0_min,
                       geosec.k0_max, geosec.w_inflow_min, geosec.w_inflow_max,
-                      geosec.UCS_matrix, geosec.UCS_pebble, geosec.UCS_clasts]
+                      geosec.UCS_min, geosec.UCS_max]
             bbtpar = BbtParameter(*tmparr)
             bbtpar_items.append(bbtpar)
         prev += pxi

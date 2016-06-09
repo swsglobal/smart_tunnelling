@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import math
 from pylab import *
 from tbmconfig import *
@@ -188,7 +190,7 @@ class Rock:
         '''
         inizializza la classe
 
-        :param gamma: densità in kN/m^3
+        :param gamma: densità in kN/mc
         :param ni: ni
         :param e: modulo elastico in GPa
         :param ucs: UCS in MPa
@@ -206,7 +208,8 @@ class Rock:
         if st>=0.:
             self.Sigmat = st #tensile strength
         else:
-            self.Sigmat = ucs/12. # approssimazione qualora non siano note le caratteristiche
+            # HACK: per mantenere SigmaT sotto 0.5 (su richiesta di Venturini)
+            self.Sigmat = min(ucs/12., 0.5) # approssimazione qualora non siano note le caratteristiche
         self.Lambda = e*ni/((1.0+ni)*(1.0-2.0*ni))
         self.G = e/(2.*(1.+ni))
 
@@ -216,22 +219,23 @@ class InSituCondition:
         self.Overburden = overburden #copertura netta
         # aghensi@20160601 - aggiunta profondita acqua se falda sopra profilo di progetto
         self.Groundwaterdepth = min([groundwaterdepth, overburden])
-        self.K0 = 1.0
+        self.K0 = 1.
         self.K0min = k0min
         self.K0max = k0max
-        self.Kp = 1.0
-        self.Ka = 1.0 # posso definire RMR o GSI
+        self.Kp = 1.
+        self.Ka = 1. # posso definire RMR o GSI
 
-        if gsi > 0.0:
+        if gsi > 0.:
             self.Gsi = max(5., gsi)
         else:
-            self.Gsi = max(5., rmr - 5.0)
+            self.Gsi = max(5., rmr - 5.)
 
-        if rmr > 0.0:
+        if rmr > 0.:
             self.Rmr = max(5., rmr)
         else:
             self.Rmr = max(5., gsi+5)
-        self.SigmaV = gamma*(overburden+h_2)/1000.0 # MPa
+        self.SigmaV = gamma*(overburden+h_2)/1000. # MPa
+        self.p_w = 9.81*(overburden-groundwaterdepth)/1000. # MPa
 
     def UpdateK0KaKp(self, typ, fi):
         self.Kp = (1.0 + math.sin(math.radians(fi)))/(1.0 - math.sin(math.radians(fi)))
@@ -776,7 +780,7 @@ class TBMSegment:
         #self.P0 = P0(self.t0, self.segmentLength) # giorni di produzione richiesto a scavare un metro del segmento
         self.P1 = P1(impactP1) # impatto sulla produzione
         self.P3 = P3(impactP3) # impatto del rallentamento per rocce dure
-        self.P4 = P4(self.Tbm.type, 1., productionBase,  segment.length)
+        self.P4 = P4(self.Tbm.type, 1., productionBase,  self.segmentLength)
         self.P5 = P5(self.Tbm.type, self.cavityStabilityPar, self.frontStability.lambdae, productionBase,  segment.length)
 
         # tempi di produzione in giorni
@@ -936,7 +940,7 @@ class TBMSegment:
         cr = self.MohrCoulomb.Cr / 1000.0 / coefC # MPa
 
         # aghensi@20160601 aggiunto pressione acqua
-        p0 = (self.InSituCondition.Overburden*(self.Rock.Gamma-10.0)+self.InSituCondition.Groundwaterdepth*10)/1000 # in MPa
+        p0 = self.InSituCondition.SigmaV-self.InSituCondition.p_w # in MPa
         pcr = p0 * (1.-math.sin(fi)) - c * math.cos(fi) # in MPa
         pocp = p0 + c / math.tan(fi)
         pocr = p0 + cr / math.tan(fir)

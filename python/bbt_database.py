@@ -76,8 +76,8 @@ def get_bbtparameters(sDBPath):
     cur = conn.cursor()
     bbtresults = cur.execute("SELECT inizio,fine,est,nord,he,hp,co,hw,wdepth,g_med,g_stddev,phimin,\
                              phimax,ei_med,ei_stdev,c_med,c_stdev,rmr_med,rmr_stdev,profilo_id,\
-                             geoitem_id,title,k0_min,k0_max,w_inflow_min,w_inflow_max,UCS_matrix,\
-                             UCS_pebble,UCS_clasts FROM bbtparameter ORDER BY profilo_id")
+                             geoitem_id,title,k0_min,k0_max,w_inflow_min,w_inflow_max,UCS_min,\
+                             UCS_max FROM bbtparameter ORDER BY profilo_id")
     bbt_parameters = []
     for bbt_parameter in bbtresults:
         bbt_parameters.append(bbt_parameter)
@@ -93,8 +93,8 @@ def insert_parameters(sDBPath, bbtpar_items):
         c.execute('insert into BbtParameter (inizio,fine,est,nord,he,hp,co,hw,wdepth,g_med,\
                    g_stddev,phimin,phimax,ei_med,ei_stdev,c_med,c_stdev,rmr_med,rmr_stdev,\
                    profilo_id,geoitem_id,title,k0_min,k0_max,w_inflow_min,w_inflow_max,\
-                   UCS_matrix,UCS_pebble,UCS_clasts) \
-                   values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', bbtpar)
+                   UCS_min,UCS_max) \
+                   values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', bbtpar)
     conn.commit()
     conn.close()
 
@@ -117,8 +117,8 @@ def insert_geoitems(sDBPath, geoseg_list):
     for geoseg in geoseg_list:
         c.execute('insert into BbtGeoitem (id,inizio,fine,l,perc,type,g_med,g_stddev,phimin,\
                   phimax,ei_med,ei_stdev,c_med,c_stdev,rmr_med,rmr_stdev,title,k0_min,k0_max,\
-                  w_inflow_min,w_inflow_max,UCS_matrix,UCS_pebble,UCS_clasts)\
-                  values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', geoseg)
+                  w_inflow_min,w_inflow_max,UCS_min,UCS_max)\
+                  values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', geoseg)
     conn.commit()
     conn.close()
 
