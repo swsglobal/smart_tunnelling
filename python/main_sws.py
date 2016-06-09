@@ -22,7 +22,6 @@ if not os.path.isfile(sDBPath):
 # mi connetto al database
 conn = sqlite3.connect(sDBPath)
 
-# TODO aghensi: aggiungo profondità acqua!
 # definisco il tipo di riga che vado a leggere, la funzione bbtmyparameter_factory serve per spiegare al modulo del db dove metterte i valori delle colonne
 BbtMyParameter =  namedtuple('BbtMyParameter',['descr','inizio','fine','length','he','hp','co','gamma','sci','mi','ei','gsi','rmr', 'sti', 'k0_min', 'k0_max'])
 def bbtmyparameter_factory(cursor, row):
@@ -41,7 +40,6 @@ res=bbtresults.fetchall()
 fiRi = .5
 frictionCoeff = .15
 
-# TODO aghensi: cambio con mio tracciato
 #inizializzo le info sul tracciato
 alnCE=InfoAlignment('Cunicolo esplorativo direzione Nord', 'CE', 13290., 27217., fiRi, frictionCoeff) # gabriele@20151114 friction parametrica
 alnGLNORD=InfoAlignment('Galleria di linea direzione Nord', 'GLNORD', 44191.75, 32088., fiRi, frictionCoeff) # gabriele@20151114 friction parametrica

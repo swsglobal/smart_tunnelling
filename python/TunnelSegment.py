@@ -581,7 +581,7 @@ class TBMSegment:
             self.D = 0.0
         else:
             self.D = 0.2
-        #self.HoekBrown = HoekBrown(gamma, ucs, mi, e, self.InSituCondition.Gsi, self.D, self.InSituCondition.SigmaV) #check dove usa i parametri
+        #self.HoekBrown = HoekBrown(gamma, ucs, mi, e, self.InSituCondition.Gsi, self.D, self.InSituCondition.SigmaV)
         self.MohrCoulomb = MohrCoulomb()
         #self.MohrCoulomb.SetRock(self.HoekBrown, ucs) # uso setsoil
         # aghensi@20160603 - giusto?
