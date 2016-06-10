@@ -225,9 +225,9 @@ def insert_eval4Iter(sDBPath, bbt_evalparameters, bbttbmkpis):
                        inSituConditionSigmaV, tunnelRadius, rockE, mohrCoulombPsi, rockUcs,\
                        inSituConditionGsi, hoekBrownMi, hoekBrownD, hoekBrownMb, hoekBrownS,\
                        hoekBrownA, hoekBrownMr, hoekBrownSr, hoekBrownAr, urPiHB, rpl, picr,\
-                       ldpVlachBegin, ldpVlachEnd, cavityStabilityPar, tailCavityStabilityPar\
+                       ldpVlachBegin, ldpVlachEnd, cavityStabilityPar, tailCavityStabilityPar, LocFt\
                        ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
-                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbt_evalparameters)
+                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbt_evalparameters)
         conn.commit()
         conn.close()
 

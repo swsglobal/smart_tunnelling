@@ -339,14 +339,15 @@ def main(argv):
                     ylimSup = parmDict[sParameterToShow][3]
                     ymainInf = min(he)
                     fig = plt.figure(figsize=(32, 20), dpi=100)
+                    matplotlib.rcParams.update({'font.size': 18})
                     ax1 = fig.add_subplot(111)
                     ax1.set_ylim(0,max(he)+100)
                     title("%s - %s" % (tun,tbmKey))
                     ax1.plot(pi,he,'b-', linewidth=1)
                     if bShowlTunnel:
                         ax1.plot(pi,hp,'k-', linewidth=1)
-                    ax1.set_xlabel('Progressiva (m)')
-                    ax1.set_ylabel('Quota (m)', color='b')
+                    ax1.set_xlabel('Station (m)')
+                    ax1.set_ylabel('Elevation (m)', color='b')
                     for tl in ax1.get_yticklabels():
                         tl.set_color('b')
                     ##########

@@ -209,7 +209,7 @@ def mp_producer(parms):
                                                    #tbmsect.HoekBrown.Sr, tbmsect.HoekBrown.Ar,
                                                    tbmsect.UrPi(0.), 0, 0, 0, 0,
                                                    tbmsect.cavityStabilityPar,
-                                                   tbmsect.tailCavityStabilityPar))
+                                                   tbmsect.tailCavityStabilityPar, tbmsect.LocFt))
                                                    #tbmsect.Rpl, tbmsect.Picr,
                                                    #tbmsect.LDP_Vlachopoulos_2009(0.),
                                                    #tbmsect.LDP_Vlachopoulos_2009(tbm.Slen)))

@@ -711,9 +711,9 @@ class TBMSegment:
 
         #definisco il thrust che rimane per l'avanzamento tolti gli attriti e la convergenza sullo scudo
         if tbm.type == 'DS':
-            self.availableThrust = max(0., self.Tbm.installedAuxiliaryThrustForce - self.frictionForce)
+            self.availableThrust = max(0., self.Tbm.installedThrustForce - self.frictionForce)
         else:
-            self.availableThrust = max(0., self.Tbm.installedAuxiliaryThrustForce - self.frictionForce - self.Tbm.BackupDragForce)
+            self.availableThrust = max(0., self.Tbm.installedThrustForce - self.frictionForce - self.Tbm.BackupDragForce)
 
         #se non mi rimane thurst devo consolidare o sbloccare la macchina
         ratio = self.availableThrust/self.Tbm.totalContactThrust
@@ -724,7 +724,7 @@ class TBMSegment:
         else:
             self.cavityStabilityPar = 1.
         #considero anche il blocco dello scudo posteriore
-        if self.Tbm.installedAuxiliaryThrustForce>self.tailFrictionForce:
+        if self.Tbm.installedThrustForce>self.tailFrictionForce:
             self.tailCavityStabilityPar = 0.
         else:
             self.tailCavityStabilityPar = 1.
@@ -768,7 +768,7 @@ class TBMSegment:
         self.torque+=self.breakawayTorque
         dar = 24.*locuf*locp*self.Tbm.rpm*60. # in m/gg con anni di 365 gg
         self.requiredThrustForce = self.Tbm.BackupDragForce+self.contactThrust+self.frictionForce
-
+        self.LocFt = locFt
         # considerazioni sulla produzione
         productionMax = self.Tbm.maxProduction
         productionBase = 24.*locuf*locpBase*self.Tbm.rpm*60. # produzione teorica (in m/gg) a meno dei rallentamenti per rocce dure
@@ -791,7 +791,8 @@ class TBMSegment:
         self.t5 = self.P5.duration
 
         # ora che ho tutti i tempi ridetermino il dayly advance rate come segment length / (t1+t3+t4+t5)
-        self.dailyAdvanceRate = self.segmentLength/(self.t1+self.t3+self.t4+self.t5)
+        #self.dailyAdvanceRate = self.segmentLength/(self.t1+self.t3+self.t4+self.t5)
+        self.dailyAdvanceRate = dar
 
         # indicatori geotecnici
         self.G1 = G1(self.Tbm.type, self.frontStability.lambdae, self.availableBreakawayTorque-self.frontStabilityBreakawayTorque)
