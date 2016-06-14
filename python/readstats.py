@@ -72,9 +72,6 @@ def main(argv):
         thrustLim[tbm.name]=tbm.auxiliaryThrustForce
         torqueLim[tbm.name]=tbm.breakawayTorque
 
-
-# TODO: cambio select leggendo cavityStabilityPar >0 e tailCavityStabilityPar = 1
-
     # carico tutti i segmenti ordinati dove posso avere blocco scudo o testa
     sSql = """SELECT  BbtParameterEval.tunnelName, BbtParameterEval.tbmName, BbtParameterEval.fine, count(*) as cnt
         FROM BbtParameterEval

@@ -46,6 +46,7 @@ def get_mainbbtparameterseval(sDBPath, sKey, iterMin, iterMax):
     conn.row_factory = bbtParameterEvalMain_factory
     cur = conn.cursor()
     bbt_bbtparameterseval = defaultdict(list)
+
     cur.execute("SELECT BbtParameter.inizio,BbtParameter.fine,BbtParameter.est,BbtParameter.nord,\
                  BbtParameter.he,BbtParameter.hp,BbtParameter.co,BbtParameter.hw,\
                  BbtParameter.wdepth,BbtParameter.g_med,BbtParameter.g_stddev,\
@@ -57,7 +58,12 @@ def get_mainbbtparameterseval(sDBPath, sKey, iterMin, iterMax):
                  BbtParameterEval.gamma,BbtParameterEval.phi,BbtParameterEval.ei,\
                  BbtParameterEval.c,BbtParameterEval.rmr,BbtParameterEval.k0,\
                  BbtParameterEval.winflow,BbtParameterEval.ucs,BbtParameterEval.iteration_no,\
-                 BbtParameterEval.insertdate \
+                 BbtParameterEval.insertdate, \
+                 BbtParameterEval.open_std_eff,BbtParameterEval.open_bould_eff, \
+                 BbtParameterEval.open_water_eff,BbtParameterEval.open_mixit_eff, \
+                 BbtParameterEval.open_tbm_eff,BbtParameterEval.dual_std_eff, \
+                 BbtParameterEval.dual_bould_eff,BbtParameterEval.dual_water_eff, \
+                 BbtParameterEval.dual_mixit_eff, BbtParameterEval.dual_tbm_eff \
                  FROM BbtParameterEval \
                  JOIN BbtParameter ON BbtParameter.profilo_id = BbtParameterEval.profilo_id \
                  WHERE BbtParameterEval.tunnelName = ?  AND BbtParameterEval.iteration_no>=? \
@@ -77,7 +83,17 @@ def get_bbtparameters(sDBPath):
     bbtresults = cur.execute("SELECT inizio,fine,est,nord,he,hp,co,hw,wdepth,g_med,g_stddev,phimin,\
                              phimax,ei_med,ei_stdev,c_med,c_stdev,rmr_med,rmr_stdev,profilo_id,\
                              geoitem_id,title,k0_min,k0_max,w_inflow_min,w_inflow_max,UCS_min,\
-                             UCS_max FROM bbtparameter ORDER BY profilo_id")
+                             UCS_max,open_std_eff_min,open_std_eff_avg,open_std_eff_max,\
+                             open_bould_eff_min,open_bould_eff_avg,open_bould_eff_max,\
+                             open_water_eff_min,open_water_eff_avg,open_water_eff_max,\
+                             open_mixit_eff_min,open_mixit_eff_avg,open_mixit_eff_max,\
+                             open_tbm_eff_min,open_tbm_eff_avg,open_tbm_eff_max,\
+                             dual_std_eff_min,dual_std_eff_avg,dual_std_eff_max,\
+                             dual_bould_eff_min,dual_bould_eff_avg,dual_bould_eff_max,\
+                             dual_water_eff_min,dual_water_eff_avg,dual_water_eff_max,\
+                             dual_mixit_eff_min,dual_mixit_eff_avg,dual_mixit_eff_max,\
+                             dual_tbm_eff_min,dual_tbm_eff_avg,dual_tbm_eff_max \
+                             FROM bbtparameter ORDER BY profilo_id")
     bbt_parameters = []
     for bbt_parameter in bbtresults:
         bbt_parameters.append(bbt_parameter)
@@ -93,8 +109,18 @@ def insert_parameters(sDBPath, bbtpar_items):
         c.execute('insert into BbtParameter (inizio,fine,est,nord,he,hp,co,hw,wdepth,g_med,\
                    g_stddev,phimin,phimax,ei_med,ei_stdev,c_med,c_stdev,rmr_med,rmr_stdev,\
                    profilo_id,geoitem_id,title,k0_min,k0_max,w_inflow_min,w_inflow_max,\
-                   UCS_min,UCS_max) \
-                   values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', bbtpar)
+                   UCS_min,UCS_max,open_std_eff_min,open_std_eff_avg,open_std_eff_max,\
+                   open_bould_eff_min,open_bould_eff_avg,open_bould_eff_max,\
+                   open_water_eff_min,open_water_eff_avg,open_water_eff_max,\
+                   open_mixit_eff_min,open_mixit_eff_avg,open_mixit_eff_max,\
+                   open_tbm_eff_min,open_tbm_eff_avg,open_tbm_eff_max,\
+                   dual_std_eff_min,dual_std_eff_avg,dual_std_eff_max,\
+                   dual_bould_eff_min,dual_bould_eff_avg,dual_bould_eff_max,\
+                   dual_water_eff_min,dual_water_eff_avg,dual_water_eff_max,\
+                   dual_mixit_eff_min,dual_mixit_eff_avg,dual_mixit_eff_max,\
+                   dual_tbm_eff_min,dual_tbm_eff_avg,dual_tbm_eff_max) \
+                   values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
+                   ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', bbtpar)
     conn.commit()
     conn.close()
 
@@ -117,8 +143,18 @@ def insert_geoitems(sDBPath, geoseg_list):
     for geoseg in geoseg_list:
         c.execute('insert into BbtGeoitem (id,inizio,fine,l,perc,type,g_med,g_stddev,phimin,\
                   phimax,ei_med,ei_stdev,c_med,c_stdev,rmr_med,rmr_stdev,title,k0_min,k0_max,\
-                  w_inflow_min,w_inflow_max,UCS_min,UCS_max)\
-                  values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', geoseg)
+                  w_inflow_min,w_inflow_max,UCS_min,UCS_max,open_std_eff_min,open_std_eff_avg,open_std_eff_max,\
+                  open_bould_eff_min,open_bould_eff_avg,open_bould_eff_max,\
+                  open_water_eff_min,open_water_eff_avg,open_water_eff_max,\
+                  open_mixit_eff_min,open_mixit_eff_avg,open_mixit_eff_max,\
+                  open_tbm_eff_min,open_tbm_eff_avg,open_tbm_eff_max,\
+                  dual_std_eff_min,dual_std_eff_avg,dual_std_eff_max,\
+                  dual_bould_eff_min,dual_bould_eff_avg,dual_bould_eff_max,\
+                  dual_water_eff_min,dual_water_eff_avg,dual_water_eff_max,\
+                  dual_mixit_eff_min,dual_mixit_eff_avg,dual_mixit_eff_max,\
+                  dual_tbm_eff_min,dual_tbm_eff_avg,dual_tbm_eff_max)\
+                  values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?\
+                  ,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', geoseg)
     conn.commit()
     conn.close()
 
@@ -201,9 +237,12 @@ def insert_eval4Geo(sDBPath, bbt_evalparameters):
                        inSituConditionSigmaV, tunnelRadius, rockE, mohrCoulombPsi, rockUcs,\
                        inSituConditionGsi, hoekBrownMi, hoekBrownD, hoekBrownMb, hoekBrownS,\
                        hoekBrownA, hoekBrownMr, hoekBrownSr, hoekBrownAr, urPiHB, rpl, picr,\
-                       ldpVlachBegin, ldpVlachEnd, ucs\
+                       ldpVlachBegin, ldpVlachEnd, ucs, open_std_eff,open_bould_eff, \
+                       open_water_eff,open_mixit_eff,open_tbm_eff,dual_std_eff, \
+                       dual_bould_eff,dual_water_eff,dual_mixit_eff, dual_tbm_eff \
                        ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
-                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbt_evalparameters)
+                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                       bbt_evalparameters)
         conn.commit()
         conn.close()
 
@@ -225,9 +264,13 @@ def insert_eval4Iter(sDBPath, bbt_evalparameters, bbttbmkpis):
                        inSituConditionSigmaV, tunnelRadius, rockE, mohrCoulombPsi, rockUcs,\
                        inSituConditionGsi, hoekBrownMi, hoekBrownD, hoekBrownMb, hoekBrownS,\
                        hoekBrownA, hoekBrownMr, hoekBrownSr, hoekBrownAr, urPiHB, rpl, picr,\
-                       ldpVlachBegin, ldpVlachEnd, cavityStabilityPar, tailCavityStabilityPar, LocFt\
+                       ldpVlachBegin, ldpVlachEnd, cavityStabilityPar, tailCavityStabilityPar,\
+                       LocFt,open_std_eff,open_bould_eff,open_water_eff,open_mixit_eff,\
+                       open_tbm_eff,dual_std_eff,dual_bould_eff,dual_water_eff,dual_mixit_eff,\
+                       dual_tbm_eff\
                        ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
-                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbt_evalparameters)
+                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                       bbt_evalparameters)
         conn.commit()
         conn.close()
 

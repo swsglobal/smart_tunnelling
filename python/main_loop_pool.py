@@ -30,10 +30,6 @@ def insert_georandom(sDBPath, nIter, bbt_parameters, sKey):
     for idx, bbt_parameter in enumerate(bbt_parameters):
         mynorms = build_normfunc_dict(bbt_parameter, nIter)
         for n in range(nIter):
-#            'g_med', 'g_stddev', 'phimin', 'phimax', 'ei_med', 'ei_stdev', 'c_med', 'c_stdev',
-#            'rmr_med',
-#            'rmr_stdev', 'k0_min', 'k0_max', 'w_inflow_min', 'w_inflow_max', 'UCS_min',
-#            'UCS_max'
             gamma = mynorms['gamma'].rvs()
             phi = mynorms['phi'].rvs()
             ei = mynorms['ei'].rvs()
@@ -42,6 +38,18 @@ def insert_georandom(sDBPath, nIter, bbt_parameters, sKey):
             k0 = mynorms['k0'].rvs()
             winflow = mynorms['winflow'].rvs()
             ucs = mynorms['ucs'].rvs()
+
+            open_std_eff = mynorms['open_std_eff'].rvs()
+            open_bould_eff = mynorms['open_bould_eff'].rvs()
+            open_water_eff = mynorms['open_water_eff'].rvs()
+            open_mixit_eff = mynorms['open_mixit_eff'].rvs()
+            open_tbm_eff = mynorms['open_tbm_eff'].rvs()
+            dual_std_eff = mynorms['dual_std_eff'].rvs()
+            dual_bould_eff = mynorms['dual_bould_eff'].rvs()
+            dual_water_eff = mynorms['dual_water_eff'].rvs()
+            dual_mixit_eff = mynorms['dual_mixit_eff'].rvs()
+            dual_tbm_eff = mynorms['dual_tbm_eff'].rvs()
+
 #            ucs_pebble = mynorms['ucs_pebble'].rvs()
 #            ucs_clasts = mynorms['ucs_clasts'].rvs()
             #ppv = bbt_parameter + (gamma, phi, ei, c, rmr, winflow, n, strnow)
@@ -54,7 +62,10 @@ def insert_georandom(sDBPath, nIter, bbt_parameters, sKey):
                                   bbt_parameter.profilo_id, bbt_parameter.geoitem_id,
                                   bbt_parameter.title, k0, winflow,
                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ucs))
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ucs,
+                                  open_std_eff, open_bould_eff, open_water_eff, open_mixit_eff,
+                                  open_tbm_eff, dual_std_eff, dual_bould_eff, dual_water_eff,
+                                  dual_mixit_eff, dual_tbm_eff))
         if (idx+1) % 100 == 0:
             insert_eval4Geo(sDBPath, bbt_insertval)
             bbt_insertval = []
@@ -110,14 +121,14 @@ def mp_producer(parms):
     fCShiledMode = bbtConfig.getfloat('Alignment', 'frictionCShiledMode')
     fCShiledMax = bbtConfig.getfloat('Alignment', 'frictionCShiledMax')
     #CREO OGGETTO
-    fcShield = FrictionCoeff(fCShiledMin, fCShiledMode, fCShiledMax)
+    fcShield = TriangDist(fCShiledMin, fCShiledMode, fCShiledMax)
 
     #LEGGO I PARAMETRI DA FILE DI CONFIGURAZIONE
     fCCutterdMin = bbtConfig.getfloat('Alignment', 'frictionCCutterMin')
     fCCutterMode = bbtConfig.getfloat('Alignment', 'frictionCCutterMode')
     fCCutterMax = bbtConfig.getfloat('Alignment', 'frictionCCutterMax')
     #CREO OGGETTO
-    fcCutter = FrictionCoeff(fCCutterdMin, fCCutterMode, fCCutterMax)
+    fcCutter = TriangDist(fCCutterdMin, fCCutterMode, fCCutterMax)
 
     alnAll = []
     aln = InfoAlignment('Galleria', 'GLEST', inizio, fine, fCCutterMode, fCShiledMode)
@@ -141,13 +152,13 @@ def mp_producer(parms):
         for alnCurr in alnAll:
             for tbmKey in loopTbms:
                 tbmData = loopTbms[tbmKey]
-                # Se la TBM e' conforme al TUnnell
+                # Se la TBM e' conforme al Tunnel
                 if alnCurr.tbmKey in tbmData.alignmentCode:
-                    tbm = TBM(tbmData, 'P') #aghensi@20160603 - uso Panet
+                    tbm = TBM(tbmData, 'P')
                     kpiTbm = KpiTbm4Tunnel(alnCurr.description, mainIterationNo)
                     iCheckBbttbmkpis += 1
                     kpiTbm.setKPI4TBM(alnCurr, tbmKey, tbm, projectRefCost)
-                    # cerco i segmenti che rientrano tra inizio e fine del Tunnell
+                    # cerco i segmenti che rientrano tra inizio e fine del Tunnel
                     matches_params = [bpar for bpar in bbt_bbtparameterseval[mainIterationNo] if alnCurr.pkStart <= bpar.inizio and bpar.fine <= alnCurr.pkEnd]
                     for bbt_parameter in matches_params:
                         bbtparameter4seg = build_bbtparameterVal4seg(bbt_parameter)
@@ -330,7 +341,7 @@ if __name__ == "__main__":
         workers.close()
         workers.join()
 #
-#        # aghensi@20160603 singolo thread per debug
+        # aghensi@20160603 singolo thread per debug
 #        for ja in job_args:
 #            mp_producer(ja)
 

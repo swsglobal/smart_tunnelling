@@ -1,33 +1,53 @@
 from collections import namedtuple
 # aghensi@20160601 - adattamento tuple per filippine e restyling PEP8
-BbtGeoitem = namedtuple('BbtGeoitem', ['id', 'inizio', 'fine', 'l', 'perc', 'type', 'g_med',
-                                       'g_stddev', 'phimin', 'phimax', 'ei_med', 'ei_stdev',
-                                       'c_med', 'c_stdev', 'rmr_med', 'rmr_stdev', 'title',
-                                       'k0_min', 'k0_max', 'w_inflow_min', 'w_inflow_max',
-                                       'UCS_min', 'UCS_max'])
+BbtGeoitem = namedtuple('BbtGeoitem',
+                        ['id', 'inizio', 'fine', 'l', 'perc', 'type', 'g_med', 'g_stddev', 'phimin',
+                         'phimax', 'ei_med', 'ei_stdev', 'c_med', 'c_stdev', 'rmr_med', 'rmr_stdev',
+                         'title', 'k0_min', 'k0_max', 'w_inflow_min', 'w_inflow_max', 'UCS_min',
+                         'UCS_max', 'open_std_eff_min', 'open_std_eff_avg', 'open_std_eff_max',
+                         'open_bould_eff_min', 'open_bould_eff_avg', 'open_bould_eff_max',
+                         'open_water_eff_min', 'open_water_eff_avg', 'open_water_eff_max',
+                         'open_mixit_eff_min', 'open_mixit_eff_avg', 'open_mixit_eff_max',
+                         'open_tbm_eff_min', 'open_tbm_eff_avg', 'open_tbm_eff_max',
+                         'dual_std_eff_min', 'dual_std_eff_avg', 'dual_std_eff_max',
+                         'dual_bould_eff_min', 'dual_bould_eff_avg', 'dual_bould_eff_max',
+                         'dual_water_eff_min', 'dual_water_eff_avg', 'dual_water_eff_max',
+                         'dual_mixit_eff_min', 'dual_mixit_eff_avg', 'dual_mixit_eff_max',
+                         'dual_tbm_eff_min', 'dual_tbm_eff_avg', 'dual_tbm_eff_max'])
 BbtProfilo = namedtuple('BbtProfilo', ['id', 'inizio', 'fine', 'est', 'nord', 'he', 'hp', 'co',
                                        'hw', 'wdepth'])
-BbtParameter = namedtuple('BbtParameter', ['inizio', 'fine', 'est', 'nord', 'he', 'hp', 'co', 'hw',
-                                           'wdepth', 'g_med', 'g_stddev', 'phimin', 'phimax',
-                                           'ei_med', 'ei_stdev', 'c_med', 'c_stdev', 'rmr_med',
-                                           'rmr_stdev', 'profilo_id', 'geoitem_id', 'title',
-                                           'k0_min', 'k0_max', 'w_inflow_min', 'w_inflow_max',
-                                           'UCS_min', 'UCS_max'])
+
+BbtParameter = namedtuple('BbtParameter',
+                          ['inizio', 'fine', 'est', 'nord', 'he', 'hp', 'co', 'hw', 'wdepth',
+                           'g_med', 'g_stddev', 'phimin', 'phimax', 'ei_med', 'ei_stdev', 'c_med',
+                           'c_stdev', 'rmr_med', 'rmr_stdev', 'profilo_id', 'geoitem_id', 'title',
+                           'k0_min', 'k0_max', 'w_inflow_min', 'w_inflow_max', 'UCS_min', 'UCS_max',
+                           'open_std_eff_min', 'open_std_eff_avg', 'open_std_eff_max',
+                           'open_bould_eff_min', 'open_bould_eff_avg', 'open_bould_eff_max',
+                           'open_water_eff_min', 'open_water_eff_avg', 'open_water_eff_max',
+                           'open_mixit_eff_min', 'open_mixit_eff_avg', 'open_mixit_eff_max',
+                           'open_tbm_eff_min', 'open_tbm_eff_avg', 'open_tbm_eff_max',
+                           'dual_std_eff_min', 'dual_std_eff_avg', 'dual_std_eff_max',
+                           'dual_bould_eff_min', 'dual_bould_eff_avg', 'dual_bould_eff_max',
+                           'dual_water_eff_min', 'dual_water_eff_avg', 'dual_water_eff_max',
+                           'dual_mixit_eff_min', 'dual_mixit_eff_avg', 'dual_mixit_eff_max',
+                           'dual_tbm_eff_min', 'dual_tbm_eff_avg', 'dual_tbm_eff_max'])
 BbtReliability = namedtuple('BbtReliability', ['id', 'inizio', 'fine', 'gmr_class', 'gmr_val',
                                                'reliability', 'eval_var'])
 BbtParameterEvalMin = namedtuple('BbtParameterEvalMin', ['gamma', 'phi', 'ei', 'c', 'rmr', 'k0',
                                                          'winflow', 'profilo_id'])
 
-BbtParameterEvalMain = namedtuple('BbtParameterEvalMain', ['inizio', 'fine', 'est', 'nord', 'he',
-                                                           'hp', 'co', 'hw', 'wdepth', 'g_med',
-                                                           'g_stddev', 'phimin', 'phimax',
-                                                           'ei_med', 'ei_stdev', 'c_med',
-                                                           'c_stdev', 'rmr_med', 'rmr_stdev',
-                                                           'profilo_id', 'geoitem_id', 'title',
-                                                           'k0_min', 'k0_max', 'w_inflow_min',
-                                                           'w_inflow_max', 'gamma', 'phi', 'ei',
-                                                           'c', 'rmr', 'k0', 'winflow', 'ucs',
-                                                           'iteration_no', 'insertdate'])
+BbtParameterEvalMain = namedtuple('BbtParameterEvalMain',
+                                  ['inizio', 'fine', 'est', 'nord', 'he', 'hp', 'co', 'hw',
+                                   'wdepth', 'g_med', 'g_stddev', 'phimin', 'phimax', 'ei_med',
+                                   'ei_stdev', 'c_med', 'c_stdev', 'rmr_med', 'rmr_stdev',
+                                   'profilo_id', 'geoitem_id', 'title', 'k0_min', 'k0_max',
+                                   'w_inflow_min', 'w_inflow_max', 'gamma', 'phi', 'ei', 'c',
+                                   'rmr', 'k0', 'winflow', 'ucs', 'iteration_no', 'insertdate',
+                                   'open_std_eff', 'open_bould_eff', 'open_water_eff',
+                                   'open_mixit_eff', 'open_tbm_eff', 'dual_std_eff',
+                                   'dual_bould_eff', 'dual_water_eff', 'dual_mixit_eff',
+                                   'dual_tbm_eff'])
 
 #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
 BbtParameterEval = namedtuple('BbtParameterEval', ['insertdate', 'iteration_no', 'fine', 'he', 'hp',
@@ -46,12 +66,16 @@ BbtParameterEval = namedtuple('BbtParameterEval', ['insertdate', 'iteration_no',
                                                    'hoekBrownD', 'hoekBrownMb', 'hoekBrownS',
                                                    'hoekBrownA', 'hoekBrownMr', 'hoekBrownSr',
                                                    'hoekBrownAr', 'urPiHB', 'rpl', 'picr',
-                                                   'ldpVlachBegin', 'ldpVlachEnd','ucs'])
+                                                   'ldpVlachBegin', 'ldpVlachEnd', 'ucs'])
 
 BbtParameter4Seg = namedtuple('BbtParameter4Seg', ['inizio', 'fine', 'length', 'he', 'hp', 'co',
                                                    'gamma', 'phi', 'ei', 'c', 'rmr', 'profilo_id',
                                                    'geoitem_id', 'descr', 'k0', 'winflow', 'ucs',
-                                                   'wdepth', 'k0_min', 'k0_max'])
+                                                   'wdepth', 'k0_min', 'k0_max',
+                                                   'open_std_eff', 'open_bould_eff', 'open_water_eff',
+                                                   'open_mixit_eff', 'open_tbm_eff', 'dual_std_eff',
+                                                   'dual_bould_eff', 'dual_water_eff', 'dual_mixit_eff',
+                                                   'dual_tbm_eff'])
 BbtTbmKpi = namedtuple('BbtTbmKpi', ['tunnelName', 'tbmName', 'iterationNo', 'kpiKey', 'kpiDescr',
                                      'minImpact', 'maxImpact', 'avgImpact', 'appliedLength',
                                      'percentOfApplication', 'probabilityScore', 'totalImpact'])

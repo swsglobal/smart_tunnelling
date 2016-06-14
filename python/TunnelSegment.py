@@ -496,16 +496,19 @@ class TBM:
         self.Slen1 =tbmData.frontShieldLength
 
         # aghensi@20160530 impostato rmr 50 con 80mm/min = 4.8m/h e ufDS a 0.217 => dar di 25m/giorno
-        # TODO: HRK ha 100mm/min = 6m/h, dovrei dare uf di 0.174 ma ho RMR fisso, come faccio?)
+        # aghensi@20160614 impostato rmr 50 a 100mm/min = 6 m/h; uf non lo utilizzo
         # penetration rate per ogni decina di rmr: 0, 10, 20, 30.....100
-        self.rop= array((1.2904525, 1.2904525,1.540995,1.7915375,4.8, 4.8 ,4.8, 2.2253075,1.97355,1.7217925, 1.7217925)) # m/h metri di scavo all'ora
+        self.rop= array((1.2904525, 1.2904525, 1.540995, 1.7915375, 6, 6 , 6, 2.2253075, 1.97355,
+                         1.7217925, 1.7217925)) # m/h metri di scavo all'ora
         self.penetrationPerRevolution = self.rop/60./self.rpm  #in m per rivoluzione
         # definisco l'Utilization Factor
-        uf0=array((0.110166666666667, 0.110166666666667,0.159111111111111,0.208055555555556,0.288194444444445,0.368333333333333,0.4335, \
-                    0.498666666666667, 0.498666666666667,0.498666666666667,0.498666666666667))
-        ufS=array((0.154166666666667,0.154166666666667,0.189583333333333,0.225,0.285416666666667,0.345833333333333, \
-                    0.377083333333333,0.408333333333333,0.408333333333333,0.408333333333333,0.408333333333333))
-        ufDS=array((0.15,0.15,0.219166666666667,0.288333333333333, 0.217, 0.217, 0.217, \
+        uf0=array((0.110166666666667, 0.110166666666667, 0.159111111111111, 0.208055555555556,
+                   0.288194444444445, 0.368333333333333, 0.4335,
+                   0.498666666666667, 0.498666666666667, 0.498666666666667, 0.498666666666667))
+        ufS=array((0.154166666666667, 0.154166666666667, 0.189583333333333, 0.225, 0.285416666666667,
+                   0.345833333333333, 0.377083333333333, 0.408333333333333, 0.408333333333333,
+                   0.408333333333333, 0.408333333333333))
+        ufDS=array((0.15,0.15,0.219166666666667,0.288333333333333, 0.217, 0.217, 0.217,
                     0.463611111111111,0.463611111111111,0.463611111111111,0.463611111111111))
         if self.type == 'O': # per ogni decina di rmr: 0, 10, 20, 30.....100
             self.uf = uf0
@@ -668,7 +671,9 @@ class TBMSegment:
             self.contactType = 0
             self.frontFrictionForce = 0.
             self.tailFrictionForce = 0.
-            self.frictionForce = 0.0 # in kN quella che mi rallenta l'avanzamento
+            #self.frictionForce = 0.0 # in kN quella che mi rallenta l'avanzamento
+            # aghensi@20160613: aggiunto attrito trascinamento macchina sotto (60°; 60/360 = 1/6)
+            self.frictionForce = self.Tbm.weight*tbm.Slen*self.Tbm.tailShieldDiameter*math.pi/6*frictionCoeff*1000.0
             self.Xcontact = tbm.Slen
         elif self.TunnelClosureAtShieldEnd>self.Tbm.gap and self.TunnelClosureAtShieldEnd1<=self.Tbm.gap1:
             self.Xcontact = self.xLim(self.Tbm.gap)
@@ -709,6 +714,8 @@ class TBMSegment:
             self.tailFrictionForce = total*self.Tbm.tailShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
             self.frictionForce = self.frontFrictionForce
 
+
+
         #definisco il thrust che rimane per l'avanzamento tolti gli attriti e la convergenza sullo scudo
         if tbm.type == 'DS':
             self.availableThrust = max(0., self.Tbm.installedThrustForce - self.frictionForce)
@@ -730,17 +737,30 @@ class TBMSegment:
             self.tailCavityStabilityPar = 1.
 
         # definisco thrust e torque
+        # metodo colorado school of mines
         psi = self.Tbm.psi
         ucs = self.Rock.Ucs
         sigmat = self.Rock.Sigmat
         RMR = self.InSituCondition.Rmr
         rate = self.Tbm.penetrationPerRevolution
-        uf = self.Tbm.uf
+        #uf = self.Tbm.uf
 
         i_1 = int(math.floor(RMR/10.0))
         i = i_1+1
         locpBase = rate[i_1]+(rate[i]-rate[i_1])/10.0*(RMR-i_1*10)
-        locuf = uf[i_1]+(uf[i]-uf[i_1])/10.0*(RMR-i_1*10)
+
+        # aghensi@20160614 - locuf dipende dai parametri di efficienza in base al tipo di TBM
+        if tbm.dstype.upper == 'O':
+            prefix = 'open_'
+        else:
+            prefix = 'dual_'
+        std_eff = getattr(segment,'{}std_eff'.format(prefix))
+        bould_eff = getattr(segment,'{}bould_eff'.format(prefix))
+        water_eff = getattr(segment,'{}water_eff'.format(prefix))
+        mixit_eff = getattr(segment,'{}mixit_eff'.format(prefix))
+        tbm_eff = getattr(segment,'{}tbm_eff'.format(prefix))
+        locuf = (std_eff - bould_eff - water_eff - mixit_eff) * tbm_eff
+        #locuf = uf[i_1]+(uf[i]-uf[i_1])/10.0*(RMR-i_1*10)
         locfi = math.acos((self.Tbm.CutterRadius-locpBase)/self.Tbm.CutterRadius)
         locP0 = 2.12*math.pow((self.Tbm.CutterSpacing*(ucs**2)*sigmat/(locfi*math.sqrt(self.Tbm.CutterRadius*self.Tbm.CutterThickness))), 1.0/3.0)
         locFt = 1000.0*locP0*locfi*self.Tbm.CutterRadius*self.Tbm.CutterThickness/(1.0+psi) # in kN
@@ -766,6 +786,7 @@ class TBMSegment:
         self.torque = 0.3*(self.Tbm.excavationDiam+2.0*self.Tbm.gap)*self.Tbm.CutterNo*locFr # in kNm
         self.availableBreakawayTorque = self.Tbm.breakawayTorque - self.torque
         self.torque+=self.breakawayTorque
+
         dar = 24.*locuf*locp*self.Tbm.rpm*60. # in m/gg con anni di 365 gg
         self.requiredThrustForce = self.Tbm.BackupDragForce+self.contactThrust+self.frictionForce
         self.LocFt = locFt
@@ -776,6 +797,7 @@ class TBMSegment:
         impactP3 = impactOnProduction(dar, productionBase)
 
 
+
         # indicatore di produzione
         #self.P0 = P0(self.t0, self.segmentLength) # giorni di produzione richiesto a scavare un metro del segmento
         self.P1 = P1(impactP1) # impatto sulla produzione
@@ -784,15 +806,15 @@ class TBMSegment:
         self.P5 = P5(self.Tbm.type, self.cavityStabilityPar, self.frontStability.lambdae, productionBase,  segment.length)
 
         # tempi di produzione in giorni
-        self.t0= self.segmentLength/(24.*locuf*locp*self.Tbm.rpm*60.) #giorni di scavo del segmento
-        self.t1= self.segmentLength/(24.*locuf*locpBase*self.Tbm.rpm*60.) #giorni di scavo del segmento
+        self.t0 = self.segmentLength/(24.*locuf*locp*self.Tbm.rpm*60.) #giorni di scavo del segmento
+        self.t1 = self.segmentLength/(24.*locuf*locpBase*self.Tbm.rpm*60.) #giorni di scavo del segmento
         self.t3 = self.t0-self.t1 # extra tempo in giorni causato dalle rocce dure
         self.t4 = self.P4.duration
         self.t5 = self.P5.duration
 
-        # ora che ho tutti i tempi ridetermino il dayly advance rate come segment length / (t1+t3+t4+t5)
+        # ora che ho tutti i tempi ridetermino il daily advance rate come segment length / (t1+t3+t4+t5)
         #self.dailyAdvanceRate = self.segmentLength/(self.t1+self.t3+self.t4+self.t5)
-        self.dailyAdvanceRate = dar
+        self.dailyAdvanceRate = dar * tot_eff # aghensi - non avendo dati su efficienze uso dar secco
 
         # indicatori geotecnici
         self.G1 = G1(self.Tbm.type, self.frontStability.lambdae, self.availableBreakawayTorque-self.frontStabilityBreakawayTorque)
@@ -978,7 +1000,7 @@ class TBMSegment:
         # aghensi@20160531 cambiato UrPi_HB con UrPi
         umax = self.UrPi(0.0)
         Rt = self.Excavation.Radius # in m
-        Rp = self.Rpl
+        Rp = self.Rpl # TODO: non è inizializzato!
         Rstar = Rp/Rt
         u0star = math.exp(-0.15*Rstar)/3.0
         xstar = x/Rt
@@ -991,7 +1013,7 @@ class TBMSegment:
         # x in m
         # opt e' opzione di calcolo P = panet, V = Vlachopoulos
         opt = self.Tbm.LDP_type
-        if opt == 'p' or opt == 'P':
+        if opt.upper() == 'P':
             return self.LDP_Panet_1995(x)
         else:
             return self.LDP_Vlachopoulos_2009(x)
@@ -1037,7 +1059,7 @@ class TBMSegment:
 
 class StabilizationMeasure:
     def __init__(self, pkFrom, pkTo, type, len):
-        self.pkFrom =pkFrom
+        self.pkFrom = pkFrom
         self.pkTo = pkTo
         self.type = type
         self.len = len

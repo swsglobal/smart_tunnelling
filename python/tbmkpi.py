@@ -8,19 +8,43 @@ from bbt_database import getDBConnection
 # danzi.tn@20151113 distribuzione triangolare per friction on Shield e on Cutter Head
 # danzi.tn@20151115 recepimento modifiche gabriele
 
-class FrictionCoeff:
+class TriangDist:
+    '''
+    Crea distribuzione trangolare partendo da tre valori: minimo, media e massimo.
 
-    def __init__(self,minVal,avgVal,maxVal):
-        self.minVal = minVal
-        self.avgVal = avgVal
-        self.maxVal = maxVal
-        self.c = (avgVal-minVal)/(maxVal-minVal)
-        self.loc = minVal
-        self.scale = maxVal-minVal
-        self.triangFunc = triang(self.c, loc=self.loc,scale=self.scale)
+    Per un maggior controllo i valori vengono riordinati automaticamente.
+    '''
+    def __init__(self, minVal, avgVal, maxVal):
+        '''
+        aghensi@20160614 - mi assicuro che i valori siano in ordine
+        crea la distribuzione triangolare ordinando i parametri di input in modo crescente
+
+        Args:
+            * minVal (float): valore minimo
+            * avgVal (float): valore medio
+            * maxVal (float): valore massimo
+        '''
+        self.minVal, self.avgVal, self.maxVal = sorted([minVal, avgVal, maxVal])
+        self.loc = self.minVal
+        self.scale = self.maxVal-self.minVal
+        try:
+            self.c = (self.avgVal-self.minVal)/(self.maxVal-self.minVal)
+        except ZeroDivisionError:
+            self.c = 1
+        self.triangFunc = triang(self.c, loc=self.loc, scale=self.scale)
 
     def rvs(self):
-        return self.triangFunc.rvs()
+        '''
+        ritorna un valore random appartenente alla distribuzione
+
+        Returns:
+            float - numero random nella distribuzione
+        '''
+        try:
+            return self.triangFunc.rvs()
+        except:
+            print "errore in TriangDist, minVal={}, maxVal={}, avgVal={}, loc={}, c={}, scale={}". format(self.minVal, self.maxVal, self.avgVal, self.loc, self.c, self.scale)
+            return self.avgVal
 
 
 
@@ -256,6 +280,16 @@ def build_normfunc_dict(bbt_parameter, nIter=1000):
         #gsi = get_my_norm(bbt_parameter.gsi_med, bbt_parameter.gsi_stdev, 'gsi', nIter)
         #sti = get_my_norm_min_max(bbt_parameter.sigma_ti_min, bbt_parameter.sigma_ti_max,
         #                          'sigma_ti', nIter)
+        'open_std_eff': TriangDist(bbt_parameter.open_std_eff_min, bbt_parameter.open_std_eff_avg, bbt_parameter.open_std_eff_max),
+        'open_bould_eff': TriangDist(bbt_parameter.open_bould_eff_min, bbt_parameter.open_bould_eff_avg, bbt_parameter.open_bould_eff_max),
+        'open_water_eff': TriangDist(bbt_parameter.open_water_eff_min, bbt_parameter.open_water_eff_avg, bbt_parameter.open_water_eff_max),
+        'open_mixit_eff': TriangDist(bbt_parameter.open_mixit_eff_min, bbt_parameter.open_mixit_eff_avg, bbt_parameter.open_mixit_eff_max),
+        'open_tbm_eff': TriangDist(bbt_parameter.open_tbm_eff_min, bbt_parameter.open_tbm_eff_avg, bbt_parameter.open_tbm_eff_max),
+        'dual_std_eff': TriangDist(bbt_parameter.dual_std_eff_min, bbt_parameter.dual_std_eff_avg, bbt_parameter.dual_std_eff_max),
+        'dual_bould_eff': TriangDist(bbt_parameter.dual_bould_eff_min, bbt_parameter.dual_bould_eff_avg, bbt_parameter.dual_bould_eff_max),
+        'dual_water_eff': TriangDist(bbt_parameter.dual_water_eff_min, bbt_parameter.dual_water_eff_avg, bbt_parameter.dual_water_eff_max),
+        'dual_mixit_eff': TriangDist(bbt_parameter.dual_mixit_eff_min, bbt_parameter.dual_mixit_eff_avg, bbt_parameter.dual_mixit_eff_max),
+        'dual_tbm_eff': TriangDist(bbt_parameter.dual_tbm_eff_min, bbt_parameter.dual_tbm_eff_avg, bbt_parameter.dual_tbm_eff_max)
         }
 
 
@@ -279,7 +313,12 @@ def build_bbtparameterVal4seg(bbt_parameterVal):
                             bbt_parameterVal.geoitem_id, bbt_parameterVal.title,
                             bbt_parameterVal.k0, bbt_parameterVal.winflow, bbt_parameterVal.ucs,
                             bbt_parameterVal.wdepth, bbt_parameterVal.k0_min,
-                            bbt_parameterVal.k0_max)
+                            bbt_parameterVal.k0_max, bbt_parameterVal.open_std_eff,
+                            bbt_parameterVal.open_bould_eff, bbt_parameterVal.open_water_eff,
+                            bbt_parameterVal.open_mixit_eff, bbt_parameterVal.open_tbm_eff,
+                            bbt_parameterVal.dual_std_eff, bbt_parameterVal.dual_bould_eff,
+                            bbt_parameterVal.dual_water_eff, bbt_parameterVal.dual_mixit_eff,
+                            bbt_parameterVal.dual_tbm_eff)
 
 
 def build_bbtparameter4seg_from_bbt_parameter(bbt_parameter, normfunc_dict):

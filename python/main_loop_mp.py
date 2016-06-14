@@ -10,7 +10,7 @@ from bbtnamedtuples import *
 from tbmkpi import *
 from collections import namedtuple
 from pprint import pprint
-from tbmkpi import FrictionCoeff
+from tbmkpi import TriangDist
 from multiprocessing import cpu_count
 from threading import Thread, Lock
 from logging import handlers
@@ -58,14 +58,14 @@ def mp_producer(idWorker,  nIter,bbt_parameters,normfunc_dicts,loopTbms):
     fCShiledMode = bbtConfig.getfloat('Alignment','frictionCShiledMode')
     fCShiledMax = bbtConfig.getfloat('Alignment','frictionCShiledMax')
     #CREO OGGETTO
-    fcShield = FrictionCoeff(fCShiledMin,fCShiledMode,fCShiledMax)
+    fcShield = TriangDist(fCShiledMin,fCShiledMode,fCShiledMax)
 
     #LEGGO I PARAMETRI DA FILE DI CONFIGURAZIONE
     fCCutterdMin = bbtConfig.getfloat('Alignment','frictionCCutterMin')
     fCCutterMode = bbtConfig.getfloat('Alignment','frictionCCutterMode')
     fCCutterMax = bbtConfig.getfloat('Alignment','frictionCCutterMax')
     #CREO OGGETTO
-    fcCutter =  FrictionCoeff(fCCutterdMin,fCCutterMode,fCCutterMax)
+    fcCutter =  TriangDist(fCCutterdMin,fCCutterMode,fCCutterMax)
 
     alnAll = []
     aln=InfoAlignment('Galleria di linea direzione Sud', 'GLSUD', inizio_GLSUD, fine_GLSUD,fCCutterMode, fCShiledMode)

@@ -191,7 +191,21 @@ for k in geoitems:
                       geosec.ei_stdev, geosec.c_med, geosec.c_stdev, geosec.rmr_med,
                       geosec.rmr_stdev, pk.id, geosec.id, geosec.title, geosec.k0_min,
                       geosec.k0_max, geosec.w_inflow_min, geosec.w_inflow_max,
-                      geosec.UCS_min, geosec.UCS_max]
+                      geosec.UCS_min, geosec.UCS_max, geosec.open_std_eff_min,
+                      geosec.open_std_eff_avg, geosec.open_std_eff_max,
+                      geosec.open_bould_eff_min, geosec.open_bould_eff_avg,
+                      geosec.open_bould_eff_max, geosec.open_water_eff_min,
+                      geosec.open_water_eff_avg, geosec.open_water_eff_max,
+                      geosec.open_mixit_eff_min, geosec.open_mixit_eff_avg,
+                      geosec.open_mixit_eff_max, geosec.open_tbm_eff_min,
+                      geosec.open_tbm_eff_avg, geosec.open_tbm_eff_max,
+                      geosec.dual_std_eff_min, geosec.dual_std_eff_avg, geosec.dual_std_eff_max,
+                      geosec.dual_bould_eff_min, geosec.dual_bould_eff_avg,
+                      geosec.dual_bould_eff_max, geosec.dual_water_eff_min,
+                      geosec.dual_water_eff_avg, geosec.dual_water_eff_max,
+                      geosec.dual_mixit_eff_min, geosec.dual_mixit_eff_avg,
+                      geosec.dual_mixit_eff_max, geosec.dual_tbm_eff_min, geosec.dual_tbm_eff_avg,
+                      geosec.dual_tbm_eff_max ]
             bbtpar = BbtParameter(*tmparr)
             bbtpar_items.append(bbtpar)
         prev += pxi

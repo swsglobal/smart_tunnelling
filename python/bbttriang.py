@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from tbmkpi import FrictionCoeff
+from tbmkpi import TriangDist
 from bbtutils import bbtConfig
 fig, ax = plt.subplots(1, 1)
 
@@ -9,14 +9,14 @@ fCShiledMin = bbtConfig.getfloat('Alignment','frictionCShiledMin')
 fCShiledMode = bbtConfig.getfloat('Alignment','frictionCShiledMode')
 fCShiledMax = bbtConfig.getfloat('Alignment','frictionCShiledMax')
 #CREO OGGETTO
-fcShield = FrictionCoeff(fCShiledMin,fCShiledMode,fCShiledMax)
+fcShield = TriangDist(fCShiledMin,fCShiledMode,fCShiledMax)
 
 #LEGGO I PARAMETRI DA FILE DI CONFIGURAZIONE
 fCCutterdMin = bbtConfig.getfloat('Alignment','frictionCCutterMin')
 fCCutterMode = bbtConfig.getfloat('Alignment','frictionCCutterMode')
 fCCutterMax = bbtConfig.getfloat('Alignment','frictionCCutterMax')
 #CREO OGGETTO
-fcCutter =  FrictionCoeff(fCCutterdMin,fCCutterMode,fCCutterMax)
+fcCutter =  TriangDist(fCCutterdMin,fCCutterMode,fCCutterMax)
 
 # Mostro Output
 si = np.zeros(shape=(1000,), dtype=float)
