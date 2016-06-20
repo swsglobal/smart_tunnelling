@@ -482,7 +482,8 @@ class TBM:
 
         self.dotation = tbmData.dotationForProspection #numero tra 0 e 1 dove 0 e' la meno dotata
         self.name = tbmData.name
-
+        self.dstype = tbmData.dstype
+        self.weight = tbmData.weight
         self.gap = tbmData.overcut + (self.excavationDiam-tbmData.tailShieldDiameter)/2. #gap in m
         self.gap1 = tbmData.overcut + (self.excavationDiam-tbmData.frontShieldDiameter)/2. #gap in m del primo scudo (per le DS)
         self.CutterNo = tbmData.cutterCount # numebr of cutters
@@ -498,7 +499,7 @@ class TBM:
         # aghensi@20160530 impostato rmr 50 con 80mm/min = 4.8m/h e ufDS a 0.217 => dar di 25m/giorno
         # aghensi@20160614 impostato rmr 50 a 100mm/min = 6 m/h; uf non lo utilizzo
         # penetration rate per ogni decina di rmr: 0, 10, 20, 30.....100
-        self.rop= array((1.2904525, 1.2904525, 1.540995, 1.7915375, 6, 6 , 6, 2.2253075, 1.97355,
+        self.rop= array((1.2904525, 1.2904525, 1.540995, 1.7915375, 6, 6, 6, 2.2253075, 1.97355,
                          1.7217925, 1.7217925)) # m/h metri di scavo all'ora
         self.penetrationPerRevolution = self.rop/60./self.rpm  #in m per rivoluzione
         # definisco l'Utilization Factor
@@ -667,13 +668,14 @@ class TBMSegment:
         # contactType = 1 significa conatto solo sullo scudo posteriore
         # contactType = 2 significa contatto solo sullo scudo anteriore
         # contactType = 3 significa contatto su entrambe gli scudi
+
         if self.TunnelClosureAtShieldEnd<=self.Tbm.gap and self.TunnelClosureAtShieldEnd1<=self.Tbm.gap1:
             self.contactType = 0
             self.frontFrictionForce = 0.
             self.tailFrictionForce = 0.
             #self.frictionForce = 0.0 # in kN quella che mi rallenta l'avanzamento
-            # aghensi@20160613: aggiunto attrito trascinamento macchina sotto (60°; 60/360 = 1/6)
-            self.frictionForce = self.Tbm.weight*tbm.Slen*self.Tbm.tailShieldDiameter*math.pi/6*frictionCoeff*1000.0
+            # aghensi@20160613: aggiunto attrito trascinamento macchina
+            self.frictionForce = 0 #*tbm.Slen*self.Tbm.tailShieldDiameter*math.pi/6*1000
             self.Xcontact = tbm.Slen
         elif self.TunnelClosureAtShieldEnd>self.Tbm.gap and self.TunnelClosureAtShieldEnd1<=self.Tbm.gap1:
             self.Xcontact = self.xLim(self.Tbm.gap)
@@ -684,7 +686,7 @@ class TBMSegment:
                 self.contactType = 1
                 self.frontFrictionForce = 0.
                 self.tailFrictionForce = total*self.Tbm.tailShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
-                self.frictionForce = 0.
+                self.frictionForce = 0
             else:
                 self.contactType = 2
                 self.frontFrictionForce = total*self.Tbm.tailShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
@@ -713,7 +715,7 @@ class TBMSegment:
             total = maxPressure*(self.Tbm.Slen-self.Tbm.Slen1)/2.0
             self.tailFrictionForce = total*self.Tbm.tailShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
             self.frictionForce = self.frontFrictionForce
-
+        self.frictionForce += self.Tbm.weight*frictionCoeff #aggiungo forza di attrito per il trascinamento della macchina
 
 
         #definisco il thrust che rimane per l'avanzamento tolti gli attriti e la convergenza sullo scudo
@@ -750,7 +752,7 @@ class TBMSegment:
         locpBase = rate[i_1]+(rate[i]-rate[i_1])/10.0*(RMR-i_1*10)
 
         # aghensi@20160614 - locuf dipende dai parametri di efficienza in base al tipo di TBM
-        if tbm.dstype.upper == 'O':
+        if tbm.dstype.upper() == 'O':
             prefix = 'open_'
         else:
             prefix = 'dual_'
@@ -759,7 +761,7 @@ class TBMSegment:
         water_eff = getattr(segment,'{}water_eff'.format(prefix))
         mixit_eff = getattr(segment,'{}mixit_eff'.format(prefix))
         tbm_eff = getattr(segment,'{}tbm_eff'.format(prefix))
-        locuf = (std_eff - bould_eff - water_eff - mixit_eff) * tbm_eff
+        locuf = (std_eff - bould_eff - water_eff - mixit_eff) # * tbm_eff * 20/24
         #locuf = uf[i_1]+(uf[i]-uf[i_1])/10.0*(RMR-i_1*10)
         locfi = math.acos((self.Tbm.CutterRadius-locpBase)/self.Tbm.CutterRadius)
         locP0 = 2.12*math.pow((self.Tbm.CutterSpacing*(ucs**2)*sigmat/(locfi*math.sqrt(self.Tbm.CutterRadius*self.Tbm.CutterThickness))), 1.0/3.0)
@@ -788,6 +790,12 @@ class TBMSegment:
         self.torque+=self.breakawayTorque
 
         dar = 24.*locuf*locp*self.Tbm.rpm*60. # in m/gg con anni di 365 gg
+        # aghensi@20160615 - fattore di riduzione 20/24 per riduzioen ore di lavoro
+        # e aggiunta d 5minti per anello: 5min/(1,4m*60*24)
+        dar = dar*(1-dar*0.002)*tbm_eff*20./24.
+
+        self.daysForSegment = self.segmentLength/dar
+
         self.requiredThrustForce = self.Tbm.BackupDragForce+self.contactThrust+self.frictionForce
         self.LocFt = locFt
         # considerazioni sulla produzione
@@ -814,7 +822,7 @@ class TBMSegment:
 
         # ora che ho tutti i tempi ridetermino il daily advance rate come segment length / (t1+t3+t4+t5)
         #self.dailyAdvanceRate = self.segmentLength/(self.t1+self.t3+self.t4+self.t5)
-        self.dailyAdvanceRate = dar * tot_eff # aghensi - non avendo dati su efficienze uso dar secco
+        self.dailyAdvanceRate = dar
 
         # indicatori geotecnici
         self.G1 = G1(self.Tbm.type, self.frontStability.lambdae, self.availableBreakawayTorque-self.frontStabilityBreakawayTorque)

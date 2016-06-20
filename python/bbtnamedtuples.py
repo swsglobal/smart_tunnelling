@@ -153,7 +153,7 @@ parmDict = {
     't4':("Tempo apprestamento prospezioni", "gg", 0, 0),
     't5':("Tempo approstamento consolidamenti", "gg", 0, 0),
     'tsum':("Tempo di scavo totale", "gg", 0, 0),
-    'adv':("Avanzamento cumulato", "gg", 0, 1400),
+    'adv':("Avanzamento cumulato", "gg", 0, 0),
     'sigma_ti':("Resistenza a trazione", "GPa", 0, 0),
     'k0':("K0", "-", 0, 0),
     'LocFt':("Per-cutter force", 'kN', 0, 0)

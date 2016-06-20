@@ -220,10 +220,22 @@ def mp_producer(parms):
                                                    #tbmsect.HoekBrown.Sr, tbmsect.HoekBrown.Ar,
                                                    tbmsect.UrPi(0.), 0, 0, 0, 0,
                                                    tbmsect.cavityStabilityPar,
-                                                   tbmsect.tailCavityStabilityPar, tbmsect.LocFt))
+                                                   tbmsect.tailCavityStabilityPar, tbmsect.LocFt,
                                                    #tbmsect.Rpl, tbmsect.Picr,
                                                    #tbmsect.LDP_Vlachopoulos_2009(0.),
                                                    #tbmsect.LDP_Vlachopoulos_2009(tbm.Slen)))
+                                                   bbtparameter4seg.open_std_eff,
+                                                   bbtparameter4seg.open_bould_eff,
+                                                   bbtparameter4seg.open_water_eff,
+                                                   bbtparameter4seg.open_mixit_eff,
+                                                   bbtparameter4seg.open_tbm_eff,
+                                                   bbtparameter4seg.dual_std_eff,
+                                                   bbtparameter4seg.dual_bould_eff,
+                                                   bbtparameter4seg.dual_water_eff,
+                                                   bbtparameter4seg.dual_mixit_eff,
+                                                   bbtparameter4seg.dual_tbm_eff,
+                                                   tbmsect.daysForSegment))
+
                     kpiTbm.updateKPI(alnCurr)
                     bbttbmkpis += kpiTbm.getBbtTbmKpis()
                     sys.stdout.flush()
@@ -340,7 +352,7 @@ if __name__ == "__main__":
         results = workers.map(mp_producer, job_args)
         workers.close()
         workers.join()
-#
+
         # aghensi@20160603 singolo thread per debug
 #        for ja in job_args:
 #            mp_producer(ja)
