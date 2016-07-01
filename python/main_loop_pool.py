@@ -234,7 +234,9 @@ def mp_producer(parms):
                                                    bbtparameter4seg.dual_water_eff,
                                                    bbtparameter4seg.dual_mixit_eff,
                                                    bbtparameter4seg.dual_tbm_eff,
-                                                   tbmsect.daysForSegment))
+                                                   tbmsect.daysForSegment,
+                                                   tbmsect.pvcTubeDiameter,
+                                                   tbmsect.clsTubeDiameter))
 
                     kpiTbm.updateKPI(alnCurr)
                     bbttbmkpis += kpiTbm.getBbtTbmKpis()

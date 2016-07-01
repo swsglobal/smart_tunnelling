@@ -156,5 +156,7 @@ parmDict = {
     'adv':("Avanzamento cumulato", "gg", 0, 0),
     'sigma_ti':("Resistenza a trazione", "GPa", 0, 0),
     'k0':("K0", "-", 0, 0),
-    'LocFt':("Per-cutter force", 'kN', 0, 0)
+    'LocFt':("Per-cutter force", 'kN', 0, 0),
+    'pvcTubeDiameter': ("dewatering tube diameter - PVC", "m", 0, 0),
+    'clsTubeDiameter': ("dewatering tube diameter - concrete", "m", 0, 0)
 }

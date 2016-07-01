@@ -1,16 +1,18 @@
-#from scipy.stats import *
+# -*- coding: utf-8 -*-
+import math
 import matplotlib
 import numpy as np
 from pylab import *
 from scipy.stats import *
+from scipy.optimize import minimize, fsolve
 import ConfigParser, os
 # danzi.tn@20151115 colori per nuove TBM
 # danzi.tn@20151118 colori per la nuova TBM
 # danzi.tn@20151124 replaceTBMName
-main_colors = ['#1f77b4',  '#ff7f0e', '#ffbb78',
-                  '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
-                  '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
-                  '#c7c7c7', '#2ca02c', '#bcbd22', '#dbdb8d', '#B56123', '#aec7e8', '#17becf', '#9edae5','#FCBE01','#44619D']
+main_colors = ['#1f77b4', '#ff7f0e', '#ffbb78', '#98df8a', '#d62728', '#ff9896', '#9467bd',
+               '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7',
+               '#2ca02c', '#bcbd22', '#dbdb8d', '#B56123', '#aec7e8', '#17becf', '#9edae5',
+               '#FCBE01', '#44619D']
 
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
@@ -158,9 +160,12 @@ def get_my_norm_rvs_min_max(vmin,vmax,name=''):
     return retVal
 
 #danzi.tn@20151113 funzione statistica sulla base del numero di iterazioni
-def get_my_norm_min_max(vmin,vmax,name='',nIter=1000):
+def get_my_norm_min_max(vmin, vmax, name='', nIter=1000):
     if vmin==-1 or vmax==-1:
         return CNorm(0.0)
+    # aghensi@20160623 se ho minimo e massimo coincidenti restituisco costante
+    elif vmin == vmax:
+        return CNorm(vmin)
     elif nIter<2:
         return CNorm((vmin+vmax)/2.0)
     elif nIter < 4:
@@ -171,7 +176,7 @@ def get_my_norm_min_max(vmin,vmax,name='',nIter=1000):
         myNorm = rv_discrete(name='bbt_%s' % name, values=(hixk, hipk))
         return myNorm
     else:
-        mean , std = get_sigma_95(vmin,vmax)
+        mean , std = get_sigma_95(vmin, vmax)
         if mean == -1: return mean
         lower = vmin
         upper = vmax
@@ -218,7 +223,6 @@ def geo_ritardo_eventi_straordinari(l,rmr):
     return evento_eccezionale(l,ecc)
 
 
-
 def outputFigure(sDiagramsFolderPath, sFilename, format="png"):
     imagefname=os.path.join(sDiagramsFolderPath,sFilename)
     if os.path.exists(imagefname):
@@ -239,3 +243,71 @@ def replaceTBMName(inputStr):
             outputStr = inputStr.replace(sKey,strTbmReplace[sKey])
             break
     return outputStr
+
+def gauckler_strickler(y, d, q, ks, i_f, full_output=False):
+    '''
+    equazione di Gauckler-Strickler
+
+    per diametri minori di 500mm si ipotizza un grado di riempimento del 50%
+    per diametri maggiori si usa il 75%
+
+    Args:
+        * d (float): diametro del tubo in metri
+        * q (float): portata in mc/s
+        * ks (float): scabrezza del tubo (80 per PVC, 67 per CLS)
+        * i_f (float): pendenza (numero adimensionale)
+        * full_output (bool): se impostato a True restituisce gli output opzionali
+
+    Resturns:
+        * res (float): risultato della componente sinistra dell'equazione,
+            -1 se i vincoli sul grado di riempimento e sulla velocità non sono rispettati
+        * A (float): area del fluido in mq
+        * v (float): velocità del fluifo in mq
+    '''
+    if 0 < y <= d*0.7:
+        r = d/2
+        fi = math.asin((y-r)/r)*2+math.pi
+        A = r**2/2*(fi-math.sin(fi))
+        C = r*fi
+        v = q/A
+        if 0.5 <= v <= 5:
+            res = v-ks*math.sqrt(i_f)*(A/C)**(2/3)
+            if full_output:
+                return res, A, v
+            else:
+                return res
+    return -1
+
+
+def dewatering(q, pk, elevation, start_pk, start_elevation, ks):
+    '''trova il diametro del tubo richiesto per una tubatura con portata e pendenze note
+
+    utilizza l'equazione di Gauckler-Strickler per una serie di diametri nominali standard
+    NB: funziona per tubazioni in discesa!
+    per diametri minori di 500mm si ipotizza un grado di riempimento massimo del 50%
+    per diametri maggiori si usa il 75%
+    verifica che le velocità del fluido siano comprese tra 0.5 e 5m/s
+
+    Args:
+        * q (float): portata in mc/s
+        * pk (float): progressiva attuale
+        * elevation (float): quota di progetto attuale in metri
+        * start_pk (float): progressiva finale del tubo in metri
+        * start_elevation (float): quota finale del tubo in metri
+        * ks (float): scabrezza del tubo (80 per PVC, 67 per CLS)
+    '''
+    try:
+        i_f = abs(elevation-start_elevation)/abs(pk-start_pk)
+    except ZeroDivisionError:
+        return 0
+    DNs = [0.05, 0.063, 0.075, 0.090, 0.110, 0.125, 0.140, 0.150, 0.180,
+           0.200, 0.225, 0.250, 0.280, 0.315, 0.355, 0.400, 0.500, 0.630]
+    for DN in DNs:
+        res, idict, ier, msg = fsolve(gauckler_strickler, DN*0.1, (DN, q, ks, i_f), full_output=True)
+        if ier == 1:
+            return DN
+    return 0
+
+if __name__ == '__main__':
+    print dewatering(.006, 7200., 18., 0., 0., 80)
+

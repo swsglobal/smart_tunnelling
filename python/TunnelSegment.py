@@ -4,6 +4,7 @@ import math
 from pylab import *
 from tbmconfig import *
 import numpy as np
+from bbtutils import dewatering
 
 def probabilityAftes2012(percent):
     if percent <0.005:
@@ -165,7 +166,7 @@ def tempoInterventiSpeciali(tbmType, length): #obsoleta
 
 def derivative(f, x, nu, a, so, h):
     res = (f(x+h, nu, a, so) - f(x-h, nu, a, so)) / (2.0*h)
-    if res ==0:
+    if res == 0:
         res = 0.00001
     return res  # might want to return a small non-zero if ==0
 
@@ -190,16 +191,12 @@ class Rock:
         '''
         inizializza la classe
 
-        :param gamma: densità in kN/mc
-        :param ni: ni
-        :param e: modulo elastico in GPa
-        :param ucs: UCS in MPa
-        :param st: resistenza a trazione in MPa
-        :type gamma: float
-        :type ni: float
-        :type e: float
-        :type ucs: float
-        :type st: float
+        Attrib:
+            * gamma (float): densità in kN/mc
+            * ni (float): ni
+            * e (float): modulo elastico in GPa
+            * uc (float)s: UCS in MPa
+            * st (float): resistenza a trazione in MPa
         '''
         self.Gamma = gamma
         self.Ni = ni
@@ -361,7 +358,7 @@ class rockBursting:
 
 class frontStability:
     # stabilita' del fronte secondo Panet (Ns e Lambdae)
-    def __init__(self, ratio,  sigmaCm, p0, kp):
+    def __init__(self, ratio, sigmaCm, p0, kp):
 
         if ratio < 2.5:
             # criterio non applicabile per basse coperture ratio = copertura/diametro di scavo equivalente
@@ -423,6 +420,7 @@ class Breakaway:
     #definisco l'altezza di materiale di frana secondo tamez per terreni
     def calculate(self, nu, t, fiRi):
         # nu e' opening Ratio della cutterhead
+        # t è lo spessore della cutterhead
         si = self.si
         D = self.D
 #        D = excav.Radius*2.
@@ -603,34 +601,24 @@ class TBMSegment:
         bat = Breakaway()
         if self.frontStability.lambdae > 0.6:
             self.frontStabilityBreakawayTorque = 0.
-        elif self.frontStability.lambdae > 0.3:
+        else:
             # tra 0.3 e 0.6 ipotizzo che aumenti progressivamente il diametro di base
-            dEq = self.Excavation.Radius*2.*(0.6-self.frontStability.lambdae)/.3
+            dEq = self.Excavation.Radius*2.*(0.6-max(self.frontStability.lambdae,0.3))/.3
             bat.setupFrontInstability(overburden, self.MohrCoulomb, gamma, dEq)
             bat.calculate(tbm.openingRatio, tbm.cutterheadThickness, fiRi)
 #            print 'Breakaway torque for front stability mid = %f' % (bat.torque)
-        else:
-            dEq=self.Excavation.Radius*2.
-            bat.setupFrontInstability(overburden, self.MohrCoulomb, gamma, dEq)
-            bat.calculate(tbm.openingRatio, tbm.cutterheadThickness, fiRi)
-#            print 'Breakaway torque for front stability full = %f' % (bat.torque)
-        self.frontStabilityBreakawayTorque = bat.torque
+            self.frontStabilityBreakawayTorque = bat.torque
 
         # definisco il breakawayTorque per il rockburst
 #        bat = Breakaway()
 #        if self.rockBurst.Val < .3:
 #            self.rockburstBreakawayTorque = 0.
-#        elif self.rockBurst.Val < .4:
+#        else:
 #            # tra 0.3 e 0.6 ipotizzo che aumenti progressivamente il diametro di base
-#            dEq = self.Excavation.Radius*2.*(self.rockBurst.Val-0.3)/.1
+#            dEq = self.Excavation.Radius*2.*(min(self.rockBurst.Val,0.4)-0.3)/.1
 #            bat.setupRockburst(self.MohrCoulomb, gamma, dEq)
 #            bat.calculate(tbm.openingRatio, tbm.cutterheadThickness, fiRi)
 ##            print 'Breakaway torque for rockbursting mid = %f' % (bat.torque)
-#        else:
-#            dEq=self.Excavation.Radius*2.
-#            bat.setupRockburst(self.MohrCoulomb, gamma, dEq)
-#            bat.calculate(tbm.openingRatio, tbm.cutterheadThickness, fiRi)
-##            print 'Breakaway torque for rockbursting full = %f' % (bat.torque)
 #        self.rockburstBreakawayTorque = bat.torque
         # definisco il breakawayTorque come il massimo tra quello richiesto per instabilita' del fronte e quello richesto dal rockbursting
 #        self.breakawayTorque = max(self.frontStabilityBreakawayTorque, self.rockburstBreakawayTorque)
@@ -834,6 +822,16 @@ class TBMSegment:
         self.G11 = G11(self.Tbm.type, segment.descr, self.cavityStabilityPar)
         self.G12 = G12(self.Tbm.type, segment.descr, self.frontStability.lambdae, self.availableBreakawayTorque-self.frontStabilityBreakawayTorque)
         #self.G13 = G13(self.Tbm.type, self.rockBurst.Val, self.availableBreakawayTorque-self.rockburstBreakawayTorque)
+
+        # aghensi@20160622 aggiunto calcolo per dimensionamento tubo dewatering
+        # TODO: HACK per filippine, dovrei salvarmi il punto di inizio della galleria
+        if segment.winflow > 0:
+            self.pvcTubeDiameter = dewatering(segment.winflow/1000., segment.fine, segment.hp, 7200, 256, 80)
+            self.clsTubeDiameter = dewatering(segment.winflow/1000., segment.fine, segment.hp, 7200, 256, 67)
+        else:
+            self.pvcTubeDiameter = 0
+            self.clsTubeDiameter = 0
+
 
     def UrPi_HB(self, pi):
         #curva caratteristica con parametri di H-B secondo Carranza torres del 2006
