@@ -36,7 +36,7 @@ tbm4.name = 'GL_RBS'
 tbm4.alignmentCode='GLSUD'
 tbm4.manifacturer='Robbins'
 tbm4.type='DS' # O = open, S = single shield, DS = double shield
-tbm4.shieldLength=1.1
+tbm4.shieldLength=1.1 # non lo trovo
 tbm4.frontShieldDiameter=7.01
 tbm4.tailShieldDiameter=7.01 # NON LO TROVO
 tbm4.excavationDiameter=7.01 # NON LO TROVO

@@ -65,7 +65,7 @@ def get_bbtparameters(sDBPath):
     conn = getDBConnection(sDBPath)
     conn.row_factory = bbtparameter_factory
     cur = conn.cursor()
-    bbtresults = cur.execute("SELECT inizio,fine,est,nord,he,hp,co,tipo,g_med,g_stddev,\
+    bbtresults = cur.execute("SELECT inizio,fine,est,nord,he,hp,co,tipo,wdepth,g_med,g_stddev,\
                               sigma_ci_avg,sigma_ci_stdev,mi_med,mi_stdev,ei_med,ei_stdev,cai_med,\
                               cai_stdev,gsi_med,gsi_stdev,rmr_med,rmr_stdev,profilo_id,geoitem_id,\
                               title,sigma_ti_min,sigma_ti_max,k0_min,k0_max,perc\
@@ -177,10 +177,10 @@ def insert_eval4Geo(sDBPath, bbt_evalparameters):
                        requiredThrustForce,availableThrust,dailyAdvanceRate,profilo_id,geoitem_id,\
                        title,sigma_ti,k0,t0,t1,t3,t4,t5,inSituConditionSigmaV,tunnelRadius,rockE,\
                        mohrCoulombPsi,rockUcs,inSituConditionGsi,hoekBrownMi,hoekBrownD,\
-                       hoekBrownMb,hoekBrownS,hoekBrownA,hoekBrownMr,hoekBrownSrhoekBrownAr,\
+                       hoekBrownMb,hoekBrownS,hoekBrownA,hoekBrownMr,hoekBrownSr,hoekBrownAr,\
                        urPiHB,rpl,picr,ldpVlachBegin,ldpVlachEnd)\
-                       values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
-                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                       values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
+                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        bbt_evalparameters)
         conn.commit()
         conn.close()
@@ -191,7 +191,7 @@ def insert_eval4Iter(sDBPath, bbt_evalparameters, bbttbmkpis):
         c = conn.cursor()
         c.executemany("INSERT INTO BbtTbmKpi (tunnelName,tbmName,iterationNo,kpiKey,kpiDescr,minImpact,maxImpact,avgImpact,appliedLength,percentOfApplication,probabilityScore,totalImpact) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", bbttbmkpis)
         conn.commit()
-        c.executemany("INSERT INTO BbtParameterEval (           insertdate,\
+        c.executemany("INSERT INTO BbtParameterEval (insertdate,\
                                                             iteration_no, \
                                                             tunnelName,\
                                                             tbmName,\
@@ -239,7 +239,7 @@ def insert_eval4Iter(sDBPath, bbt_evalparameters, bbttbmkpis):
                                                             picr,\
                                                             ldpVlachBegin,\
                                                             ldpVlachEnd\
-        ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbt_evalparameters)
+        ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbt_evalparameters)
         conn.commit()
         conn.close()
 

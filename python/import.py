@@ -77,8 +77,8 @@ insert_geoitems(sDBPath, geoseg_list)
 ########### BbtProfilo - Acquisisco Profilo
 bprofilo = xlrd.open_workbook(sProfilo_XLS)
 civilReport_sheet = bprofilo.sheet_by_name(u'CivilReport')
-headrow = civilReport_sheet.row(16)  # header
-row = civilReport_sheet.row(17)  # first row
+headrow = civilReport_sheet.row(0)  # header
+row = civilReport_sheet.row(1)  # first row
 """
 from xlrd.sheet import ctype_text
 print('(Column #) type:value')
@@ -89,12 +89,12 @@ for idx, cell_obj in enumerate(row):
 num_cols = civilReport_sheet.ncols
 profilo_list = []
 prev_prog = 0
-for row_idx in range(17, civilReport_sheet.nrows):
+for row_idx in range(1, civilReport_sheet.nrows):
     keepRow = False
     rowvalues=[]
-    for col_idx in range(1, num_cols):  # Iterate through columns
+    for col_idx in range(0, num_cols):  # Iterate through columns
         cell_obj = civilReport_sheet.cell(row_idx, col_idx)  # Get cell object by row, col
-        if col_idx == 1:
+        if col_idx == 0:
            # aghensi@20160531 - ho dato float ogni 10m
 #            s1 = cell_obj.value.split(',')
 #            dec = int(s1[1])
@@ -158,7 +158,7 @@ for bbtpro in profilo_list:
     for geosec in geoseg_list:
         if geosec.inizio <=  bbtpro.fine < geosec.fine:
             tmparr = [bbtpro.inizio , bbtpro.fine, bbtpro.est, bbtpro.nord, bbtpro.he, bbtpro.hp,
-                      bbtpro.co, bbtpro.tipo,
+                      bbtpro.co, bbtpro.tipo, bbtpro.wdepth,
                       geosec.g_med, geosec.g_stddev, geosec.sigma_ci_avg, geosec.sigma_ci_stdev,
                       geosec.mi_med, geosec.mi_stdev, geosec.ei_med, geosec.ei_stdev,
                       geosec.cai_med, geosec.cai_stdev, geosec.gsi_med, geosec.gsi_stdev,

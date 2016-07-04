@@ -38,7 +38,6 @@ def insert_georandom(sDBPath,nIter, bbt_parameters,sKey):
             rmr =  mynorms['rmr'].rvs()
             sti = mynorms['sti'].rvs()
             k0 = mynorms['k0'].rvs()
-            ppv = bbt_parameter + (gamma,sci,mi,ei,cai,rmr,gsi, sti, k0, n,strnow)
             bbt_insertval.append((strnow, n, sKey, sKey, bbt_parameter.fine, bbt_parameter.he,
                                   bbt_parameter.hp, bbt_parameter.co, bbt_parameter.wdepth,
                                   gamma, sci, mi, ei, cai, gsi,
@@ -73,6 +72,7 @@ def createLogger(indx=0,name="main_loop"):
 def mp_producer(parms):
     idWorker,  nIter, sDBPath, loopTbms ,sKey = parms
     # ritardo per evitare conflitti su DB
+    # aghensi@20160606 commentato per velocizzare debug
     tsleep(idWorker*10+1)
     start_time = ttime()
     now = datetime.datetime.now()
@@ -86,6 +86,7 @@ def mp_producer(parms):
     #inizializzo le info sui tracciati dai file di configurazione
     inizio_GL = bbtConfig.getfloat('Import','inizio_GL')
     fine_GL = bbtConfig.getfloat('Import','fine_GL')
+    projectRefCost = bbtConfig.getfloat('Import', 'project_ref_cost')
 
     # danzi.tn@20151115 recepimento modifiche su InfoAlignment fatte da Garbriele
     #LEGGO I PARAMETRI DA FILE DI CONFIGURAZIONE
@@ -175,51 +176,52 @@ def mp_producer(parms):
                                 continue
                             kpiTbm.setKPI4SEG(alnCurr,tbmsect,bbtparameter4seg)
                             #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
-                            bbt_evalparameters.append((strnow, mainIterationNo,alnCurr.description, tbmKey, param_to_use.fine,param_to_use.he,param_to_use.hp,param_to_use.co,bbtparameter4seg.gamma,\
-                                                            bbtparameter4seg.sci,bbtparameter4seg.mi,bbtparameter4seg.ei,bbtparameter4seg.cai,bbtparameter4seg.gsi,bbtparameter4seg.rmr,\
-                                                            tbmsect.pkCe2Gl(param_to_use.fine),\
-                                                            tbmsect.TunnelClosureAtShieldEnd*100. ,\
-                                                            tbmsect.rockBurst.Val,\
-                                                            tbmsect.frontStability.Ns,\
-                                                            tbmsect.frontStability.lambdae,\
-                                                            tbmsect.penetrationRate*1000. ,\
-                                                            tbmsect.penetrationRateReduction*1000. ,\
-                                                            tbmsect.contactThrust, \
-                                                            tbmsect.torque, \
-                                                            tbmsect.frictionForce, \
-                                                            tbmsect.requiredThrustForce, \
-                                                            tbmsect.availableThrust, \
-                                                            tbmsect.dailyAdvanceRate, \
-                                                            param_to_use.profilo_id, \
-                                                            param_to_use.geoitem_id, \
-                                                            param_to_use.title, \
-                                                            bbtparameter4seg.sti, \
-                                                            bbtparameter4seg.k0, \
-                                                            tbmsect.t0, \
-                                                            tbmsect.t1, \
-                                                            tbmsect.t3, \
-                                                            tbmsect.t4, \
-                                                            tbmsect.t5, \
-                                                            tbmsect.InSituCondition.SigmaV, \
-                                                            tbmsect.Excavation.Radius, \
-                                                            tbmsect.Rock.E, \
-                                                            tbmsect.MohrCoulomb.psi, \
-                                                            tbmsect.Rock.Ucs, \
-                                                            tbmsect.InSituCondition.Gsi, \
-                                                            tbmsect.HoekBrown.Mi, \
-                                                            tbmsect.HoekBrown.D, \
-                                                            tbmsect.HoekBrown.Mb, \
-                                                            tbmsect.HoekBrown.S, \
-                                                            tbmsect.HoekBrown.A, \
-                                                            tbmsect.HoekBrown.Mr, \
-                                                            tbmsect.HoekBrown.Sr, \
-                                                            tbmsect.HoekBrown.Ar, \
-                                                            tbmsect.UrPi_HB(0.), \
-                                                            tbmsect.Rpl, \
-                                                            tbmsect.Picr, \
-                                                            tbmsect.LDP_Vlachopoulos_2009(0.), \
-                                                            tbmsect.LDP_Vlachopoulos_2009(tbm.Slen), \
-                                                            ))
+                            bbt_evalparameters.append((
+                                strnow, mainIterationNo,alnCurr.description, tbmKey,
+                                param_to_use.fine,param_to_use.he,param_to_use.hp,
+                                param_to_use.co, param_to_use.wdepth, bbtparameter4seg.gamma,
+                                bbtparameter4seg.sci, bbtparameter4seg.mi, bbtparameter4seg.ei,
+                                bbtparameter4seg.cai,bbtparameter4seg.gsi,bbtparameter4seg.rmr,\
+                                tbmsect.pkCe2Gl(param_to_use.fine),
+                                tbmsect.TunnelClosureAtShieldEnd*100., tbmsect.rockBurst.Val,\
+                                tbmsect.frontStability.Ns, tbmsect.frontStability.lambdae,\
+                                tbmsect.penetrationRate*1000.,
+                                tbmsect.penetrationRateReduction*1000.,
+                                tbmsect.contactThrust, tbmsect.torque,
+                                tbmsect.frictionForce,
+                                tbmsect.requiredThrustForce,
+                                tbmsect.availableThrust,
+                                tbmsect.dailyAdvanceRate,
+                                param_to_use.profilo_id,
+                                param_to_use.geoitem_id,
+                                param_to_use.title,
+                                bbtparameter4seg.sti,
+                                bbtparameter4seg.k0,
+                                tbmsect.t0,
+                                tbmsect.t1,
+                                tbmsect.t3,
+                                tbmsect.t4,
+                                tbmsect.t5,
+                                tbmsect.InSituCondition.SigmaV,
+                                tbmsect.Excavation.Radius,
+                                tbmsect.Rock.E,
+                                tbmsect.MohrCoulomb.psi,
+                                tbmsect.Rock.Ucs,
+                                tbmsect.InSituCondition.Gsi,
+                                tbmsect.HoekBrown.Mi,
+                                tbmsect.HoekBrown.D,
+                                tbmsect.HoekBrown.Mb,
+                                tbmsect.HoekBrown.S,
+                                tbmsect.HoekBrown.A,
+                                tbmsect.HoekBrown.Mr,
+                                tbmsect.HoekBrown.Sr,
+                                tbmsect.HoekBrown.Ar,
+                                tbmsect.UrPi_HB(0.),
+                                tbmsect.Rpl,
+                                tbmsect.Picr,
+                                tbmsect.LDP_Vlachopoulos_2009(0.),
+                                tbmsect.LDP_Vlachopoulos_2009(tbm.Slen)
+                                ))
                     kpiTbm.updateKPI(alnCurr)
                     bbttbmkpis += kpiTbm.getBbtTbmKpis()
                     sys.stdout.flush()
@@ -331,11 +333,18 @@ if __name__ == "__main__":
         list_a = range(mp_np)
         start_time = ttime()
         job_args = [(i, nIter, sDBPath, loopTbms, sKey) for i, item_a in enumerate(list_a)]
+
+        # aghensi@20160603 singolo thread per debug - inizio
         workers = Pool(processes=mp_np)
         main_logger.info("Istanziati %d processi" % mp_np  )
         results = workers.map(mp_producer, job_args)
         workers.close()
         workers.join()
+
+#        for ja in job_args:
+#            mp_producer(ja)
+        # aghensi@20160603 singolo thread per debug - fine
+
         end_time = ttime()
         main_logger.info("Tutti i processi terminati, tempo totale %d secondi (in minuti = %f , in ore = %f ore)" % (end_time-start_time,(end_time-start_time)/60.,(end_time-start_time)/3600.))
         main_logger.info("Processo principale terminato")

@@ -116,6 +116,8 @@ def main(argv):
     ########### Outupt Folder
     sDiagramsFolder = bbtConfig.get('Diagrams','folder')
     sDiagramsFolderPath = os.path.join(os.path.abspath('..'), sDiagramsFolder)
+    if not os.path.exists(sDiagramsFolderPath):
+        os.makedirs(sDiagramsFolderPath)
     # mi connetto al database
     conn = getDBConnection(sDBPath)
     # definisco il tipo di riga che vado a leggere, bbtparametereval_factory viene definita in bbtnamedtuples
@@ -210,9 +212,23 @@ def main(argv):
             if len(segmentsToShow) > 0:
                 for sCriteria, sProg in segmentsToShow:
                     # danzi.tn@20151123 calcolo iterazioni per la TBM corrente (non e' detto che siano tutte uguali)
-                    sSql = "SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3 +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv FROM BbtParameter, BBtParameterEval  WHERE  BbtParameter.profilo_id = BBtParameterEval.profilo_id  AND BbtParameter.fine = "+sCriteria+" AND BBtParameterEval.tunnelNAme = '"+tun+"' AND tbmNAme='"+tbmKey+"'"
+                    sSql = """SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3
+                            +BBtParameterEval.t4 +BBtParameterEval.t5 AS tsum, 1 AS adv
+                            FROM BbtParameter, BBtParameterEval
+                            WHERE BbtParameter.profilo_id = BBtParameterEval.profilo_id
+                                AND BbtParameter.fine = """+sCriteria+"""
+                                AND BBtParameterEval.tunnelNAme = '"""+tun+"""'
+                                AND tbmNAme='"""+tbmKey+""""'"""
                     if bGroupTypes:
-                        sSql = "SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3 +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv FROM BbtParameter, BBtParameterEval, BbtTbm  WHERE BbtParameter.profilo_id = BBtParameterEval.profilo_id  AND BbtParameter.fine = "+sCriteria+" AND  BbtTbm.name = BBtParameterEval.tbmName AND BbtParameter.profilo_id = BBtParameterEval.profilo_id  AND BBtParameterEval.tunnelNAme = '"+tun+"' AND BbtTbm.type='"+tbmKey+"'"
+                        sSql = """SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3
+                                +BBtParameterEval.t4 +BBtParameterEval.t5 AS tsum, 1 AS adv
+                                FROM BbtParameter, BBtParameterEval, BbtTbm
+                                WHERE BbtParameter.profilo_id = BBtParameterEval.profilo_id
+                                  AND BbtParameter.fine = """+sCriteria+"""
+                                  AND  BbtTbm.name = BBtParameterEval.tbmName
+                                  AND BbtParameter.profilo_id = BBtParameterEval.profilo_id
+                                  AND BBtParameterEval.tunnelNAme = '"""+tun+"""'
+                                  AND BbtTbm.type='"""+tbmKey+"""'"""
                     cur.execute(sSql)
                     bbtresults = cur.fetchall()
                     pValues = []
@@ -239,21 +255,40 @@ def main(argv):
                         ax1.yaxis.grid(True)
                         sFileNAme = "bbt_%s_%s_%s_%s_hist.svg" % ( tun.replace (" ", "_"), replaceTBMName(tbmKey),sParameterToShow,sProg)
                         outputFigure(sDiagramsFolderPath, sFileNAme, format="svg")
+#                        print "Output su %s disponibile" % sFileNAme
+                        sFileNAme = "%s_%s_%s_%s_hist.png" % (tun.replace(" ", "_"), tbmKey, sParameterToShow, sProg)
+                        outputFigure(sDiagramsFolderPath, sFileNAme)
                         print "Output su %s disponibile" % sFileNAme
                         plt.close(fig)
             elif bShowProfile:
                 # danzi.tn@20151118 calcolo iterazioni per la TBM corrente (non e' detto che siano tutte uguali)
-                sSql = "select max(BbtParameterEval.iteration_no) as max_iter from BbtParameterEval WHERE BbtParameterEval.tbmName ='%s'" % tbmKey
+                sSql = """SELECT MAX(BbtParameterEval.iteration_no) AS max_iter
+                          FROM BbtParameterEval
+                          WHERE BbtParameterEval.tbmName ='"""+ tbmKey + """'"""
                 if bGroupTypes:
-                    sSql = "select max(BbtParameterEval.iteration_no) as max_iter from BbtParameterEval JOIN BbtTbm on BbtTbm.name = BbtParameterEval.tbmName WHERE BbtTbm.type ='%s'" % tbmKey
+                    sSql = """select max(BbtParameterEval.iteration_no) as max_iter
+                              from BbtParameterEval
+                              JOIN BbtTbm on BbtTbm.name = BbtParameterEval.tbmName
+                              WHERE BbtTbm.type ='"""+ tbmKey +""""'"""
                 cur.execute(sSql)
                 bbtresult = cur.fetchone()
                 M = float(bbtresult[0]) + 1.0
                 if M_Max > M:
                     print "Numero massimo di iterazioni per %s sono %d" % (tbmKey, M)
-                sSql = "SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3 +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv FROM BBtParameterEval  WHERE BBtParameterEval.tunnelNAme = '"+tun+"' AND tbmNAme='"+tbmKey+"' order by BBtParameterEval.iteration_no, BBtParameterEval.fine"
+                sSql = """SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3
+                          +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv
+                          FROM BBtParameterEval
+                          WHERE BBtParameterEval.tunnelNAme = '"""+tun+"""'
+                              AND tbmNAme='"""+tbmKey+"""'
+                          order by BBtParameterEval.iteration_no, BBtParameterEval.fine"""
                 if bGroupTypes:
-                    sSql = "SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3 +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv FROM BBtParameterEval JOIN BbtTbm on BbtTbm.name = BBtParameterEval.tbmName WHERE BBtParameterEval.tunnelNAme = '"+tun+"' AND BbtTbm.type='"+tbmKey+"' order by BBtParameterEval.iteration_no, BBtParameterEval.fine, BbtTbm.type"
+                    sSql = """SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3
+                              +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv
+                              FROM BBtParameterEval
+                              JOIN BbtTbm on BbtTbm.name = BBtParameterEval.tbmName
+                              WHERE BBtParameterEval.tunnelNAme = '"""+tun+"""'
+                                  AND BbtTbm.type='"""+tbmKey+"""'
+                              order by BBtParameterEval.iteration_no, BBtParameterEval.fine, BbtTbm.type"""
                 cur.execute(sSql)
                 bbtresults = cur.fetchall()
                 # recupero tutti i parametri e li metto in una lista
@@ -291,7 +326,10 @@ def main(argv):
                         pVal = tti[i][j]
                         if bGroupTypes:
                             pVal = pVal/tbmCount
-                    outValues.append([int(bbt_parametereval['iteration_no']),float(bbt_parametereval['fine']), float(bbt_parametereval['he']),float(bbt_parametereval['hp']),pVal])
+                    outValues.append([int(bbt_parametereval['iteration_no']),
+                                      float(bbt_parametereval['fine']),
+                                      float(bbt_parametereval['he']),
+                                      float(bbt_parametereval['hp']),pVal])
                     parm2show[i][j] = pVal
                     i += 1
                 for i in range(int(N)):
@@ -314,14 +352,15 @@ def main(argv):
                     ylimSup = parmDict[sParameterToShow][3]
                     ymainInf = min(he)
                     fig = plt.figure(figsize=(32, 20), dpi=100)
+                    matplotlib.rcParams.update({'font.size': 18})
                     ax1 = fig.add_subplot(111)
                     ax1.set_ylim(0,max(he)+100)
-                    title("%s - %s" % (tun,replaceTBMName(tbmKey)))
+                    title("%s - %s" % (tun,tbmKey))
                     ax1.plot(pi,he,'b-', linewidth=1)
                     if bShowlTunnel:
                         ax1.plot(pi,hp,'k-', linewidth=1)
-                    ax1.set_xlabel('Progressiva (m)')
-                    ax1.set_ylabel('Quota (m)', color='b')
+                    ax1.set_xlabel('Station (m)')
+                    ax1.set_ylabel('Elevation (m)', color='b')
                     for tl in ax1.get_yticklabels():
                         tl.set_color('b')
                     ##########
@@ -336,14 +375,15 @@ def main(argv):
                     ax2.set_ylabel("%s (%s)" % (parmDict[sParameterToShow][0],parmDict[sParameterToShow][1]), color='r')
                     for tl in ax2.get_yticklabels():
                         tl.set_color('r')
-                    outputFigure(sDiagramsFolderPath,"bbt_%s_%s_%s.svg" % ( tun.replace (" ", "_") , replaceTBMName(tbmKey),sParameterToShow), format="svg")
+                    #outputFigure(sDiagramsFolderPath,"%s_%s_%s.svg" % (tun.replace(" ", "_"), tbmKey, sParameterToShow), "svg")
+                    outputFigure(sDiagramsFolderPath,"%s_%s_%s.png" % (tun.replace(" ", "_"), tbmKey, sParameterToShow))
                     plt.close(fig)
                     # esposrto in csv i valori di confronto
-                    csvfname=os.path.join(sDiagramsFolderPath,"bbt_%s_%s_%s.csv" % ( tun.replace (" ", "_") , replaceTBMName(tbmKey),sParameterToShow))
-                    with open(csvfname, 'wb') as f:
-                        writer = csv.writer(f,delimiter=";")
-                        writer.writerow(('iterazione','fine','he','hp',sParameterToShow,'media','min95' ,'max95' ))
-                        writer.writerows(outValues)
+#                    csvfname=os.path.join(sDiagramsFolderPath,"%s_%s_%s.csv" % ( tun.replace(" ", "_"), tbmKey, sParameterToShow))
+#                    with open(csvfname, 'wb') as f:
+#                        writer = csv.writer(f,delimiter=";")
+#                        writer.writerow(('iterazione','fine','he','hp',sParameterToShow,'media','min95' ,'max95' ))
+#                        writer.writerows(outValues)
 
 
 
@@ -364,11 +404,11 @@ def main(argv):
                 dictKPI[key].append( item[1:-1] )
                 listToExport.append(item[:4])
             # esposrto in csv i valori di confronto
-            csvfname=os.path.join(sDiagramsFolderPath,"bbt_%s_all_data.csv" %  tun.replace (" ", "_") )
-            with open(csvfname, 'wb') as f:
-                writer = csv.writer(f,delimiter=";")
-                writer.writerow(('kpi','tbm','medie','sigma'  ))
-                writer.writerows(listToExport)
+#            csvfname=os.path.join(sDiagramsFolderPath,"%s_all_data.csv" %  tun.replace (" ", "_") )
+#            with open(csvfname, 'wb') as f:
+#                writer = csv.writer(f,delimiter=";")
+#                writer.writerow(('kpi','tbm','medie','sigma'  ))
+#                writer.writerows(listToExport)
             for key in dictKPI:
                 keyDescr = dictDescr[key]
                 allTbmData = dictKPI[key]
@@ -388,7 +428,7 @@ def main(argv):
                 tbmHiddenNames = []
                 for tk in tbmNames:
                     plotColors.append(tbmColors[tk])
-                    tbmHiddenNames.append(replaceTBMName(tk))
+                    tbmHiddenNames.append(tk)
                 if len(tbmDatas[0]) < 3:
                     #Stampa per quando len(tbmDatas) < 3
                     width = 0.35
@@ -415,7 +455,8 @@ def main(argv):
                         plt.bar(xind, tbmMeans, width,color=plotColors, yerr=tbmSigmas)
                         plt.xticks(xind + width/2., tbmHiddenNames)
 
-                outputFigure(sDiagramsFolderPath,"bbt_%s_%s_comp.svg" % (tun.replace (" ", "_") , key), format="svg")
+                #outputFigure(sDiagramsFolderPath,"%s_%s_comp.svg" % (tun.replace (" ", "_") , key), format="svg")
+                outputFigure(sDiagramsFolderPath,"%s_%s_comp.png" % (tun.replace (" ", "_") , key))
                 plt.close(fig)
 
 

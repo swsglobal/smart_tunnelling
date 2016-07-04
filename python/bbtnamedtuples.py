@@ -116,43 +116,48 @@ bbtClassReliabilityList.append(bbtcls)
 
 
 parmDict = {
-    'iteration_no': ("Numero Iterazioni", "N",0,0),\
-    'fine':("Progressiva", "m",0,0),\
-    'he':("Quota", "m",0,0),\
-    'hp':("Quota di progetto", "m",0,0),\
-    'co':("Copertura", "m",0,0),\
-    'gamma':("Peso di volume", "kN/mc",0,0),\
-    'sigma':("Resistenza a compressione", "GPa",0,0),\
-    'mi':("Parametro dell'inviluppo di rottura", "-",0,0),\
-    'ei':("Modulo di deformazione", "GPa",0,0),\
-    'cai':("Indice di Abrasivita'", "-",0,0),\
-    'gsi':("GSI", "-",0,0),\
-    'rmr':("RMR", "-",0,0),\
-    'inSituConditionSigmaV':("In-situ Stress", "MPA",0,0),\
-    'rockE':("Young modulus in MPa", "MPA",0,0),\
-    'rockUcs':("UCS", "MPA",0,0),\
-    'pkgl':("Progressiva", "m",0,0),\
-    'closure':("Chiusura a fine scudo", "cm",0,40),\
-    'ldpVlachBegin':("Convergenza al fronte", "cm",0,0.1),\
-    'ldpVlachEnd':("Convergenza a fine scudo", "cm",0,0.1),\
-    'rockburst':("Rockburst", "-",0,0.6),\
-    'front_stability_ns':("xxx", "GPa",0,1.2),\
-    'front_stability_lambda':("Metodo di Panet (Lambda E)", "-",0,3.2),\
-    'penetrationRate':("xxx", "GPa",0,0),\
-    'penetrationRateReduction':("xxx", "GPa",0,0),\
-    'contactThrust':("xxx", "GPa",0,0),\
-    'torque':("xxx", "GPa",0,0),\
-    'frictionForce':("xxx", "GPa",0,0),\
-    'requiredThrustForce':("xxx", "GPa",0,0),\
-    'availableThrust':("xxx", "GPa",0,0),\
-    'dailyAdvanceRate':("Avanzamento giornaliero", "m/die",0,0),
-    't1':("Tempo di produzione teorico", "gg",0,0),
-    't2':("Tempo di montaggio/smontaggio/spostamento", "gg",0,0),
-    't3':("Extra tempo per scavo in rocce dure", "gg",0,0),
-    't4':("Tempo apprestamento prospezioni", "gg",0,0),
-    't5':("Tempo approstamento consolidamenti", "gg",0,0),
-    'tsum':("Tempo di scavo totale", "gg",0,0),
-    'adv':("Avanzamento cumulato", "gg",0,1400),
-    'sigma_ti':("Resistenza a trazione", "GPa",0,0),
-    'k0':("K0", "-",0,0)
-}
+    'iteration_no': ("Numero Iterazioni", "N", 0, 0),
+    'fine':("Progressiva", "m", 0, 0),
+    'he':("Elevation", "m", 0, 0),
+    'hp':("Quota di progetto", "m", 0, 0),
+    'co':("Overburden", "m", 0, 0),
+    'hw':("Quota Falda", "m", 0, 0),
+    'wdepth':("Profondita falda", "m", 0, 0),
+    'gamma':("Peso di volume", "kN/mc", 0, 0),
+    'sigma':("Resistenza a compressione", "GPa", 0, 0),
+    'mi':("Parametro dell'inviluppo di rottura", "-", 0, 0),
+    'ei':("Modulo di deformazione", "GPa", 0, 0),
+    'cai':("Indice di Abrasivita'", "-", 0, 0),
+    'gsi':("GSI", "-", 0, 0),
+    'rmr':("RMR", "-", 0, 0),
+    'inSituConditionSigmaV':("In-situ Stress", "MPA", 0, 0),
+    'rockE':("Young modulus in MPa", "MPA", 0, 0),
+    'rockUcs':("UCS", "MPA", 0, 0),
+    'pkgl':("Progressiva", "m", 0, 0),
+    'closure':("Closure at shield tail", "cm", 0, 30),
+    'ldpVlachBegin':("Convergenza al fronte", "cm", 0, 0.1),
+    'ldpVlachEnd':("Convergenza a fine scudo", "cm", 0, 0.1),
+    'rockburst':("Rockburst", "-", 0, 0.6),
+    'front_stability_ns':("xxx", "GPa", 0, 1.2),
+    'front_stability_lambda':("Panet Method (Lambda E)", "-", 0, 3.2),
+    'penetrationRate':("xxx", "GPa", 0, 0),
+    'penetrationRateReduction':("xxx", "GPa", 0, 0),
+    'contactThrust':("Contact thrust", "kN", 0, 0),
+    'torque':("xxx", "GPa", 0, 0),
+    'frictionForce':("Friction Force", "kN", 0, 0),
+    'requiredThrustForce':("Required thrust force", "kN", 0, 0),
+    'availableThrust':("Available thrust force", "kN", 0, 0),
+    'dailyAdvanceRate':("Daily advance rate", "m/die", 0, 0),
+    't1':("Tempo di produzione teorico", "gg", 0, 0),
+    't2':("Tempo di montaggio/smontaggio/spostamento", "gg", 0, 0),
+    't3':("Extra tempo per scavo in rocce dure", "gg", 0, 0),
+    't4':("Tempo apprestamento prospezioni", "gg", 0, 0),
+    't5':("Tempo approstamento consolidamenti", "gg", 0, 0),
+    'tsum':("Tempo di scavo totale", "gg", 0, 0),
+    'adv':("Avanzamento cumulato", "gg", 0, 0),
+    'sigma_ti':("Resistenza a trazione", "GPa", 0, 0),
+    'k0':("K0", "-", 0, 0),
+    'LocFt':("Per-cutter force", 'kN', 0, 0),
+    'pvcTubeDiameter': ("dewatering tube diameter - PVC", "m", 0, 0),
+    'clsTubeDiameter': ("dewatering tube diameter - concrete", "m", 0, 0)
+    }

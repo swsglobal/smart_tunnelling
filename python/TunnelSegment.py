@@ -479,8 +479,9 @@ class TBM:
         self.cutterheadThickness = tbmData.cutterheadThickness
         self.Slen1 =tbmData.frontShieldLength
 
-# TODO: aghensi - come gestisco questi dati????
+# TODO: aghensi - come trovo questi dati????
         # penetration rate per ogni decina di rmr: 0, 10, 20, 30.....100
+        # media dei valori tra Cassinelli et al.(1982), Sapigni et al.(2002), Grandori et al. (2011)
         self.rop= array((1.2904525, 1.2904525,1.540995,1.7915375,1.97058,2.1246225,2.187465,2.2253075,1.97355,1.7217925, 1.7217925)) # m/h metri di scavo all'ora
         self.penetrationPerRevolution = self.rop/60./self.rpm  #in m per rivoluzione
         # definisco l'Utilization Factor
