@@ -200,7 +200,8 @@ class InSituCondition:
 # caratteristiche dell'ammasso e stato tensionale locale
     def __init__(self, overburden, h_2, groundwaterdepth, gamma, k0min, k0max, gsi, rmr):
         self.Overburden = overburden #copertura netta
-        self.Groundwaterdepth = groundwaterdepth #copertura netta
+        # aghensi@20160601 - aggiunta profondita acqua se falda sopra profilo di progetto
+        self.Groundwaterdepth = min([groundwaterdepth, overburden]) #copertura netta
         self.K0 = 1.0
         self.K0min = k0min
         self.K0max = k0max
@@ -217,6 +218,7 @@ class InSituCondition:
         else:
             self.Rmr = max(5., gsi+5)
         self.SigmaV = gamma*(overburden+h_2)/1000.0 # MPa
+        self.p_w = 9.81*(overburden-groundwaterdepth)/1000. # MPa
 
     def UpdateK0KaKp(self, typ, fi):
         self.Kp = (1.0 + math.sin(math.radians(fi)))/(1.0 - math.sin(math.radians(fi)))
@@ -263,6 +265,8 @@ class MohrCoulomb:
         self.C = 0. #in KPa
         self.Cr = 0. #in KPa
         self.SigmaCm0 = 0.
+        self.SigmaCm0r = 0.
+        self.psi = 0.
 
     # inizializzazione per rocce
     def SetRock(self, hb, ucs):
@@ -287,6 +291,10 @@ class MohrCoulomb:
         self.C = c
         self.Fir = fir
         self.SigmaCm0 = 2.0*c*math.cos(math.radians(fi))/(1.0-math.sin(math.radians(fi)))/1000.0
+        # HACK aghensi@20160603 - imposto anche i parametri residui per non avere errori nelle altre funzioni
+        self.Cr = c
+        self.SigmaCm0r = 2.0*c*math.cos(math.radians(fir))/(1.0-math.sin(math.radians(fir)))/1000.0
+        self.psi = (self.Fi-self.Fir)/1.5
 
 class Excavation:
     # caratteristiche legate allo scavo
@@ -397,7 +405,8 @@ class Breakaway:
 
     #definisco l'altezza di materiale di frana secondo tamez per terreni
     def calculate(self, nu, t, fiRi):
-        # nu e' opening Ratio della cutterhead
+        # nu = opening Ratio della cutterhead
+        # t = spessore della cutterhead
         si = self.si
         D = self.D
 #        D = excav.Radius*2.
@@ -457,7 +466,7 @@ class TBM:
 
         self.dotation = tbmData.dotationForProspection #numero tra 0 e 1 dove 0 e' la meno dotata
         self.name = tbmData.name
-
+        self.weight = tbmData.weight
         self.gap = tbmData.overcut + (self.excavationDiam-tbmData.tailShieldDiameter)/2. #gap in m
         self.gap1 = tbmData.overcut + (self.excavationDiam-tbmData.frontShieldDiameter)/2. #gap in m del primo scudo (per le DS)
         self.CutterNo = tbmData.cutterCount # numebr of cutters
@@ -470,6 +479,7 @@ class TBM:
         self.cutterheadThickness = tbmData.cutterheadThickness
         self.Slen1 =tbmData.frontShieldLength
 
+# TODO: aghensi - come gestisco questi dati????
         # penetration rate per ogni decina di rmr: 0, 10, 20, 30.....100
         self.rop= array((1.2904525, 1.2904525,1.540995,1.7915375,1.97058,2.1246225,2.187465,2.2253075,1.97355,1.7217925, 1.7217925)) # m/h metri di scavo all'ora
         self.penetrationPerRevolution = self.rop/60./self.rpm  #in m per rivoluzione
@@ -530,7 +540,8 @@ class TBMSegment:
         st = segment.sti
         mi = segment.mi
         overburden = segment.co
-        groundwaterdepth = segment.co
+        # aghensi@20160704 - aggiunta groundwaterdepth
+        groundwaterdepth = segment.wdepth
         k0min = segment.k0_min
         k0max = segment.k0_max
         gsi = segment.gsi
@@ -567,17 +578,12 @@ class TBMSegment:
         bat = Breakaway()
         if self.frontStability.lambdae > 0.6:
             self.frontStabilityBreakawayTorque = 0.
-        elif self.frontStability.lambdae > 0.3:
+        else:
             # tra 0.3 e 0.6 ipotizzo che aumenti progressivamente il diametro di base
-            dEq = self.Excavation.Radius*2.*(0.6-self.frontStability.lambdae)/.3
+            dEq = self.Excavation.Radius*2.*(0.6-max(self.frontStability.lambdae,0.3))/.3
             bat.setupFrontInstability(overburden, self.MohrCoulomb, gamma, dEq)
             bat.calculate(tbm.openingRatio, tbm.cutterheadThickness, fiRi)
 #            print 'Breakaway torque for front stability mid = %f' % (bat.torque)
-        else:
-            dEq=self.Excavation.Radius*2.
-            bat.setupFrontInstability(overburden, self.MohrCoulomb, gamma, dEq)
-            bat.calculate(tbm.openingRatio, tbm.cutterheadThickness, fiRi)
-#            print 'Breakaway torque for front stability full = %f' % (bat.torque)
         self.frontStabilityBreakawayTorque = bat.torque
 
         # definisco il breakawayTorque per il rockburst
@@ -652,7 +658,6 @@ class TBMSegment:
                 self.frontFrictionForce = total*self.Tbm.tailShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
                 self.tailFrictionForce = 0.
                 self.frictionForce = self.frontFrictionForce
-
         elif self.TunnelClosureAtShieldEnd<=self.Tbm.gap and self.TunnelClosureAtShieldEnd1>self.Tbm.gap1:
             self.contactType = 2
             self.Xcontact = self.xLim(self.Tbm.gap1)
@@ -675,12 +680,14 @@ class TBMSegment:
             total = maxPressure*(self.Tbm.Slen-self.Tbm.Slen1)/2.0
             self.tailFrictionForce = total*self.Tbm.tailShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
             self.frictionForce = self.frontFrictionForce
+        # aghensi@20160704 - aggiungo forza di attrito per il trascinamento della macchina
+        self.frictionForce += self.Tbm.weight*frictionCoeff
 
         #definisco il thrust che rimane per l'avanzamento tolti gli attriti e la convergenza sullo scudo
         if tbm.type == 'DS':
-            self.availableThrust = max(0., self.Tbm.installedAuxiliaryThrustForce - self.frictionForce)
+            self.availableThrust = max(0., self.Tbm.installedThrustForce - self.frictionForce)
         else:
-            self.availableThrust = max(0., self.Tbm.installedAuxiliaryThrustForce - self.frictionForce - self.Tbm.BackupDragForce)
+            self.availableThrust = max(0., self.Tbm.installedThrustForce - self.frictionForce - self.Tbm.BackupDragForce)
 
         #se non mi rimane thurst devo consolidare o sbloccare la macchina
         ratio = self.availableThrust/self.Tbm.totalContactThrust
@@ -691,12 +698,13 @@ class TBMSegment:
         else:
             self.cavityStabilityPar = 1.
         #considerao anche il blocco dello scudo posteriore
-        if self.Tbm.installedAuxiliaryThrustForce>self.tailFrictionForce:
+        if self.Tbm.installedThrustForce > self.tailFrictionForce:
             self.tailCavityStabilityPar = 0.
         else:
             self.tailCavityStabilityPar = 1.
 
         # definisco thrust e torque
+        # metodo colorado school of mines
         psi = self.Tbm.psi
         ucs = self.Rock.Ucs
         sigmat = self.Rock.Sigmat
@@ -735,6 +743,7 @@ class TBMSegment:
         self.torque+=self.breakawayTorque
         dar = 24.*locuf*locp*self.Tbm.rpm*60. # in m/gg con anni di 365 gg
         self.requiredThrustForce = self.Tbm.BackupDragForce+self.contactThrust+self.frictionForce
+        self.LocFt = locFt
 
         # considerazioni sulla produzione
         productionMax = self.Tbm.maxProduction
@@ -758,7 +767,9 @@ class TBMSegment:
         self.t5 = self.P5.duration
 
         # ora che ho tutti i tempi ridetermino il dayly advance rate come segment length / (t1+t3+t4+t5)
-        self.dailyAdvanceRate = self.segmentLength/(self.t1+self.t3+self.t4+self.t5)
+        # self.dailyAdvanceRate = self.segmentLength/(self.t1+self.t3+self.t4+self.t5)
+        # aghensi@20160704 - senza parametri di produzione il dailyAdvanceRate = dar
+        self.dailyAdvanceRate = dar
 
         # indicatori geotecnici
         self.G1 = G1(self.Tbm.type, self.frontStability.lambdae, self.availableBreakawayTorque-self.frontStabilityBreakawayTorque)
@@ -773,7 +784,8 @@ class TBMSegment:
 
     def UrPi_HB(self, pi):
         #curva caratteristica con parametri di H-B secondo Carranza torres del 2006
-        sigma0 = self.InSituCondition.SigmaV
+        # aghensi@20160601 aggiunto pressione acqua
+        sigma0 = self.InSituCondition.SigmaV-self.InSituCondition.p_w # in MPa
         sci = self.Rock.Ucs
         R = self.Excavation.Radius
         psi = math.radians(self.MohrCoulomb.psi)
@@ -904,8 +916,9 @@ class TBMSegment:
         fir = math.radians(self.MohrCoulomb.Fir)
         fir = math.atan(math.tan(fir)/coefTanFi)
         cr = self.MohrCoulomb.Cr / 1000.0 / coefC # MPa
-
-        p0 = self.P0
+        # aghensi@20160601 aggiunto pressione acqua
+        p0 = self.InSituCondition.SigmaV-self.InSituCondition.p_w # in MPa
+        #p0 = self.P0
         pcr = self.Pcr # in MPa
         pocp = self.Pocp
         pocr = self.Pocr
@@ -961,8 +974,10 @@ class TBMSegment:
         return self.CavityConvergence(x) - self.CavityConvergence(0.0)
 
     def PiUr(self, dur):
-        # restituisce il valore di pressione equivalente a una convergenza del cavo pari a dur
-        # iol risultato e' in MPa (1 MPa = 1000 kN/m2)
+        '''
+        restituisce il valore di pressione equivalente a una convergenza del cavo pari a dur
+        il risultato e' in MPa (1 MPa = 1000 kN/m2)
+        '''
         p0 = self.InSituCondition.SigmaV
         ur = self.CavityConvergence(0.0) + dur
         pi = 0.0
@@ -988,7 +1003,7 @@ class TBMSegment:
 
 class StabilizationMeasure:
     def __init__(self, pkFrom, pkTo, type, len):
-        self.pkFrom =pkFrom
+        self.pkFrom = pkFrom
         self.pkTo = pkTo
         self.type = type
         self.len = len

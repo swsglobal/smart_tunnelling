@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #from scipy.stats import *
 import matplotlib
 import numpy as np
@@ -30,11 +31,15 @@ def to_percent(y, position):
     else:
         return s + '%'
 # funzione che restituisce media e sigma di una gaussiana sulla base di valori minimi e massimi al 95 percentile
-def get_sigma_95(min,max):
+def get_sigma_95(min, max, percentile=95):
     if min==-1 or max == -1:
         return -1, 0
     avg = (max+min)/2.0
-    sigma = (max-avg)/2.0
+    if percentile == 95:
+        sigma = (max-avg)/2.0
+    elif percentile == 90:
+        #90° percentile = avg+sigma*1.28
+        sigma = (max-avg)/1.28
     return avg, sigma
 
 #riskvariables (in days/10m)
@@ -158,7 +163,7 @@ def get_my_norm_rvs_min_max(vmin,vmax,name=''):
     return retVal
 
 #danzi.tn@20151113 funzione statistica sulla base del numero di iterazioni
-def get_my_norm_min_max(vmin,vmax,name='',nIter=1000):
+def get_my_norm_min_max(vmin,vmax,name='', nIter=1000, percentile=95):
     if vmin==-1 or vmax==-1:
         return CNorm(0.0)
     elif nIter<2:
@@ -171,7 +176,7 @@ def get_my_norm_min_max(vmin,vmax,name='',nIter=1000):
         myNorm = rv_discrete(name='bbt_%s' % name, values=(hixk, hipk))
         return myNorm
     else:
-        mean , std = get_sigma_95(vmin,vmax)
+        mean , std = get_sigma_95(vmin,vmax, percentile)
         if mean == -1: return mean
         lower = vmin
         upper = vmax

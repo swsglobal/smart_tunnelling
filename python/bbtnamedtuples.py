@@ -2,10 +2,23 @@ from collections import namedtuple
 # id	inizio	fine	L	perc	type	g_med	g_stddev	sigma_ci_avg	sigma_ci_stdev	mi_med	mi_stdev	ei_med	ei_stdev	cai_med	cai_stdev	gsi_med	gsi_stdev
 BbtGeoitem = namedtuple('BbtGeoitem', ['id','inizio','fine','l','perc','type','g_med','g_stddev','sigma_ci_avg','sigma_ci_stdev','mi_med','mi_stdev','ei_med','ei_stdev','cai_med','cai_stdev','gsi_med','gsi_stdev','rmr_med','rmr_stdev','title','sigma_ti_min','sigma_ti_max','k0_min','k0_max'])
 #id=Vertice altimetrico inizio(calcolato)	fine=Progressiva	Est	Nord	he=Quota altimetrica esistente	hp=Progetto quota altimetrica	co=Differenza quota altimetrica	tipo=Tipo di punto
-BbtProfilo = namedtuple('BbtProfilo',['id','inizio','fine','est','nord','he','hp','co','tipo'])
-BbtParameter =  namedtuple('BbtParameter',['inizio','fine','est','nord','he','hp','co','tipo','g_med','g_stddev','sigma_ci_avg','sigma_ci_stdev','mi_med','mi_stdev','ei_med','ei_stdev','cai_med','cai_stdev','gsi_med','gsi_stdev','rmr_med','rmr_stdev','profilo_id','geoitem_id','title','sigma_ti_min','sigma_ti_max','k0_min','k0_max'])
-BbtReliability = namedtuple('BbtReliability',['id','inizio','fine','gmr_class','gmr_val','reliability','eval_var'])                                                        
-BbtParameterEvalMin = namedtuple('BbtParameterEvalMin',['gamma','sigma','mi','ei','cai','rmr', 'gsi', 'sigma_ti', 'k0' ,'profilo_id'])
+BbtProfilo = namedtuple('BbtProfilo',['id','inizio','fine','est','nord','he','hp','co','tipo','wdepth'])
+# aghensi@20160704 aggiunto percentuale per segmenti con materiali multipli
+BbtParameter =  namedtuple('BbtParameter',[
+    'inizio','fine','est','nord','he','hp','co','tipo','wdepth','g_med','g_stddev','sigma_ci_avg',
+    'sigma_ci_stdev','mi_med','mi_stdev','ei_med','ei_stdev','cai_med','cai_stdev','gsi_med',
+    'gsi_stdev','rmr_med','rmr_stdev','profilo_id','geoitem_id','title','sigma_ti_min',
+    'sigma_ti_max','k0_min','k0_max','perc'])
+BbtReliability = namedtuple('BbtReliability',['id','inizio','fine','gmr_class','gmr_val','reliability','eval_var'])
+BbtParameterEvalMin = namedtuple('BbtParameterEvalMin',['gamma','sigma','mi','ei','cai','rmr', 'gsi','sigma_ti', 'k0' ,'profilo_id'])
+# aghensi@20160704 rollback per far funzionare main_loop_pool; aggiunto perc
+BbtParameterEvalMain = namedtuple('BbtParameterEvalMain',[
+    'inizio', 'fine', 'est', 'nord', 'he', 'hp','co','tipo','g_med','g_stddev','sigma_ci_avg',
+    'sigma_ci_stdev','mi_med','mi_stdev','ei_med','ei_stdev','cai_med','cai_stdev','gsi_med',
+    'gsi_stdev','rmr_med','rmr_stdev','profilo_id','geoitem_id','title','sigma_ti_min',
+    'sigma_ti_max','k0_min','k0_max', 'perc', 'wdepth',
+    'gamma','sigma','mi','ei','cai','rmr', 'gsi', 'sigma_ti', 'k0', 'iteration_no', 'insertdate'
+    ])
 #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
 BbtParameterEval =  namedtuple('BbtParameterEval',[ 'insertdate',
                                                     'iteration_no',\
@@ -54,11 +67,7 @@ BbtParameterEval =  namedtuple('BbtParameterEval',[ 'insertdate',
                                                     'ldpVlachEnd',\
                                                     ])
 
-BbtParameter4Seg =  namedtuple('BbtParameter4Seg',['inizio',\
-                                                    'fine',\
-                                                    'length',\
-                                                    'he',\
-                                                    'hp',\
+BbtParameter4Seg =  namedtuple('BbtParameter4Seg',['inizio', 'fine', 'length', 'he', 'hp',\
                                                     'co',\
                                                     'gamma',\
                                                     'sci',\
@@ -67,7 +76,7 @@ BbtParameter4Seg =  namedtuple('BbtParameter4Seg',['inizio',\
                                                     'cai',\
                                                     'gsi',\
                                                     'rmr',\
-                                                    'profilo_id','geoitem_id','descr','sti','k0','k0_min','k0_max'])
+                                                    'profilo_id','geoitem_id','descr','sti','k0','k0_min','k0_max', 'wdepth'])
 BbtTbmKpi = namedtuple('BbtTbmKpi',['tunnelName',\
                                     'tbmName',\
                                     'iterationNo','kpiKey','kpiDescr','minImpact','maxImpact','avgImpact',\
@@ -90,6 +99,9 @@ def bbttbmkpi_factory(cursor, row):
 
 def bbtParameterEvalMin_factory(cursor, row):
     return BbtParameterEvalMin(*row)
+
+def bbtParameterEvalMain_factory(cursor, row):
+    return BbtParameterEvalMain(*row)
 
 bbtClassReliabilityList = []
 BbtClassReliability = namedtuple('BbtClassReliability',['code','reliability','gmr_min','gmr_max','min_val','max_val'])
