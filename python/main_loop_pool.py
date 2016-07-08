@@ -151,6 +151,7 @@ def mp_producer(parms):
                                     cum_prob += param.perc
                                     if par_prob < cum_prob:
                                        param_to_use = param
+                                       break
                                 # tengo quel cur_param
                             # aghensi@20160704 - ci sono più bbt_parameter multipli per la stessa pk - fine
                             bbtparameter4seg = build_bbtparameterVal4seg(param_to_use)
@@ -183,7 +184,7 @@ def mp_producer(parms):
                                 bbtparameter4seg.sci, bbtparameter4seg.mi, bbtparameter4seg.ei,
                                 bbtparameter4seg.cai,bbtparameter4seg.gsi,bbtparameter4seg.rmr,\
                                 tbmsect.pkCe2Gl(param_to_use.fine),
-                                tbmsect.TunnelClosureAtShieldEnd*100., tbmsect.rockBurst.Val,\
+                                tbmsect.TunnelClosureAtShieldEnd*1000., tbmsect.rockBurst.Val,\
                                 tbmsect.frontStability.Ns, tbmsect.frontStability.lambdae,\
                                 tbmsect.penetrationRate*1000.,
                                 tbmsect.penetrationRateReduction*1000.,

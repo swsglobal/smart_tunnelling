@@ -134,7 +134,7 @@ parmDict = {
     'rockE':("Young modulus in MPa", "MPA", 0, 0),
     'rockUcs':("UCS", "MPA", 0, 0),
     'pkgl':("Progressiva", "m", 0, 0),
-    'closure':("Closure at shield tail", "cm", 0, 30),
+    'closure':("Closure at shield tail", "mm", 0, 30),
     'ldpVlachBegin':("Convergenza al fronte", "cm", 0, 0.1),
     'ldpVlachEnd':("Convergenza a fine scudo", "cm", 0, 0.1),
     'rockburst':("Rockburst", "-", 0, 0.6),
