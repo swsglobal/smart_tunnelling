@@ -84,9 +84,15 @@ def mp_producer(parms):
 
 
     #inizializzo le info sui tracciati dai file di configurazione
-    inizio_GL = bbtConfig.getfloat('Import','inizio_GL')
-    fine_GL = bbtConfig.getfloat('Import','fine_GL')
-    projectRefCost = bbtConfig.getfloat('Import', 'project_ref_cost')
+    inizio_GLEST = bbtConfig.getfloat('Import','inizio_GLEST')
+    fine_GLEST = bbtConfig.getfloat('Import','fine_GLEST')
+    inizio_GLSUD = bbtConfig.getfloat('Import','inizio_GLSUD')
+    fine_GLSUD = bbtConfig.getfloat('Import','fine_GLSUD')
+    inizio_CE = bbtConfig.getfloat('Import','inizio_CE')
+    fine_CE = bbtConfig.getfloat('Import','fine_CE')
+    #differenza tra CE e GLEST in modo tale che GLNORD = delta_GLEST_CE - CE
+    delta_GLEST_CE =  bbtConfig.getfloat('Import','delta_GLEST_CE')
+    projectRefCost = bbtConfig.getfloat('Import','project_ref_cost') # mln di euro
 
     # danzi.tn@20151115 recepimento modifiche su InfoAlignment fatte da Garbriele
     #LEGGO I PARAMETRI DA FILE DI CONFIGURAZIONE
@@ -103,9 +109,18 @@ def mp_producer(parms):
     #CREO OGGETTO
     fcCutter =  FrictionCoeff(fCCutterdMin,fCCutterMode,fCCutterMax)
 
+    # aghensi@20160713 - aggiunti parametri per rapporti Thrust e pressioni su conci
+    minRequiredContactThrustRatio = bbtConfig.getfloat('TBM', 'minRequiredContactThrustRatio')
+    liningRelaxationRatio = bbtConfig.getfloat('TBM', 'liningRelaxationRatio')
+
     alnAll = []
-    aln=InfoAlignment('Galleria di linea', 'GL', inizio_GL, fine_GL, fCCutterMode, fCShiledMode)
+    aln=InfoAlignment('Galleria di linea direzione Sud', 'GLSUD', inizio_GLSUD, fine_GLSUD,fCCutterMode, fCShiledMode)
     alnAll.append(aln)
+    aln=InfoAlignment('Cunicolo esplorativo direzione Nord', 'CE', delta_GLEST_CE - fine_CE, delta_GLEST_CE - inizio_CE , fCCutterMode, fCShiledMode)
+    alnAll.append(aln)
+    aln=InfoAlignment('Galleria di linea direzione Nord', 'GLNORD',inizio_GLEST, fine_GLEST, fCCutterMode, fCShiledMode)
+    alnAll.append(aln)
+
     kpiTbmList = []
     main_logger.debug("[%d]############################# Inizia a recuperare le itarazioni di %s dalla %d alla %d" % (idWorker,sKey,idWorker*nIter, (idWorker+1)*nIter))
     bbt_bbtparameterseval = get_mainbbtparameterseval(sDBPath, sKey, idWorker*nIter, (idWorker+1)*nIter)
@@ -168,7 +183,7 @@ def mp_producer(parms):
                                 alnCurr.fiRi = fCCutterMode
                             try:
                                 tbmSegBefore = ttime()
-                                tbmsect = TBMSegment(bbtparameter4seg, tbm, alnCurr.fiRi, alnCurr.frictionCoeff)
+                                tbmsect = TBMSegment(bbtparameter4seg, tbm, alnCurr.fiRi, alnCurr.frictionCoeff, minRequiredContactThrustRatio, liningRelaxationRatio)
                                 tbmSegAfter = ttime()
                                 tbmSegmentCum += (tbmSegAfter - tbmSegBefore)
                             except Exception as e:

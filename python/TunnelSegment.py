@@ -477,9 +477,8 @@ class TBM:
         self.BackupDragForce = tbmData.backupDragForce # kN (8000 per la GL, 4000 per il CE
         self.openingRatio = tbmData.openingRatio
         self.cutterheadThickness = tbmData.cutterheadThickness
-        self.Slen1 =tbmData.frontShieldLength
+        self.Slen1 = tbmData.frontShieldLength
 
-# TODO: aghensi - come trovo questi dati????
         # penetration rate per ogni decina di rmr: 0, 10, 20, 30.....100
         # media dei valori tra Cassinelli et al.(1982), Sapigni et al.(2002), Grandori et al. (2011)
         self.rop= array((1.2904525, 1.2904525,1.540995,1.7915375,1.97058,2.1246225,2.187465,2.2253075,1.97355,1.7217925, 1.7217925)) # m/h metri di scavo all'ora
@@ -533,7 +532,7 @@ class TBM:
 
 class TBMSegment:
     # definisco la condizione intrinseca (TODO verificare definizione con Luca o Paolo)
-    def __init__(self, segment, tbm, fiRi, frictionCoeff): # gabriele@20151114 friction parametrica
+    def __init__(self, segment, tbm, fiRi, frictionCoeff, minRequiredContactThrustRatio, liningRelaxationRatio): # gabriele@20151114 friction parametrica
         gamma = segment.gamma
         ni = .2
         e = segment.ei*1000.
@@ -555,6 +554,8 @@ class TBMSegment:
         aunsupported = tbm.Slen
         excavType = 'Mech'
         pi = 0.
+        # aghensi@20160713 - aggiunto contributo anidriti
+        anidrite = segment.anidrite
         if ucs <= 1.0:
             print "gamma= %f E= %f ucs= %f" % (gamma, e, ucs)
         self.Rock = Rock(gamma, ni, e, ucs,  st)	#importo definizione di Rock
@@ -606,25 +607,6 @@ class TBMSegment:
         # definisco il breakawayTorque come il massimo tra quello richiesto per instabilita' del fronte e quello richesto dal rockbursting
         self.breakawayTorque = max(self.frontStabilityBreakawayTorque, self.rockburstBreakawayTorque)
 
-        #gabriele@20151114 info fuorviante
-#        R = self.Excavation.Radius # in m
-#        ni = self.Rock.Ni
-#        fi = math.radians(self.MohrCoulomb.Fi)
-#        c = self.MohrCoulomb.C / 1000. # MPa
-#        fir = math.radians(self.MohrCoulomb.Fir)
-#        cr = self.MohrCoulomb.C / 1000. # MPa
-#        pi_cr_tan = cr / math.tan(fir)
-#        p0 = self.Rock.Gamma * (self.InSituCondition.Overburden+self.Excavation.Height/2.0) / 1000.0 # in MPa
-#        self.P_0 = p0
-#        self.Pcr = p0 * (1.-math.sin(fi)) - c * math.cos(fi) # in MPa
-#        self.Pocp = p0 + c / math.tan(fi)
-#        self.Pocr = p0 + cr / math.tan(fir)
-#        self.Nfir = (1.+math.sin(fir)) / (1.-math.sin(fir))
-#        if self.Pcr < p0:
-#            self.Rpl = (((self.Pocr-self.Pocp*math.sin(fir))/pi_cr_tan)**(1.0/(self.Nfir-1.)))*R
-#        else:
-#            self.Rpl = R
-
         self.Tbm = tbm
 
         self.TunnelClosureAtShieldEnd = self.TunnelClosure(self.Tbm.Slen) # min(self.TunnelClosure(self.Tbm.Slen, 'P'),  R)
@@ -644,6 +626,11 @@ class TBMSegment:
             self.tailFrictionForce = 0.
             self.frictionForce = 0.0 # in kN quella che mi rallenta l'avanzamento
             self.Xcontact = tbm.Slen
+            # aghensi@20160713 - aggiunti i parametri di sigma_v e _h sugli scudi e necessita' overcut - inizio
+            self.sigma_v_max_tail_skin = 0
+            self.sigma_h_max_tail_skin = 0
+            self.sigma_v_max_front_shield = 0
+            self.sigma_h_max_front_shield = 0
         elif self.TunnelClosureAtShieldEnd>self.Tbm.gap and self.TunnelClosureAtShieldEnd1<=self.Tbm.gap1:
             self.Xcontact = self.xLim(self.Tbm.gap)
             # integrazione semplificata, assumo la pressione come triangolare
@@ -654,18 +641,29 @@ class TBMSegment:
                 self.frontFrictionForce = 0.
                 self.tailFrictionForce = total*self.Tbm.tailShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
                 self.frictionForce = 0.
+                self.sigma_v_max_tail_skin = maxPressure
+                self.sigma_h_max_tail_skin = maxPressure * self.InSituCondition.K0
+                self.sigma_v_max_front_shield = 0
+                self.sigma_h_max_front_shield = 0
             else:
                 self.contactType = 2
                 self.frontFrictionForce = total*self.Tbm.tailShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
                 self.tailFrictionForce = 0.
                 self.frictionForce = self.frontFrictionForce
+                self.sigma_v_max_front_shield = maxPressure
+                self.sigma_h_max_front_shield = maxPressure * self.InSituCondition.K0
+                self.sigma_v_max_tail_skin = 0
+                self.sigma_h_max_tail_skin = 0
         elif self.TunnelClosureAtShieldEnd<=self.Tbm.gap and self.TunnelClosureAtShieldEnd1>self.Tbm.gap1:
             self.contactType = 2
             self.Xcontact = self.xLim(self.Tbm.gap1)
             # integrazione semplificata, assumo la pressione come triangolare
-            maxPressure = self.PiUr(self.Tbm.gap1) - self.PiUr(self.TunnelClosureAtShieldEnd1)
-            total = maxPressure*(self.Tbm.Slen1-self.Xcontact)/2.0
+            self.sigma_v_max_front_shield = self.PiUr(self.Tbm.gap1) - self.PiUr(self.TunnelClosureAtShieldEnd1)
+            self.sigma_h_max_front_shield = self.sigma_v_max_front_shield * self.InSituCondition.K0
+            total = self.sigma_v_max_front_shield*(self.Tbm.Slen1-self.Xcontact)/2.0
             self.frontFrictionForce = total*self.Tbm.frontShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
+            self.sigma_v_max_tail_skin = 0
+            self.sigma_h_max_tail_skin = 0
             self.tailFrictionForce = 0.
             self.frictionForce = self.frontFrictionForce
         else:
@@ -673,24 +671,38 @@ class TBMSegment:
             # ipotizzo distribuzione triangolare su tutto lo scudo di dietro e calcolo normalmente quella dello scudo davanti
             self.Xcontact = self.xLim(self.Tbm.gap1)
             # forza su scudo anteriore
-            maxPressure = self.PiUr(self.Tbm.gap1) - self.PiUr(self.TunnelClosureAtShieldEnd1)
-            total = maxPressure*(self.Tbm.Slen1-self.Xcontact)/2.0
+            self.sigma_v_max_front_shield = self.PiUr(self.Tbm.gap1) - self.PiUr(self.TunnelClosureAtShieldEnd1)
+            self.sigma_h_max_front_shield = maxPressure * self.InSituCondition.K0
+            total = self.sigma_v_max_front_shield*(self.Tbm.Slen1-self.Xcontact)/2.0
             self.frontFrictionForce = total*self.Tbm.frontShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
             #forza su scudo posteriore
-            maxPressure = self.PiUr(self.Tbm.gap) - self.PiUr(self.TunnelClosureAtShieldEnd)
-            total = maxPressure*(self.Tbm.Slen-self.Tbm.Slen1)/2.0
+            self.sigma_v_max_tail_skin = self.PiUr(self.Tbm.gap) - self.PiUr(self.TunnelClosureAtShieldEnd)
+            self.sigma_h_max_tail_skin = maxPressure * self.InSituCondition.K0
+            total = self.sigma_v_max_tail_skin*(self.Tbm.Slen-self.Tbm.Slen1)/2.0
             self.tailFrictionForce = total*self.Tbm.tailShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
             self.frictionForce = self.frontFrictionForce
         # aghensi@20160704 - aggiungo forza di attrito per il trascinamento della macchina
         self.frictionForce += self.Tbm.weight*frictionCoeff
 
-        #definisco il thrust che rimane per l'avanzamento tolti gli attriti e la convergenza sullo scudo
+        # definisco il thrust che rimane per l'avanzamento tolti gli attriti e la convergenza sullo scudo
         if tbm.type == 'DS':
             self.availableThrust = max(0., self.Tbm.installedThrustForce - self.frictionForce)
+            self.availableAuxiliaryThrust = max(0., self.Tbm.installedAuxiliaryThrustForce - self.frictionForce)
+            if self.sigma_v_max_tail_skin + self.sigma_v_max_front_shield == 0:
+                self.overcut_required = 0
+            else:
+                self.overcut_required = 1
         else:
             self.availableThrust = max(0., self.Tbm.installedThrustForce - self.frictionForce - self.Tbm.BackupDragForce)
+            self.availableAuxiliaryThrust = max(0., self.Tbm.installedAuxiliaryThrustForce - self.frictionForce - self.Tbm.BackupDragForce)
+            if self.sigma_v_max_front_shield == 0:
+                self.overcut_required = 0
+            else:
+                self.overcut_required = 1
+        # aghensi@20160713 - aggiunti i parametri di sigma_v e _h sugli scudi - fine
 
-        #se non mi rimane thurst devo consolidare o sbloccare la macchina
+
+        # se non mi rimane thurst devo consolidare o sbloccare la macchina
         ratio = self.availableThrust/self.Tbm.totalContactThrust
         if ratio > .25:
             self.cavityStabilityPar = 0.
@@ -698,11 +710,32 @@ class TBMSegment:
             self.cavityStabilityPar = (0.25-ratio)*4. # varia da 0 a 1 passando da ratio = 0.25 a 0
         else:
             self.cavityStabilityPar = 1.
-        #considerao anche il blocco dello scudo posteriore
+        # considero anche il blocco dello scudo posteriore
         if self.Tbm.installedThrustForce > self.tailFrictionForce:
             self.tailCavityStabilityPar = 0.
         else:
             self.tailCavityStabilityPar = 1.
+
+        # aghensi@20160713 - aggiunta parametri di output per segnalare necessita'
+        # di forza ausiliare o consolidamenti
+        if ratio < minRequiredContactThrustRatio:
+            self.auxiliary_thrust_required = 1
+        else:
+            self.auxiliary_thrust_required = 0
+
+        if self.availableAuxiliaryThrust/self.Tbm.totalContactThrust < minRequiredContactThrustRatio:
+            self.consolidation_required = 1
+        else:
+            self.consolidation_required = 0
+
+        # calcolo la pressione sui conci come la pressione relativa ad una percentuale
+        # della convergenza tra il gap e la massima (calcolata a 100km di distanza)
+        # a tale pressione si aggiunge il contributo anidriti se superiori al 2%
+        # RIF: cap 5.4.4 relazione di calcolo progetto esecutivo (codice 23055)
+        self.sigma_v-max_lining = self.PiUr(self.Tbm.gap+liningRelaxationRatio*(self.TunnelClosure(100000)-self.Tbm.gap))
+        if anidrite > 0.02:
+            self.sigma_v-max_lining += 0.3 #MPa
+        self.sigma_h-max_lining = self.sigma_v-max_lining * self.InSituCondition.K0
 
         # definisco thrust e torque
         # metodo colorado school of mines
