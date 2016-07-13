@@ -8,7 +8,7 @@ BbtParameter =  namedtuple('BbtParameter',[
     'inizio','fine','est','nord','he','hp','co','tipo','wdepth','g_med','g_stddev','sigma_ci_avg',
     'sigma_ci_stdev','mi_med','mi_stdev','ei_med','ei_stdev','cai_med','cai_stdev','gsi_med',
     'gsi_stdev','rmr_med','rmr_stdev','profilo_id','geoitem_id','title','sigma_ti_min',
-    'sigma_ti_max','k0_min','k0_max','perc'])
+    'sigma_ti_max','k0_min','k0_max','perc','anidrite'])
 BbtReliability = namedtuple('BbtReliability',['id','inizio','fine','gmr_class','gmr_val','reliability','eval_var'])
 BbtParameterEvalMin = namedtuple('BbtParameterEvalMin',['gamma','sigma','mi','ei','cai','rmr', 'gsi','sigma_ti', 'k0' ,'profilo_id'])
 # aghensi@20160704 rollback per far funzionare main_loop_pool; aggiunto perc

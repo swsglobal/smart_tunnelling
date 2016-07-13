@@ -20,10 +20,10 @@ sDBPath = os.path.join(os.path.abspath('..'), bbtConfig.get('Database','dbfolder
 if not os.path.isfile(sDBPath):
     print "Errore! File %s inesistente!" % sDBPath
     exit(1)
-#sGeoReliability_XLS = os.path.join(os.path.abspath('..'),bbtConfig.get('Import','folder'),bbtConfig.get('Import','valutazione'))
-#if not os.path.isfile(sGeoReliability_XLS):
-#    print "Errore! File %s inesistente!" % sGeoReliability_XLS
-#    exit(2)
+sGeoReliability_XLS = os.path.join(os.path.abspath('..'),bbtConfig.get('Import','folder'),bbtConfig.get('Import','valutazione'))
+if not os.path.isfile(sGeoReliability_XLS):
+    print "Errore! File %s inesistente!" % sGeoReliability_XLS
+    exit(2)
 sCE_XLS = os.path.join(os.path.abspath('..'),bbtConfig.get('Import','folder'),bbtConfig.get('Import','geo'))
 if not os.path.isfile(sCE_XLS):
     print "Errore! File %s inesistente!" % sCE_XLS
@@ -35,21 +35,21 @@ if not os.path.isfile(sProfilo_XLS):
 # indice dei segmenti gelogici
 geosec_index = defaultdict(list)
 ########### BbtReliability - Acquisisco affidabilita modello GEO
-#book = xlrd.open_workbook(sGeoReliability_XLS)
-#xl_sheet = book.sheet_by_name(u'val')
-#headrow = xl_sheet.row(3)  # header
-#row = xl_sheet.row(4)  # first row
-#num_cols = xl_sheet.ncols
-#reliability_list = []
-#for row_idx in range(4, xl_sheet.nrows):
-#    rowvalues=[]
-#    for col_idx in range(0, num_cols):  # Iterate through columns
-#        cell_obj = xl_sheet.cell(row_idx, col_idx)  # Get cell object by row, col
-#        rowvalues.append(cell_obj.value)
-#    reliability_item = BbtReliability(*rowvalues)
-#    reliability_list.append(reliability_item)
-## salvo in db BbtReliability
-#insert_bbtreliability(sDBPath,reliability_list)
+book = xlrd.open_workbook(sGeoReliability_XLS)
+xl_sheet = book.sheet_by_name(u'val')
+headrow = xl_sheet.row(3)  # header
+row = xl_sheet.row(4)  # first row
+num_cols = xl_sheet.ncols
+reliability_list = []
+for row_idx in range(4, xl_sheet.nrows):
+    rowvalues=[]
+    for col_idx in range(0, num_cols):  # Iterate through columns
+        cell_obj = xl_sheet.cell(row_idx, col_idx)  # Get cell object by row, col
+        rowvalues.append(cell_obj.value)
+    reliability_item = BbtReliability(*rowvalues)
+    reliability_list.append(reliability_item)
+# salvo in db BbtReliability
+insert_bbtreliability(sDBPath,reliability_list)
 ######### BbtReliability fine
 
 ########### BbtGeoitem - Acquisisco caratteristiche GEO da tavola
@@ -89,60 +89,57 @@ for idx, cell_obj in enumerate(row):
 num_cols = civilReport_sheet.ncols
 profilo_list = []
 prev_prog = 0
-for row_idx in range(1, civilReport_sheet.nrows):
+for row_idx in range(17, civilReport_sheet.nrows):
     keepRow = False
     rowvalues=[]
-    for col_idx in range(0, num_cols):  # Iterate through columns
+    for col_idx in range(1, num_cols):  # Iterate through columns
         cell_obj = civilReport_sheet.cell(row_idx, col_idx)  # Get cell object by row, col
-        if col_idx == 0:
-           # aghensi@20160531 - ho dato float ogni 10m
-#            s1 = cell_obj.value.split(',')
-#            dec = int(s1[1])
-#            s2 = s1[0].split('+')
-#            strVal = ''.join(s2)
+        if col_idx == 1:
+            s1 = cell_obj.value.split(',')
+            dec = int(s1[1])
+            s2 = s1[0].split('+')
+            strVal = ''.join(s2)
             pkend = float(cell_obj.value)
-            #if int(pkend) % 10 == 0:
-            rowvalues.append(prev_prog)
-            keepRow = True
-            rowvalues.append(pkend-10)
-            rowvalues.append(pkend)
-            prev_prog += 1
-        elif keepRow:
-            # aghensi@20160531 - i dati sono tutti float
-            # progressiva, est, nord, quota DEM, quota progetto, copertura, quota falda,
-            # profondita falda
-            rowvalues.append(float(cell_obj.value))
-#            if col_idx == 3:
-#                rowvalues.append(float(cell_obj.value))
-#            if col_idx == 4: #quota altimetrica 1.871,894m
-#                s1 = cell_obj.value.split(",")
-#                if len(s1) > 1:
-#                    s2 = s1[0].split('.')
-#                    strVal = ''.join(s2)
-#                    he = float(strVal)
-#                    rowvalues.append(he)
-#                else:
-#                    rowvalues.append(0)
-#            if col_idx == 5: #quota progetto 704,988m
-#                s1 = cell_obj.value.split(",")
-#                if len(s1) > 1:
-#                    s2 = s1[0].split('.')
-#                    strVal = ''.join(s2)
-#                    hp = float(strVal)
-#                    rowvalues.append(hp)
-#                else:
-#                    rowvalues.append(0)
-#            if col_idx == 6: #copertura 1.166,906m
-#                s1 = cell_obj.value.split(",")
-#                if len(s1) > 1:
-#                    s2 = s1[0].split('.')
-#                    strVal = ''.join(s2)
-#                    co = float(strVal)
-#                    rowvalues.append(co)
-#                else:
-#                    rowvalues.append(0)
-#            if col_idx == 7:
-#                rowvalues.append(cell_obj.value)
+            if dec == 0 and int(pkend) % 10 == 0:
+                rowvalues.append(prev_prog)
+                keepRow = True
+                rowvalues.append(pkend-10)
+                rowvalues.append(pkend)
+                prev_prog += 1
+        else:
+            if keepRow and col_idx == 2:
+                rowvalues.append(cell_obj.value)
+            if keepRow and col_idx == 3:
+                rowvalues.append(cell_obj.value)
+            if keepRow and col_idx == 4: #quota altimetrica 1.871,894m
+                s1 = cell_obj.value.split(",")
+                if len(s1) > 1:
+                    s2 = s1[0].split('.')
+                    strVal = ''.join(s2)
+                    he = float(strVal)
+                    rowvalues.append(he)
+                else:
+                    rowvalues.append(0)
+            if keepRow and col_idx == 5: #quota progetto 704,988m
+                s1 = cell_obj.value.split(",")
+                if len(s1) > 1:
+                    s2 = s1[0].split('.')
+                    strVal = ''.join(s2)
+                    hp = float(strVal)
+                    rowvalues.append(hp)
+                else:
+                    rowvalues.append(0)
+            if keepRow and col_idx == 6: #copertura 1.166,906m
+                s1 = cell_obj.value.split(",")
+                if len(s1) > 1:
+                    s2 = s1[0].split('.')
+                    strVal = ''.join(s2)
+                    co = float(strVal)
+                    rowvalues.append(co)
+                else:
+                    rowvalues.append(0)
+            if keepRow and col_idx == 7:
+                rowvalues.append(cell_obj.value)
     if rowvalues:
         bbtpro = BbtProfilo(*rowvalues)
         profilo_list.append(bbtpro)
@@ -164,7 +161,7 @@ for bbtpro in profilo_list:
                       geosec.cai_med, geosec.cai_stdev, geosec.gsi_med, geosec.gsi_stdev,
                       geosec.rmr_med, geosec.rmr_stdev, bbtpro.id, geosec.id, geosec.title,
                       geosec.sigma_ti_min, geosec.sigma_ti_max, geosec.k0_min, geosec.k0_max,
-                      geosec.perc]
+                      geosec.perc, geosec.anidrite]
             bbtpar = BbtParameter(*tmparr)
             bbtpar_items.append(bbtpar)
 
