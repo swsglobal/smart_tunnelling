@@ -191,55 +191,23 @@ def insert_eval4Iter(sDBPath, bbt_evalparameters, bbttbmkpis):
         c = conn.cursor()
         c.executemany("INSERT INTO BbtTbmKpi (tunnelName,tbmName,iterationNo,kpiKey,kpiDescr,minImpact,maxImpact,avgImpact,appliedLength,percentOfApplication,probabilityScore,totalImpact) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", bbttbmkpis)
         conn.commit()
-        c.executemany("INSERT INTO BbtParameterEval (insertdate,\
-                                                            iteration_no, \
-                                                            tunnelName,\
-                                                            tbmName,\
-                                                            fine,\
-                                                            he,\
-                                                            hp,\
-                                                            co,\
-                                                            wdepth,\
-                                                            gamma,\
-                                                            sigma,\
-                                                            mi,\
-                                                            ei,\
-                                                            cai,\
-                                                            gsi,\
-                                                            rmr,\
-                                                            pkgl,\
-                                                            closure,\
-                                                            rockburst,\
-                                                            front_stability_ns,\
-                                                            front_stability_lambda,\
-                                                            penetrationRate,\
-                                                            penetrationRateReduction,\
-                                                            contactThrust,\
-                                                            torque,\
-                                                            frictionForce,\
-                                                            requiredThrustForce,\
-                                                            availableThrust,\
-                                                            dailyAdvanceRate,profilo_id, geoitem_id ,title,sigma_ti,k0,t0,t1,t3,t4,t5, \
-                                                            inSituConditionSigmaV,\
-                                                            tunnelRadius,\
-                                                            rockE,\
-                                                            mohrCoulombPsi,\
-                                                            rockUcs,\
-                                                            inSituConditionGsi,\
-                                                            hoekBrownMi,\
-                                                            hoekBrownD,\
-                                                            hoekBrownMb,\
-                                                            hoekBrownS,\
-                                                            hoekBrownA,\
-                                                            hoekBrownMr,\
-                                                            hoekBrownSr,\
-                                                            hoekBrownAr,\
-                                                            urPiHB,\
-                                                            rpl,\
-                                                            picr,\
-                                                            ldpVlachBegin,\
-                                                            ldpVlachEnd\
-        ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", bbt_evalparameters)
+        c.executemany("INSERT INTO BbtParameterEval (insertdate, iteration_no, tunnelName,\
+                      tbmName, fine, he, hp, co, wdepth, gamma, sigma, mi, ei, cai, gsi, rmr,\
+                      pkgl, closure, rockburst, front_stability_ns, front_stability_lambda,\
+                      penetrationRate, penetrationRateReduction, contactThrust, torque,\
+                      frictionForce, requiredThrustForce, availableThrust, dailyAdvanceRate,\
+                      profilo_id, geoitem_id,title, sigma_ti, k0, t0, t1, t3, t4, t5, \
+                      inSituConditionSigmaV, tunnelRadius, rockE, mohrCoulombPsi, rockUcs,\
+                      inSituConditionGsi, hoekBrownMi, hoekBrownD, hoekBrownMb, hoekBrownS,\
+                      hoekBrownA, hoekBrownMr, hoekBrownSr, hoekBrownAr, urPiHB, rpl, picr,\
+                      ldpVlachBegin, ldpVlachEnd,\
+                      sigma_v_max_tail_skin, sigma_h_max_tail_skin, sigma_v_max_front_shield,\
+                      sigma_h_max_front_shield, overcut_required, auxiliary_thrust_required,\
+                      consolidation_required, sigma_h-max_lining, sigma_v-max_lining\
+                      ) values (\
+                      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
+                      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                      bbt_evalparameters)
         conn.commit()
         conn.close()
 

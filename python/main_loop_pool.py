@@ -236,7 +236,13 @@ def mp_producer(parms):
                                 tbmsect.Rpl,
                                 tbmsect.Picr,
                                 tbmsect.LDP_Vlachopoulos_2009(0.),
-                                tbmsect.LDP_Vlachopoulos_2009(tbm.Slen)
+                                tbmsect.LDP_Vlachopoulos_2009(tbm.Slen),
+                                #aghensi@20160713 - aggiunta parametri al DB
+                                tbmsect.sigma_v_max_tail_skin, tbmsect.sigma_h_max_tail_skin,
+                                tbmsect.sigma_v_max_front_shield, tbmsect.sigma_h_max_front_shield,
+                                tbmsect.overcut_required, tbmsect.auxiliary_thrust_required,
+                                tbmsect.consolidation_required, tbmsect.sigma_h-max_lining,
+                                tbmsect.sigma_v-max_lining
                                 ))
                     kpiTbm.updateKPI(alnCurr)
                     bbttbmkpis += kpiTbm.getBbtTbmKpis()
