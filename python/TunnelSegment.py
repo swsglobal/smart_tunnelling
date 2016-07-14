@@ -702,6 +702,20 @@ class TBMSegment:
                 self.overcut_required = 1
         # aghensi@20160713 - aggiunti i parametri di sigma_v e _h sugli scudi - fine
 
+        # se non mi rimane thurst devo consolidare o sbloccare la macchina
+        ratio = self.availableThrust/self.Tbm.totalContactThrust
+        if ratio > .25:
+            self.cavityStabilityPar = 0.
+        elif ratio > 0.:
+            self.cavityStabilityPar = (0.25-ratio)*4. # varia da 0 a 1 passando da ratio = 0.25 a 0
+        else:
+            self.cavityStabilityPar = 1.
+        # considero anche il blocco dello scudo posteriore
+        if self.Tbm.installedThrustForce > self.tailFrictionForce:
+            self.tailCavityStabilityPar = 0.
+        else:
+            self.tailCavityStabilityPar = 1.
+
         # calcolo la pressione sui conci come la pressione relativa ad una percentuale
         # della convergenza tra il gap e la massima (calcolata a 100km di distanza)
         # a tale pressione si aggiunge il contributo anidriti se superiori al 2%
@@ -761,23 +775,11 @@ class TBMSegment:
         self.requiredThrustForce = self.Tbm.BackupDragForce+self.contactThrust+self.frictionForce
         self.LocFt = locFt
 
-        # se non mi rimane thurst devo consolidare o sbloccare la macchina
-        ratio = self.availableThrust/self.contactThrust
-        if ratio > .25:
-            self.cavityStabilityPar = 0.
-        elif ratio > 0.:
-            self.cavityStabilityPar = (0.25-ratio)*4. # varia da 0 a 1 passando da ratio = 0.25 a 0
-        else:
-            self.cavityStabilityPar = 1.
-        # considero anche il blocco dello scudo posteriore
-        if self.Tbm.installedThrustForce > self.tailFrictionForce:
-            self.tailCavityStabilityPar = 0.
-        else:
-            self.tailCavityStabilityPar = 1.
+
 
         # aghensi@20160713 - aggiunta parametri di output per segnalare necessita'
         # di forza ausiliare o consolidamenti
-        if ratio < minRequiredContactThrustRatio:
+        if self.availableThrust/self.contactThrust < minRequiredContactThrustRatio:
             self.auxiliary_thrust_required = 1
         else:
             self.auxiliary_thrust_required = 0

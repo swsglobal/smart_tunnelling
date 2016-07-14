@@ -327,26 +327,25 @@ def main(argv):
                         pVal = tti[i][j]
                         if bGroupTypes:
                             pVal = pVal/tbmCount
-                    outValues.append([int(bbt_parametereval['iteration_no']),
-                                      float(bbt_parametereval['fine']),
-                                      float(bbt_parametereval['he']),
-                                      float(bbt_parametereval['hp']),pVal])
+                    #aghensi@20160714 - memorizzo solo i percentili
+                    if j == 0:
+                        outValues.append([float(bbt_parametereval['fine']),
+                                          float(bbt_parametereval['he']),
+                                          float(bbt_parametereval['hp'])])
                     parm2show[i][j] = pVal
                     i += 1
                 for i in range(int(N)):
                     # aghensi@20160714 calcolo 5°, 50° e 95° percentile effettivo sui campioni
                     # TODO: si possono calcolare i percentili di tutto param2show usando axis=...
                     mean2Show[i] = list(np.nanpercentile(parm2show[i,:],(5,50,95)))
-
+                    outValues[i].append(mean2Show[i][1])
+                    outValues[i].append(mean2Show[i][0])
+                    outValues[i].append(mean2Show[i][2])
                     #pki_mean = np.nanmean(parm2show[i,:])
                     #pki_std = np.nanstd(parm2show[i,:])
                     #mean2Show[i][0] = pki_mean - 2*pki_std
                     #mean2Show[i][1] = pki_mean
                     #mean2Show[i][2] = pki_mean + 2*pki_std
-                for i, outVal in enumerate(outValues):
-                    outVal.append(mean2Show[i%N][1])
-                    outVal.append(mean2Show[i%N][0])
-                    outVal.append(mean2Show[i%N][2])
                 if N==0:
                     print "\tPer TBM %s non ci sono dati in %s" % (tbmKey, tun)
                 else:
@@ -384,7 +383,7 @@ def main(argv):
                     csvfname=os.path.join(sDiagramsFolderPath,"%s_%s_%s.csv" % ( tun.replace(" ", "_"), tbmKey, sParameterToShow))
                     with open(csvfname, 'wb') as f:
                         writer = csv.writer(f,delimiter=";")
-                        writer.writerow(('iterazione','fine','he','hp',sParameterToShow,'media','min95' ,'max95' ))
+                        writer.writerow(('fine','he','hp','50perc','5perc' ,'95perc' ))
                         writer.writerows(outValues)
 
 
