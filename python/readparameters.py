@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sqlite3, os, csv
 import sys, getopt
 from tbmconfig import tbms

@@ -202,7 +202,8 @@ class InSituCondition:
     def __init__(self, overburden, h_2, groundwaterdepth, gamma, k0min, k0max, gsi, rmr):
         self.Overburden = overburden #copertura netta
         # aghensi@20160601 - aggiunta profondita acqua se falda sopra profilo di progetto
-        self.Groundwaterdepth = min([groundwaterdepth, overburden]) #copertura netta
+        #self.Groundwaterdepth = min([groundwaterdepth, overburden]) #copertura netta
+        self.Groundwaterdepth = overburden
         self.K0 = 1.0
         self.K0min = k0min
         self.K0max = k0max
