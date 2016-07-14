@@ -118,60 +118,60 @@ tbms[tbm4.name] = tbm4
 #tbms[tbm8.name] = tbm8
 
 #TBM 10 - Documento 092515-2-DS-T-REV5 22 JUNE 2016
-tbm10=TBMConfig()
-tbm10.name = 'GL_DS_RBS_10.56_00'
-tbm10.alignmentCode='GLSUD;GLNORD'
-tbm10.manifacturer='Robbins'
-tbm10.type='DS' # O = open, S = single shield, DS = double shield
-tbm10.excavationDiameter=10.56 # Nord; 10.51 per la sud
-tbm10.frontShieldDiameter=10.44
-tbm10.tailShieldDiameter=10.32
-tbm10.overcut=0. # TODO: creare tutte le varianti
-tbm10.shieldLength=11.2+1.
-tbm10.frontShieldLength=4.7+1.
-tbm10.cutterheadThickness=1. # in metri lo spessore della testa di scavo
-tbm10.cutterSize=19.*0.0254 #diameter
-tbm10.cutterCount=72
-tbm10.cutterSpacing=0.0732
-tbm10.loadPerCutter=311.4
-tbm10.totalContactThrust=tbm10.cutterCount*tbm10.loadPerCutter
-tbm10.nominalThrustForce=69305.
-tbm10.auxiliaryThrustForce=171378. #usato Emergency Thrust
-tbm10.referenceRpm=2.2 #relativo alla massima Cutterhead Torque
-tbm10.nominalTorque=18083. #Cutterhead Torque
-tbm10.breakawayTorque=27125. #Exceptional Cutterhead Torque; in low speed ho 40687
-tbm10.weight=1300.*9.81
-# QUESTI DATI NON CI SONO NELLE SPECIFICHE:
-tbm10.cutterThickness=0.02
-tbm10.backupDragForce=8000.
-tbm10.openingRatio=0.1
-tbm10.dotationForProspection=1. # da 0 a 1 se e' per niente o molto dotata
-
-tbms[tbm10.name] = tbm10
-
-#TBM 11
-tbm11 = deepcopy(tbm10)
-tbm11.name = 'GL_DS_RBS_10.56_03'
-tbm11.overcut=0.03
-tbms[tbm11.name] = tbm11
-
-#TBM 12
-tbm12 = deepcopy(tbm10)
-tbm12.name = 'GL_DS_RBS_10.56_06'
-tbm12.overcut=0.06
-tbms[tbm12.name] = tbm12
-
-#TBM 13
-tbm13 = deepcopy(tbm10)
-tbm13.name = 'GL_DS_RBS_10.56_09'
-tbm13.overcut=0.09
-tbms[tbm13.name] = tbm13
-
-#TBM 14
-tbm14 = deepcopy(tbm10)
-tbm14.name = 'GL_DS_RBS_10.56_12'
-tbm14.overcut=0.12
-tbms[tbm14.name] = tbm14
+#tbm10=TBMConfig()
+#tbm10.name = 'GL_DS_RBS_10.56_00'
+#tbm10.alignmentCode='GLSUD;GLNORD'
+#tbm10.manifacturer='Robbins'
+#tbm10.type='DS' # O = open, S = single shield, DS = double shield
+#tbm10.excavationDiameter=10.56 # Nord; 10.51 per la sud
+#tbm10.frontShieldDiameter=10.44
+#tbm10.tailShieldDiameter=10.32
+#tbm10.overcut=0. # TODO: creare tutte le varianti
+#tbm10.shieldLength=11.2+1.
+#tbm10.frontShieldLength=4.7+1.
+#tbm10.cutterheadThickness=1. # in metri lo spessore della testa di scavo
+#tbm10.cutterSize=19.*0.0254 #diameter
+#tbm10.cutterCount=72
+#tbm10.cutterSpacing=0.0732
+#tbm10.loadPerCutter=311.4
+#tbm10.totalContactThrust=tbm10.cutterCount*tbm10.loadPerCutter
+#tbm10.nominalThrustForce=69305.
+#tbm10.auxiliaryThrustForce=171378. #usato Emergency Thrust
+#tbm10.referenceRpm=2.2 #relativo alla massima Cutterhead Torque
+#tbm10.nominalTorque=18083. #Cutterhead Torque
+#tbm10.breakawayTorque=27125. #Exceptional Cutterhead Torque; in low speed ho 40687
+#tbm10.weight=1300.*9.81
+## QUESTI DATI NON CI SONO NELLE SPECIFICHE:
+#tbm10.cutterThickness=0.02
+#tbm10.backupDragForce=8000.
+#tbm10.openingRatio=0.1
+#tbm10.dotationForProspection=1. # da 0 a 1 se e' per niente o molto dotata
+#
+#tbms[tbm10.name] = tbm10
+#
+##TBM 11
+#tbm11 = deepcopy(tbm10)
+#tbm11.name = 'GL_DS_RBS_10.56_03'
+#tbm11.overcut=0.03
+#tbms[tbm11.name] = tbm11
+#
+##TBM 12
+#tbm12 = deepcopy(tbm10)
+#tbm12.name = 'GL_DS_RBS_10.56_06'
+#tbm12.overcut=0.06
+#tbms[tbm12.name] = tbm12
+#
+##TBM 13
+#tbm13 = deepcopy(tbm10)
+#tbm13.name = 'GL_DS_RBS_10.56_09'
+#tbm13.overcut=0.09
+#tbms[tbm13.name] = tbm13
+#
+##TBM 14
+#tbm14 = deepcopy(tbm10)
+#tbm14.name = 'GL_DS_RBS_10.56_12'
+#tbm14.overcut=0.12
+#tbms[tbm14.name] = tbm14
 
 #TBM 23
 #tbm23=TBMConfig()

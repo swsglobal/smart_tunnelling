@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 # danzi.tn@20151124 generazione delle distribuzioni per pk
 # danzi.tn@20151124 formattazione in percentuale per istogrammi
 # danzi.tn@20151124 replaceTBMName
+# aghensi@20160714 calcolo 5°, 50° e 95° percentile effettivo sui campioni
 def main(argv):
     sParm = "p,parameter in \n"
     sParameterToShow = ""
@@ -333,18 +334,19 @@ def main(argv):
                     parm2show[i][j] = pVal
                     i += 1
                 for i in range(int(N)):
-                    pki_mean = np.nanmean(parm2show[i,:])
-					# gabriele@20151124 rimosso 95o percentile sui grafi
+                    # aghensi@20160714 calcolo 5°, 50° e 95° percentile effettivo sui campioni
+                    # TODO: si possono calcolare i percentili di tutto param2show usando axis=...
+                    mean2Show[i] = list(np.nanpercentile(parm2show[i,:],(5,50,95)))
+
+                    #pki_mean = np.nanmean(parm2show[i,:])
                     #pki_std = np.nanstd(parm2show[i,:])
                     #mean2Show[i][0] = pki_mean - 2*pki_std
-                    mean2Show[i][1] = pki_mean
+                    #mean2Show[i][1] = pki_mean
                     #mean2Show[i][2] = pki_mean + 2*pki_std
-                i=0
-                for outVal in outValues:
-                    outValues[i].append(mean2Show[i%N][1])
-                    #outValues[i].append(mean2Show[i%N][0])
-                    #outValues[i].append(mean2Show[i%N][2])
-                    i += 1
+                for i, outVal in enumerate(outValues):
+                    outVal.append(mean2Show[i%N][1])
+                    outVal.append(mean2Show[i%N][0])
+                    outVal.append(mean2Show[i%N][2])
                 if N==0:
                     print "\tPer TBM %s non ci sono dati in %s" % (tbmKey, tun)
                 else:
@@ -369,21 +371,21 @@ def main(argv):
                     if ylimSup > 0:
                         ax2.set_ylim(ylimInf,ylimSup)
                     ax2.plot(pi,parm2show,'r.',markersize=1.0)
-                    #ax2.plot(pi,mean2Show[:,0],'m-',linewidth=0.5, alpha=0.4)
+                    ax2.plot(pi,mean2Show[:,0],'m-',linewidth=0.5, alpha=0.4)
                     ax2.plot(pi,mean2Show[:,1],'g-',linewidth=2, alpha=0.6)
-                    #ax2.plot(pi,mean2Show[:,2],'c-',linewidth=0.5, alpha=0.4)
+                    ax2.plot(pi,mean2Show[:,2],'c-',linewidth=0.5, alpha=0.4)
                     ax2.set_ylabel("%s (%s)" % (parmDict[sParameterToShow][0],parmDict[sParameterToShow][1]), color='r')
                     for tl in ax2.get_yticklabels():
                         tl.set_color('r')
                     #outputFigure(sDiagramsFolderPath,"%s_%s_%s.svg" % (tun.replace(" ", "_"), tbmKey, sParameterToShow), "svg")
                     outputFigure(sDiagramsFolderPath,"%s_%s_%s.png" % (tun.replace(" ", "_"), tbmKey, sParameterToShow))
                     plt.close(fig)
-                    # esposrto in csv i valori di confronto
-#                    csvfname=os.path.join(sDiagramsFolderPath,"%s_%s_%s.csv" % ( tun.replace(" ", "_"), tbmKey, sParameterToShow))
-#                    with open(csvfname, 'wb') as f:
-#                        writer = csv.writer(f,delimiter=";")
-#                        writer.writerow(('iterazione','fine','he','hp',sParameterToShow,'media','min95' ,'max95' ))
-#                        writer.writerows(outValues)
+                    # esporto in csv i valori di confronto
+                    csvfname=os.path.join(sDiagramsFolderPath,"%s_%s_%s.csv" % ( tun.replace(" ", "_"), tbmKey, sParameterToShow))
+                    with open(csvfname, 'wb') as f:
+                        writer = csv.writer(f,delimiter=";")
+                        writer.writerow(('iterazione','fine','he','hp',sParameterToShow,'media','min95' ,'max95' ))
+                        writer.writerows(outValues)
 
 
 

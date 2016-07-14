@@ -237,11 +237,11 @@ class KpiTbm4Tunnel:
                 % (self.tunnelName, self.tbmName,self.iterationNo,key, _kpi.definition, _kpi.minImpact, _kpi.maxImpact, _kpi.avgImpact, _kpi.appliedLength, _kpi.percentOfApplication, _kpi.probabilityScore, _kpi.totalImpact)
 
 def build_normfunc_dict(bbt_parameter,nIter=1000):
-    gamma = get_my_norm_min_max(bbt_parameter.g_med,bbt_parameter.g_stddev,'gamma',nIter,90)
-    sci = get_my_norm_min_max(bbt_parameter.sigma_ci_avg,bbt_parameter.sigma_ci_stdev,'sigma',nIter,90)
+    gamma = get_my_norm(bbt_parameter.g_med,bbt_parameter.g_stddev,'gamma',nIter)
+    sci = get_my_norm(bbt_parameter.sigma_ci_avg,bbt_parameter.sigma_ci_stdev,'sigma',nIter)
     mi = get_my_norm(bbt_parameter.mi_med,bbt_parameter.mi_stdev,'mi',nIter)
-    ei = get_my_norm_min_max(bbt_parameter.ei_med,bbt_parameter.ei_stdev,'ei',nIter,90)
-    cai = get_my_norm_min_max(bbt_parameter.cai_med,bbt_parameter.cai_stdev,'cai',nIter,90)
+    ei = get_my_norm(bbt_parameter.ei_med,bbt_parameter.ei_stdev,'ei',nIter)
+    cai = get_my_norm(bbt_parameter.cai_med,bbt_parameter.cai_stdev,'cai',nIter)
     gsi = get_my_norm(bbt_parameter.gsi_med,bbt_parameter.gsi_stdev,'gsi',nIter)
     rmr =  get_my_norm(bbt_parameter.rmr_med,bbt_parameter.rmr_stdev,'rmr')
     sti = get_my_norm_min_max(bbt_parameter.sigma_ti_min,bbt_parameter.sigma_ti_max,'sigma_ti',nIter,90)
@@ -274,7 +274,13 @@ def build_bbtparameterVal4seg(bbt_parameterVal):
     gsi = bbt_parameterVal.gsi
     sti = bbt_parameterVal.sigma_ti
     k0 = bbt_parameterVal.k0
-    bbtparameter4seg = BbtParameter4Seg(bbt_parameterVal.inizio,bbt_parameterVal.fine,length,bbt_parameterVal.he,bbt_parameterVal.hp,bbt_parameterVal.co,gamma,sci,mi,ei,cai ,gsi, rmr, bbt_parameterVal.profilo_id ,bbt_parameterVal.geoitem_id, bbt_parameterVal.title, sti, k0, bbt_parameterVal.k0_min, bbt_parameterVal.k0_max, bbt_parameterVal.wdepth)
+    bbtparameter4seg = BbtParameter4Seg(bbt_parameterVal.inizio,bbt_parameterVal.fine,length,
+                                        bbt_parameterVal.he,bbt_parameterVal.hp,
+                                        bbt_parameterVal.co,gamma,sci,mi,ei,cai ,gsi, rmr,
+                                        bbt_parameterVal.profilo_id ,bbt_parameterVal.geoitem_id,
+                                        bbt_parameterVal.title, sti, k0, bbt_parameterVal.k0_min,
+                                        bbt_parameterVal.k0_max, bbt_parameterVal.wdepth,
+                                        bbt_parameterVal.anidrite)
     return bbtparameter4seg
 
 def build_bbtparameter4seg_from_bbt_parameter(bbt_parameter, normfunc_dict):

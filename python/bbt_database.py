@@ -48,7 +48,7 @@ def get_mainbbtparameterseval(sDBPath,sKey,iterMin, iterMax):
                  BbtParameterEval.gamma,BbtParameterEval.sigma,BbtParameterEval.mi,\
                  BbtParameterEval.ei,BbtParameterEval.cai,BbtParameterEval.rmr,\
                  BbtParameterEval.gsi, BbtParameterEval.sigma_ti,BbtParameterEval.k0,\
-                 BbtParameterEval.iteration_no,BbtParameterEval.insertdate\
+                 BbtParameterEval.iteration_no,BbtParameterEval.insertdate, BbtParameter.anidrite\
                  FROM BbtParameterEval \
                  JOIN BbtParameter ON BbtParameter.profilo_id = BbtParameterEval.profilo_id \
                  WHERE BbtParameterEval.tunnelName = ? AND BbtParameterEval.iteration_no>=? \
@@ -68,7 +68,7 @@ def get_bbtparameters(sDBPath):
     bbtresults = cur.execute("SELECT inizio,fine,est,nord,he,hp,co,tipo,wdepth,g_med,g_stddev,\
                               sigma_ci_avg,sigma_ci_stdev,mi_med,mi_stdev,ei_med,ei_stdev,cai_med,\
                               cai_stdev,gsi_med,gsi_stdev,rmr_med,rmr_stdev,profilo_id,geoitem_id,\
-                              title,sigma_ti_min,sigma_ti_max,k0_min,k0_max,perc\
+                              title,sigma_ti_min,sigma_ti_max,k0_min,k0_max,perc,anidrite\
                               FROM bbtparameter ORDER BY profilo_id")
     bbt_parameters = []
     for bbt_parameter in bbtresults:
@@ -85,8 +85,8 @@ def insert_parameters(sDBPath,bbtpar_items):
         c.execute('insert into BbtParameter (inizio,fine,est,nord,he,hp,co,tipo,wdepth,g_med,g_stddev,\
                    sigma_ci_avg,sigma_ci_stdev,mi_med,mi_stdev,ei_med,ei_stdev,cai_med,cai_stdev,\
                    gsi_med,gsi_stdev,rmr_med,rmr_stdev,profilo_id,geoitem_id,title,sigma_ti_min,\
-                   sigma_ti_max,k0_min,k0_max,perc)\
-                   values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', bbtpar)
+                   sigma_ti_max,k0_min,k0_max,perc,anidrite)\
+                   values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', bbtpar)
     conn.commit()
     conn.close()
 
@@ -104,7 +104,10 @@ def insert_geoitems(sDBPath,geoseg_list):
     c = conn.cursor()
     c.execute('delete from BbtGeoitem')
     for geoseg in geoseg_list:
-        c.execute('insert into BbtGeoitem (id,inizio,fine,l,perc,type,g_med,g_stddev,sigma_ci_avg,sigma_ci_stdev,mi_med,mi_stdev,ei_med,ei_stdev,cai_med,cai_stdev,gsi_med,gsi_stdev,rmr_med,rmr_stdev,title,sigma_ti_min,sigma_ti_max,k0_min,k0_max ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', geoseg)
+        c.execute('insert into BbtGeoitem (id,inizio,fine,l,perc,type,g_med,g_stddev,sigma_ci_avg,\
+                  sigma_ci_stdev,mi_med,mi_stdev,ei_med,ei_stdev,cai_med,cai_stdev,gsi_med,\
+                  gsi_stdev,rmr_med,rmr_stdev,title,sigma_ti_min,sigma_ti_max,k0_min,k0_max,\
+                  anidrite) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', geoseg)
     conn.commit()
     conn.close()
 
@@ -178,9 +181,9 @@ def insert_eval4Geo(sDBPath, bbt_evalparameters):
                        title,sigma_ti,k0,t0,t1,t3,t4,t5,inSituConditionSigmaV,tunnelRadius,rockE,\
                        mohrCoulombPsi,rockUcs,inSituConditionGsi,hoekBrownMi,hoekBrownD,\
                        hoekBrownMb,hoekBrownS,hoekBrownA,hoekBrownMr,hoekBrownSr,hoekBrownAr,\
-                       urPiHB,rpl,picr,ldpVlachBegin,ldpVlachEnd)\
+                       urPiHB,rpl,picr,ldpVlachBegin,ldpVlachEnd,anidrite)\
                        values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
-                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        bbt_evalparameters)
         conn.commit()
         conn.close()
@@ -203,10 +206,10 @@ def insert_eval4Iter(sDBPath, bbt_evalparameters, bbttbmkpis):
                       ldpVlachBegin, ldpVlachEnd,\
                       sigma_v_max_tail_skin, sigma_h_max_tail_skin, sigma_v_max_front_shield,\
                       sigma_h_max_front_shield, overcut_required, auxiliary_thrust_required,\
-                      consolidation_required, sigma_h-max_lining, sigma_v-max_lining\
+                      consolidation_required, sigma_h_max_lining, sigma_v_max_lining, anidrite\
                       ) values (\
-                      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
-                      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
+                      ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                       bbt_evalparameters)
         conn.commit()
         conn.close()

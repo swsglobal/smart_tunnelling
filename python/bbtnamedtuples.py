@@ -1,6 +1,6 @@
 from collections import namedtuple
 # id	inizio	fine	L	perc	type	g_med	g_stddev	sigma_ci_avg	sigma_ci_stdev	mi_med	mi_stdev	ei_med	ei_stdev	cai_med	cai_stdev	gsi_med	gsi_stdev
-BbtGeoitem = namedtuple('BbtGeoitem', ['id','inizio','fine','l','perc','type','g_med','g_stddev','sigma_ci_avg','sigma_ci_stdev','mi_med','mi_stdev','ei_med','ei_stdev','cai_med','cai_stdev','gsi_med','gsi_stdev','rmr_med','rmr_stdev','title','sigma_ti_min','sigma_ti_max','k0_min','k0_max'])
+BbtGeoitem = namedtuple('BbtGeoitem', ['id','inizio','fine','l','perc','type','g_med','g_stddev','sigma_ci_avg','sigma_ci_stdev','mi_med','mi_stdev','ei_med','ei_stdev','cai_med','cai_stdev','gsi_med','gsi_stdev','rmr_med','rmr_stdev','title','sigma_ti_min','sigma_ti_max','k0_min','k0_max','anidrite'])
 #id=Vertice altimetrico inizio(calcolato)	fine=Progressiva	Est	Nord	he=Quota altimetrica esistente	hp=Progetto quota altimetrica	co=Differenza quota altimetrica	tipo=Tipo di punto
 BbtProfilo = namedtuple('BbtProfilo',['id','inizio','fine','est','nord','he','hp','co','tipo','wdepth'])
 # aghensi@20160704 aggiunto percentuale per segmenti con materiali multipli
@@ -17,7 +17,7 @@ BbtParameterEvalMain = namedtuple('BbtParameterEvalMain',[
     'sigma_ci_stdev','mi_med','mi_stdev','ei_med','ei_stdev','cai_med','cai_stdev','gsi_med',
     'gsi_stdev','rmr_med','rmr_stdev','profilo_id','geoitem_id','title','sigma_ti_min',
     'sigma_ti_max','k0_min','k0_max', 'perc', 'wdepth',
-    'gamma','sigma','mi','ei','cai','rmr', 'gsi', 'sigma_ti', 'k0', 'iteration_no', 'insertdate'
+    'gamma','sigma','mi','ei','cai','rmr', 'gsi', 'sigma_ti', 'k0', 'iteration_no', 'insertdate', 'anidrite'
     ])
 #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
 BbtParameterEval =  namedtuple('BbtParameterEval',[ 'insertdate',
@@ -67,20 +67,13 @@ BbtParameterEval =  namedtuple('BbtParameterEval',[ 'insertdate',
                                                     'ldpVlachEnd',\
                                                     ])
 
-BbtParameter4Seg =  namedtuple('BbtParameter4Seg',['inizio', 'fine', 'length', 'he', 'hp',\
-                                                    'co',\
-                                                    'gamma',\
-                                                    'sci',\
-                                                    'mi',\
-                                                    'ei',\
-                                                    'cai',\
-                                                    'gsi',\
-                                                    'rmr',\
-                                                    'profilo_id','geoitem_id','descr','sti','k0','k0_min','k0_max', 'wdepth'])
-BbtTbmKpi = namedtuple('BbtTbmKpi',['tunnelName',\
-                                    'tbmName',\
-                                    'iterationNo','kpiKey','kpiDescr','minImpact','maxImpact','avgImpact',\
-                                    'appliedLength','percentOfApplication','probabilityScore','totalImpact'])
+BbtParameter4Seg =  namedtuple('BbtParameter4Seg',['inizio', 'fine', 'length', 'he', 'hp', 'co',
+                                                   'gamma', 'sci', 'mi', 'ei', 'cai', 'gsi', 'rmr',
+                                                   'profilo_id', 'geoitem_id', 'descr', 'sti',
+                                                   'k0', 'k0_min', 'k0_max', 'wdepth', 'anidrite'])
+BbtTbmKpi = namedtuple('BbtTbmKpi',['tunnelName', 'tbmName', 'iterationNo', 'kpiKey', 'kpiDescr',
+                                    'minImpact', 'maxImpact', 'avgImpact', 'appliedLength',
+                                    'percentOfApplication','probabilityScore','totalImpact'])
 
 def bbtparameter_factory(cursor, row):
     return BbtParameter(*row)
@@ -152,12 +145,21 @@ parmDict = {
     't2':("Tempo di montaggio/smontaggio/spostamento", "gg", 0, 0),
     't3':("Extra tempo per scavo in rocce dure", "gg", 0, 0),
     't4':("Tempo apprestamento prospezioni", "gg", 0, 0),
-    't5':("Tempo approstamento consolidamenti", "gg", 0, 0),
+    't5':("Tempo apprestamento consolidamenti", "gg", 0, 0),
     'tsum':("Tempo di scavo totale", "gg", 0, 0),
     'adv':("Avanzamento cumulato", "gg", 0, 0),
     'sigma_ti':("Resistenza a trazione", "GPa", 0, 0),
     'k0':("K0", "-", 0, 0),
     'LocFt':("Per-cutter force", 'kN', 0, 0),
     'pvcTubeDiameter': ("dewatering tube diameter - PVC", "m", 0, 0),
-    'clsTubeDiameter': ("dewatering tube diameter - concrete", "m", 0, 0)
+    'clsTubeDiameter': ("dewatering tube diameter - concrete", "m", 0, 0),
+    'sigma_v_max_tail_skin': ("Pressione verticale sulla tailskin", "MPa", 0, 0),
+    'sigma_h_max_tail_skin': ("Pressione orizzontale sulla tailskin", "MPa", 0, 0),
+    'sigma_v_max_front_shield': ("Pressione verticale sullo scudo anteriore", "MPa", 0, 0),
+    'sigma_h_max_front_shield': ("Pressione orizzontale sullo scudo anteriore", "MPa", 0, 0),
+    'overcut_required': ("Overcut richiesto", "", -.1, 1.1),
+    'auxiliary_thrust_required': ("Auxiliary Thrust richiesta", "", -.1, 1.1),
+    'consolidation_required': ("Consolidamento richiesto", "", -.1, 1.1),
+    'sigma_h_max_lining': ("Pressione verticale sull'anello", "MPa", 0, 0),
+    'sigma_v_max_lining': ("Pressione verticale sull'o scudo anteriore'anello", "MPa", 0, 0)
     }

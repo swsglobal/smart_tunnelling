@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import math
 from pylab import *
 from tbmconfig import *
@@ -672,12 +673,12 @@ class TBMSegment:
             self.Xcontact = self.xLim(self.Tbm.gap1)
             # forza su scudo anteriore
             self.sigma_v_max_front_shield = self.PiUr(self.Tbm.gap1) - self.PiUr(self.TunnelClosureAtShieldEnd1)
-            self.sigma_h_max_front_shield = maxPressure * self.InSituCondition.K0
+            self.sigma_h_max_front_shield = self.sigma_v_max_front_shield * self.InSituCondition.K0
             total = self.sigma_v_max_front_shield*(self.Tbm.Slen1-self.Xcontact)/2.0
             self.frontFrictionForce = total*self.Tbm.frontShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
             #forza su scudo posteriore
             self.sigma_v_max_tail_skin = self.PiUr(self.Tbm.gap) - self.PiUr(self.TunnelClosureAtShieldEnd)
-            self.sigma_h_max_tail_skin = maxPressure * self.InSituCondition.K0
+            self.sigma_h_max_tail_skin = self.sigma_v_max_tail_skin * self.InSituCondition.K0
             total = self.sigma_v_max_tail_skin*(self.Tbm.Slen-self.Tbm.Slen1)/2.0
             self.tailFrictionForce = total*self.Tbm.tailShieldDiameter*math.pi*frictionCoeff*1000.0 # forza in kN
             self.frictionForce = self.frontFrictionForce
@@ -701,41 +702,21 @@ class TBMSegment:
                 self.overcut_required = 1
         # aghensi@20160713 - aggiunti i parametri di sigma_v e _h sugli scudi - fine
 
-
-        # se non mi rimane thurst devo consolidare o sbloccare la macchina
-        ratio = self.availableThrust/self.Tbm.totalContactThrust
-        if ratio > .25:
-            self.cavityStabilityPar = 0.
-        elif ratio > 0.:
-            self.cavityStabilityPar = (0.25-ratio)*4. # varia da 0 a 1 passando da ratio = 0.25 a 0
-        else:
-            self.cavityStabilityPar = 1.
-        # considero anche il blocco dello scudo posteriore
-        if self.Tbm.installedThrustForce > self.tailFrictionForce:
-            self.tailCavityStabilityPar = 0.
-        else:
-            self.tailCavityStabilityPar = 1.
-
-        # aghensi@20160713 - aggiunta parametri di output per segnalare necessita'
-        # di forza ausiliare o consolidamenti
-        if ratio < minRequiredContactThrustRatio:
-            self.auxiliary_thrust_required = 1
-        else:
-            self.auxiliary_thrust_required = 0
-
-        if self.availableAuxiliaryThrust/self.Tbm.totalContactThrust < minRequiredContactThrustRatio:
-            self.consolidation_required = 1
-        else:
-            self.consolidation_required = 0
-
         # calcolo la pressione sui conci come la pressione relativa ad una percentuale
         # della convergenza tra il gap e la massima (calcolata a 100km di distanza)
         # a tale pressione si aggiunge il contributo anidriti se superiori al 2%
         # RIF: cap 5.4.4 relazione di calcolo progetto esecutivo (codice 23055)
-        self.sigma_v-max_lining = self.PiUr(self.Tbm.gap+liningRelaxationRatio*(self.TunnelClosure(100000)-self.Tbm.gap))
+        # TODO: aggiungere interpolazione per valori più alti di 0.02
+        dClosure = self.TunnelClosure(100000)-self.Tbm.gap
+        if dClosure <= 0:
+            self.sigma_v_max_lining = 0
+            self.sigma_h_max_lining = 0
+        else:
+            self.sigma_v_max_lining = self.PiUr(self.Tbm.gap+liningRelaxationRatio*(dClosure))
+            self.sigma_h_max_lining = self.sigma_v_max_lining * self.InSituCondition.K0
         if anidrite > 0.02:
-            self.sigma_v-max_lining += 0.3 #MPa
-        self.sigma_h-max_lining = self.sigma_v-max_lining * self.InSituCondition.K0
+            self.sigma_v_max_lining += 0.3 #MPa
+            self.sigma_h_max_lining += 0.3 #MPa
 
         # definisco thrust e torque
         # metodo colorado school of mines
@@ -776,8 +757,36 @@ class TBMSegment:
         self.availableBreakawayTorque = self.Tbm.breakawayTorque - self.torque
         self.torque+=self.breakawayTorque
         dar = 24.*locuf*locp*self.Tbm.rpm*60. # in m/gg con anni di 365 gg
+
         self.requiredThrustForce = self.Tbm.BackupDragForce+self.contactThrust+self.frictionForce
         self.LocFt = locFt
+
+        # se non mi rimane thurst devo consolidare o sbloccare la macchina
+        ratio = self.availableThrust/self.contactThrust
+        if ratio > .25:
+            self.cavityStabilityPar = 0.
+        elif ratio > 0.:
+            self.cavityStabilityPar = (0.25-ratio)*4. # varia da 0 a 1 passando da ratio = 0.25 a 0
+        else:
+            self.cavityStabilityPar = 1.
+        # considero anche il blocco dello scudo posteriore
+        if self.Tbm.installedThrustForce > self.tailFrictionForce:
+            self.tailCavityStabilityPar = 0.
+        else:
+            self.tailCavityStabilityPar = 1.
+
+        # aghensi@20160713 - aggiunta parametri di output per segnalare necessita'
+        # di forza ausiliare o consolidamenti
+        if ratio < minRequiredContactThrustRatio:
+            self.auxiliary_thrust_required = 1
+        else:
+            self.auxiliary_thrust_required = 0
+
+        if self.availableAuxiliaryThrust/self.contactThrust < minRequiredContactThrustRatio:
+            self.consolidation_required = 1
+        else:
+            self.consolidation_required = 0
+
 
         # considerazioni sulla produzione
         productionMax = self.Tbm.maxProduction

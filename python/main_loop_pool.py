@@ -19,15 +19,13 @@ from time import sleep as tsleep
 import random
 
 # danzi.tn@20151119 generazione variabili random per condizioni geotecniche
-
-# danzi.tn@20151119 generazione variabili random per condizioni geotecniche
-def insert_georandom(sDBPath,nIter, bbt_parameters,sKey):
+def insert_georandom(sDBPath,nIter, bbt_parameters, sKey):
     delete_eval4Geo(sDBPath,sKey)
     now = datetime.datetime.now()
     strnow = now.strftime("%Y%m%d%H%M%S")
     bbt_insertval = []
     for idx, bbt_parameter in enumerate(bbt_parameters):
-        mynorms = build_normfunc_dict(bbt_parameter,nIter)
+        mynorms = build_normfunc_dict(bbt_parameter, nIter)
         for n in range(nIter):
             gamma = mynorms['gamma'].rvs()
             sci = mynorms['sci'].rvs()
@@ -45,7 +43,7 @@ def insert_georandom(sDBPath,nIter, bbt_parameters,sKey):
                                   bbt_parameter.profilo_id, bbt_parameter.geoitem_id,
                                   bbt_parameter.title, sti, k0,
                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, bbt_parameter.anidrite))
         if (idx+1) % 100 == 0:
             insert_eval4Geo(sDBPath,bbt_insertval)
             bbt_insertval = []
@@ -72,7 +70,7 @@ def createLogger(indx=0,name="main_loop"):
 def mp_producer(parms):
     idWorker,  nIter, sDBPath, loopTbms ,sKey = parms
     # ritardo per evitare conflitti su DB
-    # aghensi@20160606 commentato per velocizzare debug
+    # commentare per velocizzare debug in single thread
     tsleep(idWorker*10+1)
     start_time = ttime()
     now = datetime.datetime.now()
@@ -114,11 +112,11 @@ def mp_producer(parms):
     liningRelaxationRatio = bbtConfig.getfloat('TBM', 'liningRelaxationRatio')
 
     alnAll = []
-    aln=InfoAlignment('Galleria di linea direzione Sud', 'GLSUD', inizio_GLSUD, fine_GLSUD,fCCutterMode, fCShiledMode)
+    aln=InfoAlignment('GL Sud', 'GLSUD', inizio_GLSUD, fine_GLSUD,fCCutterMode, fCShiledMode)
     alnAll.append(aln)
-    aln=InfoAlignment('Cunicolo esplorativo direzione Nord', 'CE', delta_GLEST_CE - fine_CE, delta_GLEST_CE - inizio_CE , fCCutterMode, fCShiledMode)
+    aln=InfoAlignment('CE', 'CE', delta_GLEST_CE - fine_CE, delta_GLEST_CE - inizio_CE , fCCutterMode, fCShiledMode)
     alnAll.append(aln)
-    aln=InfoAlignment('Galleria di linea direzione Nord', 'GLNORD',inizio_GLEST, fine_GLEST, fCCutterMode, fCShiledMode)
+    aln=InfoAlignment('GL Nord', 'GLNORD',inizio_GLEST, fine_GLEST, fCCutterMode, fCShiledMode)
     alnAll.append(aln)
 
     kpiTbmList = []
@@ -187,14 +185,14 @@ def mp_producer(parms):
                                 tbmSegAfter = ttime()
                                 tbmSegmentCum += (tbmSegAfter - tbmSegBefore)
                             except Exception as e:
-                                main_logger.error("[%d] %s, %s per pk %d TBMSegment va in errore: %s" % (idWorker, alnCurr.description, tbmKey, param_to_use.fine , e) )
-                                main_logger.error("[%d] bbtparameter4seg = %s" % str(bbtparameter4seg))
+                                main_logger.error("[%d] %s, %s per pk %d TBMSegment va in errore: %s", idWorker, alnCurr.description, tbmKey, param_to_use.fine, e)
+                                main_logger.error("[%d] bbtparameter4seg = %s", idWorker, str(bbtparameter4seg))
                                 continue
                             kpiTbm.setKPI4SEG(alnCurr,tbmsect,bbtparameter4seg)
                             #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
                             bbt_evalparameters.append((
-                                strnow, mainIterationNo,alnCurr.description, tbmKey,
-                                param_to_use.fine,param_to_use.he,param_to_use.hp,
+                                strnow, mainIterationNo, alnCurr.description, tbmKey,
+                                param_to_use.fine, param_to_use.he, param_to_use.hp,
                                 param_to_use.co, param_to_use.wdepth, bbtparameter4seg.gamma,
                                 bbtparameter4seg.sci, bbtparameter4seg.mi, bbtparameter4seg.ei,
                                 bbtparameter4seg.cai,bbtparameter4seg.gsi,bbtparameter4seg.rmr,\
@@ -241,8 +239,9 @@ def mp_producer(parms):
                                 tbmsect.sigma_v_max_tail_skin, tbmsect.sigma_h_max_tail_skin,
                                 tbmsect.sigma_v_max_front_shield, tbmsect.sigma_h_max_front_shield,
                                 tbmsect.overcut_required, tbmsect.auxiliary_thrust_required,
-                                tbmsect.consolidation_required, tbmsect.sigma_h-max_lining,
-                                tbmsect.sigma_v-max_lining
+                                tbmsect.consolidation_required, tbmsect.sigma_h_max_lining,
+                                tbmsect.sigma_v_max_lining, bbtparameter4seg.anidrite,
+                                alnCurr.frictionCoeff
                                 ))
                     kpiTbm.updateKPI(alnCurr)
                     bbttbmkpis += kpiTbm.getBbtTbmKpis()
@@ -326,7 +325,7 @@ if __name__ == "__main__":
         totIterations = mp_np*nIter
         if bGeorandom:
             geo_start_time = ttime()
-            insert_georandom(sDBPath,totIterations, bbt_parameters,sKey)
+            insert_georandom(sDBPath,totIterations, bbt_parameters, sKey)
             geo_tot_time = ttime() - geo_start_time
             main_logger.info("Generazione dei parametri geotecnici per %d iterazioni su %d segmenti ha richiesto %d secondi" % (totIterations,len(bbt_parameters) ,geo_tot_time ) )
         else:
@@ -362,7 +361,7 @@ if __name__ == "__main__":
         results = workers.map(mp_producer, job_args)
         workers.close()
         workers.join()
-
+#
 #        for ja in job_args:
 #            mp_producer(ja)
         # aghensi@20160603 singolo thread per debug - fine
