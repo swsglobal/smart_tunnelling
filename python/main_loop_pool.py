@@ -157,7 +157,7 @@ def mp_producer(parms):
                                 param_to_use = bbt_parameter
                             else:
                                 # genero valore random da 0 a 1
-                                par_prob = random.random()
+                                par_prob = float(iIterationNo)/float(nIter)
                                 # controllo dove cade il valore rispetto a cur_params[i].perc
                                 cum_prob = 0
                                 for param in cur_params:
