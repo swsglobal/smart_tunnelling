@@ -244,7 +244,7 @@ def build_normfunc_dict(bbt_parameter,nIter=1000):
     cai = get_my_norm(bbt_parameter.cai_med,bbt_parameter.cai_stdev,'cai',nIter)
     gsi = get_my_norm(bbt_parameter.gsi_med,bbt_parameter.gsi_stdev,'gsi',nIter)
     rmr =  get_my_norm(bbt_parameter.rmr_med,bbt_parameter.rmr_stdev,'rmr')
-    sti = get_my_norm_min_max(bbt_parameter.sigma_ti_min,bbt_parameter.sigma_ti_max,'sigma_ti',nIter,90)
+    sti = get_my_norm_min_max(bbt_parameter.sigma_ti_min,bbt_parameter.sigma_ti_max,'sigma_ti',nIter,95)
     k0 = get_my_norm_min_max(bbt_parameter.k0_min,bbt_parameter.k0_max,'k0',nIter,95)
     return {'gamma':gamma,'sci':sci,'mi':mi,'ei':ei,'cai':cai,'gsi':gsi,'rmr':rmr,'sti':sti,'k0':k0}
 

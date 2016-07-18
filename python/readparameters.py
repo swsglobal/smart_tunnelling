@@ -14,6 +14,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def get_stress(cur):
+    for param in ("lining","front_shield","tail_skin"):
+        strSql="""SELECT a.tunnelname, a.tbmname, a.fine, a.title, a.sigma_v_max_{0}, a.sigma_h_max{1}
+            FROM bbtparametereval a
+            INNER JOIN (
+                SELECT tunnelname, tbmname, min(sigma_v_max_{0}) min_par1, max(sigma_v_max_{0}) max_par1, min(sigma_h_max_{0}) min_par2, max(sigma_h_max_{0}) max_par2
+                FROM bbtparametereval
+                where tunnelname != 'XXX' and sigma_v_max_{0} > 0 and sigma_h_max_{0} > 0
+                GROUP BY tunnelname, tbmname
+            ) b
+            ON a.tunnelname = b.tunnelname AND a.tbmname = b.tbmname AND (
+            a.sigma_v_max_{0} = b.min_par1 OR a.sigma_v_max_{0} = b.max_par1
+            OR a.and sigma_h_max_{0} = b.min_par2 OR a.and sigma_h_max_{0} = b.max_par2)
+            order by a.tunnelname, a.tbmname, a.sigma_v_max_{0}, a.and sigma_h_max_{0}""".format(param)
+        cur.execute(strSql)
+        bbtresults = cur.fetchall()
+
+
+
 
 # qui vedi come leggere i parametri dal Database bbt_mules_2-3.db
 # danzi.tn@20151114 completamento lettura nuovi parametri e TBM
@@ -53,7 +72,7 @@ def main(argv):
     sParm += "\n\t-m => per tipologia di TBM indicata viene eseguito raggruppamento per Produttore\n"
     sParm += "\n\t-s => per segmento progressivo indicata con km+m\n"
     try:
-        opts, args = getopt.getopt(argv,"hp:t:rkadicm:s:",["parameter=","tbmcode=","radar","kpi","allkpi","detailkpi","histograms","compact_types","bytype","segment"])
+        opts, args = getopt.getopt(argv,"hp:t:rkadicm:s:o:",["parameter=","tbmcode=","radar","kpi","allkpi","detailkpi","histograms","compact_types","bytype","segment","probability"])
     except getopt.GetoptError:
         print "readparameters.py -p <parameter> [-t <tbmcode>] [-rkai]\r\n where\r\n %s" % sParm
         sys.exit(2)
@@ -93,6 +112,9 @@ def main(argv):
         elif opt in ("-m", "--bytype"):
             sTypeToGroup = arg
             #bGroupTypes = True
+        elif opt in ("-o", "--probability"):
+            probability = True
+            sParameterToShow = arg
 
     if len(sTypeToGroup) >0 and sTypeToGroup not in ('DS','S','O'):
         print "Wrong TBM Type -m=%s!\nreadparameters.py -p <parameter> [-t <tbmcode>] [-rkai]\r\n where\r\n %s" % (sTypeToGroup,sParm)
@@ -277,14 +299,13 @@ def main(argv):
                 M = float(bbtresult[0]) + 1.0
                 if M_Max > M:
                     print "Numero massimo di iterazioni per %s sono %d" % (tbmKey, M)
-                sSql = """SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3
-                          +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv
+                sSql = """SELECT *, t1+t3+t4+t5 as tsum, 1 as adv
                           FROM BBtParameterEval
-                          WHERE BBtParameterEval.tunnelNAme = '"""+tun+"""'
+                          WHERE tunnelNAme = '"""+tun+"""'
                               AND tbmNAme='"""+tbmKey+"""'
-                          order by BBtParameterEval.iteration_no, BBtParameterEval.fine"""
+                          order by iteration_no, fine"""
                 if bGroupTypes:
-                    sSql = """SELECT BBtParameterEval.*, BBtParameterEval.t1 +BBtParameterEval.t3
+                    sSql = """SELECT *, BBtParameterEval.t1 +BBtParameterEval.t3
                               +BBtParameterEval.t4 +BBtParameterEval.t5 as tsum, 1 as adv
                               FROM BBtParameterEval
                               JOIN BbtTbm on BbtTbm.name = BBtParameterEval.tbmName
@@ -307,7 +328,7 @@ def main(argv):
                 pj = 0
                 prev = 0.0
                 outValues =[]
-                if tun not in ('Galleria di linea direzione Sud'):
+                if tun not in ('GL Sud'):
                     bbtresults.reverse()
                 for bbt_parametereval in bbtresults:
                     j = int(bbt_parametereval['iteration_no'])
@@ -386,8 +407,54 @@ def main(argv):
                         writer = csv.writer(f,delimiter=";")
                         writer.writerow(('fine','he','hp','50perc','5perc' ,'95perc' ))
                         writer.writerows(outValues)
+            # aghensi@20160715 - aggiunto istogramma probabilità ristretta su pk in cui è maggiore di 0
+            elif probability:
+                sSql = """SELECT * FROM(
+                    SELECT fine, CAST(sum({0}) AS REAL)/cast(count({0}) as real) as probability
+                    FROM bbtparametereval
+                    WHERE tunnelname = '{1}' AND tbmname = '{2}'
+                    GROUP BY fine
+                    ORDER BY fine
+                    ) WHERE probability > 0""".format(sParameterToShow, tun, tbmKey)
+                cur.execute(sSql)
+                bbtresults = cur.fetchall()
+                N = len(bbtresults)
+                if N > 0:
+                    if tun not in ('GL Sud'):
+                        bbtresults.reverse()
+                    # recupero tutti i parametri e li metto in una lista
+                    xsequence = np.r_[0:N:1]
+                    xlabels = zeros(shape=(N), dtype=float)
+                    parm2show = zeros(shape=(N), dtype=float)
+                    outValues = []
+                    ymax = 0
+                    for i, bbt_parametereval in enumerate(bbtresults):
+                        xlabels[i] = bbt_parametereval['fine']
+                        parm2show[i] = float(bbt_parametereval['probability'])
+                        outValues.append([bbt_parametereval['fine'],bbt_parametereval['probability']])
+                        ymax = max(ymax,bbt_parametereval['probability'])
+                    fig = plt.figure(figsize=(32, 20), dpi=100)
+                    matplotlib.rcParams.update({'font.size': 18})
+                    ax1 = fig.add_subplot(111)
+                    ax1.set_ylim(0,ymax*1.1)
+                    title("%s - %s" % (tun,tbmKey))
+                    ax1.bar(xsequence, parm2show, align='center')
+                    plt.xticks(xsequence, xlabels, rotation='vertical')
+                    ax1.set_xlabel('Station (m)')
+                    ax1.set_ylabel("%s (probability)" % (parmDict[sParameterToShow][0]), color='b')
+                    for tl in ax1.get_yticklabels():
+                        tl.set_color('b')
+                    ##########
 
-
+                    #outputFigure(sDiagramsFolderPath,"%s_%s_%s.svg" % (tun.replace(" ", "_"), tbmKey, sParameterToShow), "svg")
+                    outputFigure(sDiagramsFolderPath,"%s_%s_%s-prob.png" % (tun.replace(" ", "_"), tbmKey, sParameterToShow))
+                    plt.close(fig)
+                    # esporto in csv i valori di confronto
+                    csvfname=os.path.join(sDiagramsFolderPath,"%s_%s_%s-prob.csv" % ( tun.replace(" ", "_"), tbmKey, sParameterToShow))
+                    with open(csvfname, 'wb') as f:
+                        writer = csv.writer(f,delimiter=";")
+                        writer.writerow(('fine','probability' ))
+                        writer.writerows(outValues)
 
             if bShowKPI:
                 print "%s %s" % (tun, tbmKey)

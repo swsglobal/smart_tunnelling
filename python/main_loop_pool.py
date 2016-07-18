@@ -35,13 +35,14 @@ def insert_georandom(sDBPath,nIter, bbt_parameters, sKey):
             gsi = mynorms['gsi'].rvs()
             rmr =  mynorms['rmr'].rvs()
             sti = mynorms['sti'].rvs()
-            k0 = mynorms['k0'].rvs()
+            #aghensi@20160715 - inutile, calcolo k0 da k0min e max
+            #k0 = mynorms['k0'].rvs()
             bbt_insertval.append((strnow, n, sKey, sKey, bbt_parameter.fine, bbt_parameter.he,
                                   bbt_parameter.hp, bbt_parameter.co, bbt_parameter.wdepth,
                                   gamma, sci, mi, ei, cai, gsi,
                                   rmr, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                   bbt_parameter.profilo_id, bbt_parameter.geoitem_id,
-                                  bbt_parameter.title, sti, k0,
+                                  bbt_parameter.title, sti, 0,
                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, bbt_parameter.anidrite))
         if (idx+1) % 100 == 0:
@@ -51,24 +52,38 @@ def insert_georandom(sDBPath,nIter, bbt_parameters, sKey):
         print "ultimi %d da inserire" % len(bbt_insertval)
         insert_eval4Geo(sDBPath,bbt_insertval)
 
-# danzi.tn@20151119 profiling logging ed ottimizzazione con Pool
-def createLogger(indx=0,name="main_loop"):
-    log_level = bbtConfig.get('MAIN_LOOP','log_level')
-    logging.basicConfig(level=eval("logging.%s"%log_level))
-    formatter = logging.Formatter('%(levelname)s - %(asctime)s: %(message)s')
-    main_logger = logging.getLogger("%s_%02d" % (name,indx))
-    main_logger.propagate = False
-    mainfh = handlers.RotatingFileHandler("%s_%02d.log" % (name,indx),maxBytes=500000, backupCount=5)
-    mainfh.setFormatter(formatter)
-    main_logger.addHandler(mainfh)
-    return main_logger;
+
+def createLogger(indx=0, logger_name="main_loop"):
+    '''
+    creates main logger and a rotating file handler
+    '''
+    logger = logging.getLogger("%s_%02d" % (logger_name,indx))
+    if not len(logger.handlers):
+        # Log su file
+        log_level = bbtConfig.get('MAIN_LOOP','log_level')
+        logger.setLevel(eval("logging.%s"%log_level))
+
+        file_handler = logging.handlers.RotatingFileHandler("%s_%02d.log" % (logger_name,indx),
+                                                            maxBytes=5000000, backupCount=5)
+        file_handler.setLevel(log_level)
+        formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(funcName)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        # aghensi@20160502 - messaggi critici anche su stdout
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setLevel(logging.INFO)
+        stdout_formatter = logging.Formatter('%(name)s - %(levelname)s - %(funcName)s - %(message)s')
+        stdout_handler.setFormatter(stdout_formatter)
+        logger.addHandler(stdout_handler)
+        logger.handler_set = True
+    return logger
 
 
 # danzi.tn@20151114 gestione main e numero di iterazioni da linea comando
 # danzi.tn@20151117 versione multithread
 # danzi.tn@20151118 gestione loop per singola TBM
 def mp_producer(parms):
-    idWorker,  nIter, sDBPath, loopTbms ,sKey = parms
+    idWorker,  nIter, sDBPath, loopTbms, sKey = parms
     # ritardo per evitare conflitti su DB
     # commentare per velocizzare debug in single thread
     tsleep(idWorker*10+1)
@@ -120,11 +135,13 @@ def mp_producer(parms):
     alnAll.append(aln)
 
     kpiTbmList = []
-    main_logger.debug("[%d]############################# Inizia a recuperare le itarazioni di %s dalla %d alla %d" % (idWorker,sKey,idWorker*nIter, (idWorker+1)*nIter))
+    main_logger.debug("[%d]############################# Inizia a recuperare le iterazioni di %s dalla %d alla %d" % (idWorker,sKey,idWorker*nIter, (idWorker+1)*nIter))
     bbt_bbtparameterseval = get_mainbbtparameterseval(sDBPath, sKey, idWorker*nIter, (idWorker+1)*nIter)
     main_logger.debug("[%d]############################# ...recuperate %d iterazioni, memoria totale" % (idWorker,len(bbt_bbtparameterseval)))
     for iIterationNo in range(nIter):
         mainIterationNo = idWorker*nIter + iIterationNo
+        # genero valore probabilità in base all'iterazione
+        par_prob = float(iIterationNo)/float(nIter)
         tbmSegmentCum = 0
         iter_start_time = ttime()
         bbttbmkpis = []
@@ -146,103 +163,96 @@ def mp_producer(parms):
                     # cerco i segmenti che rientrano tra inizio e fine del Tunnel
                     # aghensi@20160704 - ci sono più bbt_parameter multipli per la stessa pk - inizio
                     cur_fine = float("inf")
+                    par_found = False
                     matches_params = [bpar for bpar in bbt_bbtparameterseval[mainIterationNo] if alnCurr.pkStart <= bpar.inizio and bpar.fine <= alnCurr.pkEnd]
                     for bbt_parameter in matches_params:
                         if bbt_parameter.fine != cur_fine:
-                            param_to_use = None
+                            # nuova pk, resetto variabili controllo
                             cur_fine = bbt_parameter.fine
-                            cur_params = [par for par in matches_params if par.fine == bbt_parameter.fine]
-                            if len(cur_params) == 1:
-                                # unico materiale, utilizzo quello
-                                param_to_use = bbt_parameter
-                            else:
-                                # genero valore random da 0 a 1
-                                par_prob = float(iIterationNo)/float(nIter)
-                                # controllo dove cade il valore rispetto a cur_params[i].perc
-                                cum_prob = 0
-                                for param in cur_params:
-                                    cum_prob += param.perc
-                                    if par_prob < cum_prob:
-                                       param_to_use = param
-                                       break
-                                # tengo quel cur_param
-                            # aghensi@20160704 - ci sono più bbt_parameter multipli per la stessa pk - fine
-                            bbtparameter4seg = build_bbtparameterVal4seg(param_to_use)
-                            iCheckEvalparameters += 1
-                            if bbtparameter4seg == None:
-                                main_logger.error("[%d] %s, %s per pk %d parametri Geo non trovati" % (idWorker, alnCurr.description, tbmKey, param_to_use.fine) )
-                                continue
-                            # danzi.tn@20151115 recepimento modifiche su InfoAlignment fatte da Garbriele
-                            if iIterationNo > 2:
-                                alnCurr.frictionCoeff = fcShield.rvs()
-                                alnCurr.fiRi = fcCutter.rvs()
-                            else:
-                                alnCurr.frictionCoeff = fCShiledMode
-                                alnCurr.fiRi = fCCutterMode
-                            try:
-                                tbmSegBefore = ttime()
-                                tbmsect = TBMSegment(bbtparameter4seg, tbm, alnCurr.fiRi, alnCurr.frictionCoeff, minRequiredContactThrustRatio, liningRelaxationRatio)
-                                tbmSegAfter = ttime()
-                                tbmSegmentCum += (tbmSegAfter - tbmSegBefore)
-                            except Exception as e:
-                                main_logger.error("[%d] %s, %s per pk %d TBMSegment va in errore: %s", idWorker, alnCurr.description, tbmKey, param_to_use.fine, e)
-                                main_logger.error("[%d] bbtparameter4seg = %s", idWorker, str(bbtparameter4seg))
-                                continue
-                            kpiTbm.setKPI4SEG(alnCurr,tbmsect,bbtparameter4seg)
-                            #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
-                            bbt_evalparameters.append((
-                                strnow, mainIterationNo, alnCurr.description, tbmKey,
-                                param_to_use.fine, param_to_use.he, param_to_use.hp,
-                                param_to_use.co, param_to_use.wdepth, bbtparameter4seg.gamma,
-                                bbtparameter4seg.sci, bbtparameter4seg.mi, bbtparameter4seg.ei,
-                                bbtparameter4seg.cai,bbtparameter4seg.gsi,bbtparameter4seg.rmr,\
-                                tbmsect.pkCe2Gl(param_to_use.fine),
-                                tbmsect.TunnelClosureAtShieldEnd*1000., tbmsect.rockBurst.Val,\
-                                tbmsect.frontStability.Ns, tbmsect.frontStability.lambdae,\
-                                tbmsect.penetrationRate*1000.,
-                                tbmsect.penetrationRateReduction*1000.,
-                                tbmsect.contactThrust, tbmsect.torque,
-                                tbmsect.frictionForce,
-                                tbmsect.requiredThrustForce,
-                                tbmsect.availableThrust,
-                                tbmsect.dailyAdvanceRate,
-                                param_to_use.profilo_id,
-                                param_to_use.geoitem_id,
-                                param_to_use.title,
-                                bbtparameter4seg.sti,
-                                bbtparameter4seg.k0,
-                                tbmsect.t0,
-                                tbmsect.t1,
-                                tbmsect.t3,
-                                tbmsect.t4,
-                                tbmsect.t5,
-                                tbmsect.InSituCondition.SigmaV,
-                                tbmsect.Excavation.Radius,
-                                tbmsect.Rock.E,
-                                tbmsect.MohrCoulomb.psi,
-                                tbmsect.Rock.Ucs,
-                                tbmsect.InSituCondition.Gsi,
-                                tbmsect.HoekBrown.Mi,
-                                tbmsect.HoekBrown.D,
-                                tbmsect.HoekBrown.Mb,
-                                tbmsect.HoekBrown.S,
-                                tbmsect.HoekBrown.A,
-                                tbmsect.HoekBrown.Mr,
-                                tbmsect.HoekBrown.Sr,
-                                tbmsect.HoekBrown.Ar,
-                                tbmsect.UrPi_HB(0.),
-                                tbmsect.Rpl,
-                                tbmsect.Picr,
-                                tbmsect.LDP_Vlachopoulos_2009(0.),
-                                tbmsect.LDP_Vlachopoulos_2009(tbm.Slen),
-                                #aghensi@20160713 - aggiunta parametri al DB
-                                tbmsect.sigma_v_max_tail_skin, tbmsect.sigma_h_max_tail_skin,
-                                tbmsect.sigma_v_max_front_shield, tbmsect.sigma_h_max_front_shield,
-                                tbmsect.overcut_required, tbmsect.auxiliary_thrust_required,
-                                tbmsect.consolidation_required, tbmsect.sigma_h_max_lining,
-                                tbmsect.sigma_v_max_lining, bbtparameter4seg.anidrite,
-                                alnCurr.frictionCoeff
-                                ))
+                            par_found = False
+                            cum_prob = 0
+                        if not par_found:
+                            # non ho ancora trovato la pk con la giusta probabilità, controllo
+                            cum_prob += bbt_parameter.perc
+                            if par_prob < cum_prob:
+                                par_found = True
+                                # aghensi@20160704 - ci sono più bbt_parameter multipli per la stessa pk - fine
+                                bbtparameter4seg = build_bbtparameterVal4seg(bbt_parameter)
+                                iCheckEvalparameters += 1
+                                if bbtparameter4seg == None:
+                                    main_logger.error("[%d] %s, %s per pk %d parametri Geo non trovati" % (idWorker, alnCurr.description, tbmKey, bbt_parameter.fine) )
+                                    continue
+                                # danzi.tn@20151115 recepimento modifiche su InfoAlignment fatte da Garbriele
+                                if iIterationNo > 2:
+                                    alnCurr.frictionCoeff = fcShield.rvs()
+                                    alnCurr.fiRi = fcCutter.rvs()
+                                else:
+                                    alnCurr.frictionCoeff = fCShiledMode
+                                    alnCurr.fiRi = fCCutterMode
+                                try:
+                                    tbmSegBefore = ttime()
+                                    tbmsect = TBMSegment(bbtparameter4seg, tbm, alnCurr.fiRi, alnCurr.frictionCoeff, minRequiredContactThrustRatio, liningRelaxationRatio)
+                                    tbmSegAfter = ttime()
+                                    tbmSegmentCum += (tbmSegAfter - tbmSegBefore)
+                                except Exception as e:
+                                    main_logger.error("[%d] %s, %s per pk %d TBMSegment va in errore: %s", idWorker, alnCurr.description, tbmKey, bbt_parameter.fine, e)
+                                    main_logger.error("[%d] bbtparameter4seg = %s", idWorker, str(bbtparameter4seg))
+                                    continue
+                                kpiTbm.setKPI4SEG(alnCurr,tbmsect,bbtparameter4seg)
+                                #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
+                                bbt_evalparameters.append((
+                                    strnow, mainIterationNo, alnCurr.description, tbmKey,
+                                    bbt_parameter.fine, bbt_parameter.he, bbt_parameter.hp,
+                                    bbt_parameter.co, bbt_parameter.wdepth, bbtparameter4seg.gamma,
+                                    bbtparameter4seg.sci, bbtparameter4seg.mi, bbtparameter4seg.ei,
+                                    bbtparameter4seg.cai,bbtparameter4seg.gsi,bbtparameter4seg.rmr,\
+                                    tbmsect.pkCe2Gl(bbt_parameter.fine),
+                                    tbmsect.TunnelClosureAtShieldEnd*1000., tbmsect.rockBurst.Val,\
+                                    tbmsect.frontStability.Ns, tbmsect.frontStability.lambdae,\
+                                    tbmsect.penetrationRate*1000.,
+                                    tbmsect.penetrationRateReduction*1000.,
+                                    tbmsect.contactThrust, tbmsect.torque,
+                                    tbmsect.frictionForce,
+                                    tbmsect.requiredThrustForce,
+                                    tbmsect.availableThrust,
+                                    tbmsect.dailyAdvanceRate,
+                                    bbt_parameter.profilo_id,
+                                    bbt_parameter.geoitem_id,
+                                    bbt_parameter.title,
+                                    bbtparameter4seg.sti,
+                                    tbmsect.InSituCondition.K0,
+                                    tbmsect.t0,
+                                    tbmsect.t1,
+                                    tbmsect.t3,
+                                    tbmsect.t4,
+                                    tbmsect.t5,
+                                    tbmsect.InSituCondition.SigmaV,
+                                    tbmsect.Excavation.Radius,
+                                    tbmsect.Rock.E,
+                                    tbmsect.MohrCoulomb.psi,
+                                    tbmsect.Rock.Ucs,
+                                    tbmsect.InSituCondition.Gsi,
+                                    tbmsect.HoekBrown.Mi,
+                                    tbmsect.HoekBrown.D,
+                                    tbmsect.HoekBrown.Mb,
+                                    tbmsect.HoekBrown.S,
+                                    tbmsect.HoekBrown.A,
+                                    tbmsect.HoekBrown.Mr,
+                                    tbmsect.HoekBrown.Sr,
+                                    tbmsect.HoekBrown.Ar,
+                                    tbmsect.UrPi_HB(0.),
+                                    tbmsect.Rpl,
+                                    tbmsect.Picr,
+                                    tbmsect.LDP_Vlachopoulos_2009(0.),
+                                    tbmsect.LDP_Vlachopoulos_2009(tbm.Slen),
+                                    #aghensi@20160713 - aggiunta parametri al DB
+                                    tbmsect.sigma_v_max_tail_skin, tbmsect.sigma_h_max_tail_skin,
+                                    tbmsect.sigma_v_max_front_shield, tbmsect.sigma_h_max_front_shield,
+                                    tbmsect.overcut_required, tbmsect.auxiliary_thrust_required,
+                                    tbmsect.consolidation_required, tbmsect.sigma_h_max_lining,
+                                    tbmsect.sigma_v_max_lining, bbtparameter4seg.anidrite,
+                                    alnCurr.frictionCoeff
+                                    ))
                     kpiTbm.updateKPI(alnCurr)
                     bbttbmkpis += kpiTbm.getBbtTbmKpis()
                     sys.stdout.flush()
@@ -361,7 +371,7 @@ if __name__ == "__main__":
         results = workers.map(mp_producer, job_args)
         workers.close()
         workers.join()
-#
+
 #        for ja in job_args:
 #            mp_producer(ja)
         # aghensi@20160603 singolo thread per debug - fine

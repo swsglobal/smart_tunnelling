@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 import csv, pprint, os
+from shutil import copyfile
 import sys
 from collections import defaultdict
 from collections import namedtuple
@@ -15,11 +17,20 @@ from tbmconfig import tbms
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 ########## File vari: DB e file excel
+# aghensi@20160715 - in import prendo database vuoto e lo sostituisco a database pieno (backup!)
+empty_db_name = bbtConfig.get('Database','empty_dbname')
+empty_db_path = os.path.join(os.path.abspath('..'), bbtConfig.get('Database','dbfolder'), empty_db_name)
+if not os.path.isfile(empty_db_path):
+    print "Errore! File %s inesistente!" % empty_db_path
+    exit(1)
 sDBName = bbtConfig.get('Database','dbname')
 sDBPath = os.path.join(os.path.abspath('..'), bbtConfig.get('Database','dbfolder'), sDBName)
-if not os.path.isfile(sDBPath):
-    print "Errore! File %s inesistente!" % sDBPath
-    exit(1)
+if os.path.isfile(sDBPath):
+    os.rename(sDBPath,
+              "{}_{}.db".format(os.path.splitext(sDBPath)[0],
+                                datetime.datetime.now().strftime("%Y%m%d%H%M%S")))
+copyfile(empty_db_path, sDBPath)
+
 sGeoReliability_XLS = os.path.join(os.path.abspath('..'),bbtConfig.get('Import','folder'),bbtConfig.get('Import','valutazione'))
 if not os.path.isfile(sGeoReliability_XLS):
     print "Errore! File %s inesistente!" % sGeoReliability_XLS

@@ -556,8 +556,6 @@ class TBMSegment:
         aunsupported = tbm.Slen
         excavType = 'Mech'
         pi = 0.
-        # aghensi@20160713 - aggiunto contributo anidriti
-        anidrite = segment.anidrite
         if ucs <= 1.0:
             print "gamma= %f E= %f ucs= %f" % (gamma, e, ucs)
         self.Rock = Rock(gamma, ni, e, ucs,  st)	#importo definizione di Rock
@@ -690,14 +688,14 @@ class TBMSegment:
         if tbm.type == 'DS':
             self.availableThrust = max(0., self.Tbm.installedThrustForce - self.frictionForce)
             self.availableAuxiliaryThrust = max(0., self.Tbm.installedAuxiliaryThrustForce - self.frictionForce)
-            if self.sigma_v_max_tail_skin + self.sigma_v_max_front_shield == 0:
+            if self.sigma_v_max_tail_skin <= 0 and self.sigma_v_max_front_shield <= 0:
                 self.overcut_required = 0
             else:
                 self.overcut_required = 1
         else:
             self.availableThrust = max(0., self.Tbm.installedThrustForce - self.frictionForce - self.Tbm.BackupDragForce)
             self.availableAuxiliaryThrust = max(0., self.Tbm.installedAuxiliaryThrustForce - self.frictionForce - self.Tbm.BackupDragForce)
-            if self.sigma_v_max_front_shield == 0:
+            if self.sigma_v_max_front_shield <= 0:
                 self.overcut_required = 0
             else:
                 self.overcut_required = 1
@@ -729,9 +727,9 @@ class TBMSegment:
         else:
             self.sigma_v_max_lining = self.PiUr(self.Tbm.gap+liningRelaxationRatio*(dClosure))
             self.sigma_h_max_lining = self.sigma_v_max_lining * self.InSituCondition.K0
-        if anidrite > 0.02:
+                    # aghensi@20160713 - aggiunto contributo anidriti
+        if segment.anidrite > 0.02:
             self.sigma_v_max_lining += 0.3 #MPa
-            self.sigma_h_max_lining += 0.3 #MPa
 
         # definisco thrust e torque
         # metodo colorado school of mines
@@ -777,19 +775,15 @@ class TBMSegment:
         self.LocFt = locFt
 
 
-
         # aghensi@20160713 - aggiunta parametri di output per segnalare necessita'
         # di forza ausiliare o consolidamenti
-        if self.availableThrust/self.contactThrust < minRequiredContactThrustRatio:
+        self.auxiliary_thrust_required = 0
+        if self.contactThrust > 0 and self.availableThrust/self.contactThrust < minRequiredContactThrustRatio:
             self.auxiliary_thrust_required = 1
-        else:
-            self.auxiliary_thrust_required = 0
 
-        if self.availableAuxiliaryThrust/self.contactThrust < minRequiredContactThrustRatio:
+        self.consolidation_required = 0
+        if self.contactThrust > 0 and self.availableAuxiliaryThrust/self.contactThrust < minRequiredContactThrustRatio:
             self.consolidation_required = 1
-        else:
-            self.consolidation_required = 0
-
 
         # considerazioni sulla produzione
         productionMax = self.Tbm.maxProduction

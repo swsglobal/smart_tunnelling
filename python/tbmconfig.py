@@ -89,35 +89,6 @@ tbm5.name = 'GL_DS_HRK_10.60_112'
 tbm5.overcut=0.112
 tbms[tbm5.name] = tbm5
 
-#TBM 8
-#tbm8=TBMConfig()
-#tbm8.name = 'CE_DS_HRK_6.82'
-#tbm8.alignmentCode='CE'
-#tbm8.manifacturer='Herrenknecht'
-#tbm8.type='DS' # O = open, S = single shield, DS = double shield
-#tbm8.shieldLength=11.695 + .9
-#tbm8.frontShieldDiameter=6.77
-#tbm8.frontShieldLength=4.595+.9
-#tbm8.tailShieldDiameter=6.65
-#tbm8.excavationDiameter=6.82
-#tbm8.overcut=0.12
-#tbm8.loadPerCutter=315.
-#tbm8.cutterSize=19.*0.0254 #diameter
-#tbm8.cutterSpacing=0.085
-#tbm8.cutterThickness=0.02
-#tbm8.cutterCount=39
-#tbm8.totalContactThrust=tbm8.loadPerCutter*tbm8.cutterCount
-#tbm8.referenceRpm=5.
-#tbm8.nominalTorque=5250.
-#tbm8.breakawayTorque=11800.
-#tbm8.backupDragForce=4000.
-#tbm8.nominalThrustForce=35539.
-#tbm8.auxiliaryThrustForce=60236.
-#tbm8.openingRatio=0.05
-#tbm8.dotationForProspection=0.75 # da 0 a 1 se e' per niente o molto dotata
-#tbm8.cutterheadThickness=0.9
-#tbms[tbm8.name] = tbm8
-
 #TBM 10 - Documento 092515-2-DS-T-REV5 22 JUNE 2016
 tbm10=TBMConfig()
 tbm10.name = 'GL_DS_RBS_10.56_00'
@@ -208,25 +179,25 @@ tbms[tbm51.name] = tbm51
 
 #tbm52
 tbm52 = deepcopy(tbm51)
-tbm52.name = 'CE_DS_HRK_10.60_03'
+tbm52.name = 'CE_DS_HRK_6.82_03'
 tbm52.overcut=0.03
 tbms[tbm52.name] = tbm52
 
 #tbm53
 tbm53 = deepcopy(tbm51)
-tbm53.name = 'CE_DS_HRK_10.60_06'
+tbm53.name = 'CE_DS_HRK_6.82_06'
 tbm53.overcut=0.06
 tbms[tbm53.name] = tbm53
 
 #tbm54
 tbm54 = deepcopy(tbm51)
-tbm54.name = 'CE_DS_HRK_10.60_09'
+tbm54.name = 'CE_DS_HRK_6.82_09'
 tbm54.overcut=0.09
 tbms[tbm54.name] = tbm54
 
 #tbm55
 tbm55 = deepcopy(tbm51)
-tbm55.name = 'CE_DS_HRK_10.60_112'
+tbm55.name = 'CE_DS_HRK_6.82_112'
 tbm55.overcut=0.112
 tbms[tbm55.name] = tbm55
 

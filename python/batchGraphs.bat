@@ -1,3 +1,5 @@
+@echo off
+echo "Scatterplot con percentili..."
 REM python readparameters.py -p iteration_no
 REM python readparameters.py -p fine
 REM python readparameters.py -p he
@@ -51,4 +53,9 @@ python readparameters.py -p auxiliary_thrust_required
 python readparameters.py -p consolidation_required
 python readparameters.py -p sigma_h_max_lining
 python readparameters.py -p sigma_v_max_lining
+echo "Istogrammi Probabilità..."
+python readparameters.py -o consolidation_required
+python readparameters.py -o overcut_required
+python readparameters.py -o auxiliary_thrust_required
+echo "Fatto."
 pause
