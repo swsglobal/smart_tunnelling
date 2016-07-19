@@ -14,22 +14,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def get_stress(cur):
-    for param in ("lining","front_shield","tail_skin"):
-        strSql="""SELECT a.tunnelname, a.tbmname, a.fine, a.title, a.sigma_v_max_{0}, a.sigma_h_max{1}
-            FROM bbtparametereval a
-            INNER JOIN (
-                SELECT tunnelname, tbmname, min(sigma_v_max_{0}) min_par1, max(sigma_v_max_{0}) max_par1, min(sigma_h_max_{0}) min_par2, max(sigma_h_max_{0}) max_par2
-                FROM bbtparametereval
-                where tunnelname != 'XXX' and sigma_v_max_{0} > 0 and sigma_h_max_{0} > 0
-                GROUP BY tunnelname, tbmname
-            ) b
-            ON a.tunnelname = b.tunnelname AND a.tbmname = b.tbmname AND (
-            a.sigma_v_max_{0} = b.min_par1 OR a.sigma_v_max_{0} = b.max_par1
-            OR a.and sigma_h_max_{0} = b.min_par2 OR a.and sigma_h_max_{0} = b.max_par2)
-            order by a.tunnelname, a.tbmname, a.sigma_v_max_{0}, a.and sigma_h_max_{0}""".format(param)
-        cur.execute(strSql)
-        bbtresults = cur.fetchall()
+#def get_stress(cur):
+#    for param in ("lining","front_shield","tail_skin"):
+#        strSql="""SELECT a.*
+#            FROM bbtparametereval a
+#            INNER JOIN (
+#                SELECT tunnelname, tbmname, min(sigma_v_max_{0}) min_par1, max(sigma_v_max_{0}) max_par1, min(sigma_h_max_{0}) min_par2, max(sigma_h_max_{0}) max_par2
+#                FROM bbtparametereval
+#                where tunnelname != 'XXX' and sigma_v_max_{0} > 0 and sigma_h_max_{0} > 0
+#                GROUP BY tunnelname, tbmname
+#            ) b
+#            ON a.tunnelname = b.tunnelname AND a.tbmname = b.tbmname AND (
+#            a.sigma_v_max_{0} = b.min_par1 OR a.sigma_v_max_{0} = b.max_par1
+#            OR a.and sigma_h_max_{0} = b.min_par2 OR a.and sigma_h_max_{0} = b.max_par2)
+#            order by a.tunnelname, a.tbmname, a.sigma_v_max_{0}, a.and sigma_h_max_{0}""".format(param)
+#        cur.execute(strSql)
+#        bbtresults = cur.fetchall()
+#        for bbt_parametereval in bbtresults:
+
+
 
 
 
@@ -154,79 +157,90 @@ def main(argv):
     M_Max = float(bbtresult[0]) + 1.0
     print "Numero massimo di iterazioni presenti %d" % M_Max
     # Legge tutti i Tunnell
-    sSql = """SELECT distinct
-            bbtTbmKpi.tunnelName
-            FROM
-            bbtTbmKpi
-            ORDER BY bbtTbmKpi.tunnelName"""
-    cur.execute(sSql)
-    bbtresults = cur.fetchall()
-    print "Sono presenti %d diverse Gallerie" % len(bbtresults)
-    tunnelArray = []
-    for bbtr in bbtresults:
-        tunnelArray.append(bbtr[0])
+#    sSql = """SELECT distinct
+#            bbtTbmKpi.tunnelName
+#            FROM
+#            bbtTbmKpi
+#            ORDER BY bbtTbmKpi.tunnelName"""
+#    cur.execute(sSql)
+#    bbtresults = cur.fetchall()
+#    print "Sono presenti %d diverse Gallerie" % len(bbtresults)
+#    tunnelArray = []
+#    for bbtr in bbtresults:
+#        tunnelArray.append(bbtr[0])
+    tunnelArray = ['CE', 'GL Nord']
     # Legge tutte le TBM solo per associare i colori in maniera univoca
-    sSql = """SELECT bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer, count(*) as cnt
-            FROM
-            bbtTbmKpi
-			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
-            ORDER BY bbtTbmKpi.tbmName"""
-    if bGroupTypes:
-        sSql = """SELECT BbtTbm.type, count(*) as cnt
-                FROM
-                bbtTbmKpi
-    			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-    			GROUP BY BbtTbm.type
-                ORDER BY BbtTbm.type"""
-    cur.execute(sSql)
-    bbtresults = cur.fetchall()
+#    sSql = """SELECT bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer, count(*) as cnt
+#            FROM
+#            bbtTbmKpi
+#			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+#			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
+#            ORDER BY bbtTbmKpi.tbmName"""
+#    if bGroupTypes:
+#        sSql = """SELECT BbtTbm.type, count(*) as cnt
+#                FROM
+#                bbtTbmKpi
+#    			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+#    			GROUP BY BbtTbm.type
+#                ORDER BY BbtTbm.type"""
+#    cur.execute(sSql)
+#    bbtresults = cur.fetchall()
+    # HACK
+    tbmfilter = ['CE_DS_HRK_6.82_00', 'CE_DS_HRK_6.82_112', 'CE_DS_RBS_6.73_00', 'CE_DS_RBS_6.73_12',
+                 'GL_DS_HRK_10.60_00', 'GL_DS_HRK_10.60_112', 'GL_DS_RBS_10.56_00', 'GL_DS_RBS_10.56_12']
     # associare un colore diverso ad ogni TBM
     tbmColors = {}
-    for bbtr in bbtresults:
-        tbmColors[bbtr[0]] = main_colors.pop(0)
+    for bbtr in tbmfilter:
+        #tbmColors[bbtr[0]] = main_colors.pop(0)
+        tbmColors[bbtr] = main_colors.pop(0)
     bShowlTunnel = False
     for tun in tunnelArray:
         allTbmData = []
         print "\r\n%s" % tun
         sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
-                FROM
-                bbtTbmKpi
-                JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-                WHERE bbtTbmKpi.tunnelName = '"""+tun+"""'
+                FROM bbtTbmKpi JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+                WHERE bbtTbmKpi.tunnelName = '{0}' AND bbtTbmKpi.tbmName in ('{1}')
                 GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
-                ORDER BY bbtTbmKpi.tbmName"""
-        # Filtro sulla eventuale TBM passata come parametro
-        if len(sTbmCode) > 0:
-            sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
-                    FROM
-                    bbtTbmKpi
-        			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""' AND BbtTbm.name = '"""+sTbmCode+"""'
-        			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
-                    ORDER BY bbtTbmKpi.tbmName"""
-        # Filtro sulla eventuale Tipologia passata come parametro
-        elif len(sTypeToGroup) > 0:
-            sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
-                    FROM
-                    bbtTbmKpi
-        			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""' AND BbtTbm.type = '"""+sTypeToGroup+"""'
-        			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
-                    ORDER BY bbtTbmKpi.tbmName"""
-        # Raggruppamento per Tipo TBM
-        elif bGroupTypes:
-            sSql = """SELECT BbtTbm.type, count(*) as cnt_tbmtype
-                    FROM
-                    BbtTbm
-					WHERE
-					BbtTbm.name IN (
-                    SELECT DISTINCT BbtTbmKpi.tbmName
-					FROM bbtTbmKpi
-                    WHERE
-                    bbtTbmKpi.tunnelName = '"""+tun+"""')
-        			GROUP BY BbtTbm.type
-                    ORDER BY BbtTbm.type"""
+                ORDER BY bbtTbmKpi.tbmName""".format(tun, "', '".join(tbmfilter))
+
+#        sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
+#                FROM
+#                bbtTbmKpi
+#                JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+#                WHERE bbtTbmKpi.tunnelName = '"""+tun+"""'
+#                GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
+#                ORDER BY bbtTbmKpi.tbmName"""
+#        # Filtro sulla eventuale TBM passata come parametro
+#        if len(sTbmCode) > 0:
+#            sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
+#                    FROM
+#                    bbtTbmKpi
+#        			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+#                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""' AND BbtTbm.name = '"""+sTbmCode+"""'
+#        			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
+#                    ORDER BY bbtTbmKpi.tbmName"""
+#        # Filtro sulla eventuale Tipologia passata come parametro
+#        elif len(sTypeToGroup) > 0:
+#            sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
+#                    FROM
+#                    bbtTbmKpi
+#        			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+#                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""' AND BbtTbm.type = '"""+sTypeToGroup+"""'
+#        			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
+#                    ORDER BY bbtTbmKpi.tbmName"""
+#        # Raggruppamento per Tipo TBM
+#        elif bGroupTypes:
+#            sSql = """SELECT BbtTbm.type, count(*) as cnt_tbmtype
+#                    FROM
+#                    BbtTbm
+#					WHERE
+#					BbtTbm.name IN (
+#                    SELECT DISTINCT BbtTbmKpi.tbmName
+#					FROM bbtTbmKpi
+#                    WHERE
+#                    bbtTbmKpi.tunnelName = '"""+tun+"""')
+#        			GROUP BY BbtTbm.type
+#                    ORDER BY BbtTbm.type"""
         cur.execute(sSql)
         bbtresults = cur.fetchall()
         print "Sono presenti %d diverse TBM" % len(bbtresults)
@@ -350,10 +364,14 @@ def main(argv):
                         if bGroupTypes:
                             pVal = pVal/tbmCount
                     #aghensi@20160714 - memorizzo solo i percentili
-                    if j == 0:
-                        outValues.append([float(bbt_parametereval['fine']),
-                                          float(bbt_parametereval['he']),
-                                          float(bbt_parametereval['hp'])])
+#                    if j == 0:
+#                        outValues.append([float(bbt_parametereval['fine']),
+#                                          float(bbt_parametereval['he']),
+#                                          float(bbt_parametereval['hp'])])
+                    outValues.append([int(bbt_parametereval['iteration_no']),
+                                      float(bbt_parametereval['fine']),
+                                      float(bbt_parametereval['he']),
+                                      float(bbt_parametereval['hp']),pVal])
                     parm2show[i][j] = pVal
                     i += 1
                 for i in range(int(N)):
@@ -390,11 +408,11 @@ def main(argv):
                     ax2 = ax1.twinx()
                     ax2.yaxis.grid(True)
                     if ylimSup > 0:
-                        ax2.set_ylim(ylimInf,ylimSup)
-                    ax2.plot(pi,parm2show,'r.',markersize=1.0)
-                    ax2.plot(pi,mean2Show[:,0],'m-',linewidth=0.5, alpha=0.4)
-                    ax2.plot(pi,mean2Show[:,1],'g-',linewidth=2, alpha=0.6)
-                    ax2.plot(pi,mean2Show[:,2],'c-',linewidth=0.5, alpha=0.4)
+                        ax2.set_ylim(ylimInf, ylimSup)
+                    ax2.plot(pi, parm2show, 'r.', markersize=1.0)
+                    ax2.plot(pi, mean2Show[:,0], 'm-', linewidth=0.5, alpha=0.4)
+                    ax2.plot(pi, mean2Show[:,1], 'g-', linewidth=2, alpha=0.6)
+                    ax2.plot(pi, mean2Show[:,2], 'c-', linewidth=0.5, alpha=0.4)
                     ax2.set_ylabel("%s (%s)" % (parmDict[sParameterToShow][0],parmDict[sParameterToShow][1]), color='r')
                     for tl in ax2.get_yticklabels():
                         tl.set_color('r')
@@ -405,7 +423,7 @@ def main(argv):
                     csvfname=os.path.join(sDiagramsFolderPath,"%s_%s_%s.csv" % ( tun.replace(" ", "_"), tbmKey, sParameterToShow))
                     with open(csvfname, 'wb') as f:
                         writer = csv.writer(f,delimiter=";")
-                        writer.writerow(('fine','he','hp','50perc','5perc' ,'95perc' ))
+                        writer.writerow(('iterazione','fine','he','hp',sParameterToShow, '50perc', '5perc', '95perc'))
                         writer.writerows(outValues)
             # aghensi@20160715 - aggiunto istogramma probabilità ristretta su pk in cui è maggiore di 0
             elif probability:
@@ -431,8 +449,8 @@ def main(argv):
                     for i, bbt_parametereval in enumerate(bbtresults):
                         xlabels[i] = bbt_parametereval['fine']
                         parm2show[i] = float(bbt_parametereval['probability'])
-                        outValues.append([bbt_parametereval['fine'],bbt_parametereval['probability']])
-                        ymax = max(ymax,bbt_parametereval['probability'])
+                        outValues.append([bbt_parametereval['fine'], bbt_parametereval['probability']])
+                        ymax = max(ymax, bbt_parametereval['probability'])
                     fig = plt.figure(figsize=(32, 20), dpi=100)
                     matplotlib.rcParams.update({'font.size': 18})
                     ax1 = fig.add_subplot(111)
