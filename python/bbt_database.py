@@ -35,29 +35,23 @@ def get_mainbbtparameterseval(sDBPath,sKey,iterMin, iterMax):
     conn.row_factory = bbtParameterEvalMain_factory
     cur = conn.cursor()
     bbt_bbtparameterseval = defaultdict(list)
-    cur.execute("SELECT BbtParameter.inizio,BbtParameter.fine,BbtParameter.est,BbtParameter.nord,\
-                 BbtParameter.he,BbtParameter.hp,BbtParameter.co,BbtParameter.tipo,\
-                 BbtParameter.g_med,BbtParameter.g_stddev,BbtParameter.sigma_ci_avg,\
-                 BbtParameter.sigma_ci_stdev,BbtParameter.mi_med,BbtParameter.mi_stdev,\
-                 BbtParameter.ei_med,BbtParameter.ei_stdev,BbtParameter.cai_med,\
-                 BbtParameter.cai_stdev,BbtParameter.gsi_med,BbtParameter.gsi_stdev,\
-                 BbtParameter.rmr_med,BbtParameter.rmr_stdev,BbtParameter.profilo_id,\
-                 BbtParameter.geoitem_id,BbtParameter.title,BbtParameter.sigma_ti_min,\
-                 BbtParameter.sigma_ti_max,BbtParameter.k0_min,BbtParameter.k0_max,\
-                 BbtParameter.perc,BbtParameter.wdepth,\
-                 BbtParameterEval.gamma,BbtParameterEval.sigma,BbtParameterEval.mi,\
-                 BbtParameterEval.ei,BbtParameterEval.cai,BbtParameterEval.rmr,\
-                 BbtParameterEval.gsi, BbtParameterEval.sigma_ti,BbtParameterEval.k0,\
-                 BbtParameterEval.iteration_no,BbtParameterEval.insertdate, BbtParameter.anidrite\
-                 FROM BbtParameterEval \
-                 JOIN BbtParameter ON BbtParameter.profilo_id = BbtParameterEval.profilo_id \
-                 WHERE BbtParameterEval.tunnelName = ? AND BbtParameterEval.iteration_no>=? \
-                 AND BbtParameterEval.iteration_no < ? \
-                 ORDER BY BbtParameterEval.profilo_id, BbtParameter.inizio",
+    cur.execute("SELECT inizio, fine,\
+                 he,hp,co,\
+                 profilo_id,\
+                 geoitem_id,title,\
+                 perc,wdepth,\
+                 gamma,sigma,mi,\
+                 ei,cai,rmr,\
+                 gsi, sigma_ti,\
+                 iteration_no,insertdate, anidrite, k0_min, k0_max\
+                 FROM BbtParameterEval\
+                 WHERE tunnelName = ? AND iteration_no>=? \
+                 AND iteration_no < ? \
+                 ORDER BY profilo_id, fine",
                  (sKey,iterMin,iterMax))
     bbtresults = cur.fetchall()
     for bbt_parametereval in bbtresults:
-        bbt_bbtparameterseval[bbt_parametereval.iteration_no].append( bbt_parametereval )
+        bbt_bbtparameterseval[bbt_parametereval.iteration_no].append(bbt_parametereval)
     conn.close()
     return bbt_bbtparameterseval
 
@@ -174,16 +168,16 @@ def insert_eval4Geo(sDBPath, bbt_evalparameters):
         conn = getDBConnection(sDBPath)
         c = conn.cursor()
         c.executemany("INSERT INTO BbtParameterEval (insertdate,iteration_no,tunnelName,tbmName,\
-                       fine,he,hp,co,wdepth,gamma,sigma,mi,ei,cai,gsi,rmr,pkgl,closure,rockburst,\
+                       inizio,fine,he,hp,co,wdepth,gamma,sigma,mi,ei,cai,gsi,rmr,pkgl,closure,rockburst,\
                        front_stability_ns,front_stability_lambda,penetrationRate,\
                        penetrationRateReduction,contactThrust,torque,frictionForce,\
                        requiredThrustForce,availableThrust,dailyAdvanceRate,profilo_id,geoitem_id,\
                        title,sigma_ti,k0,t0,t1,t3,t4,t5,inSituConditionSigmaV,tunnelRadius,rockE,\
                        mohrCoulombPsi,rockUcs,inSituConditionGsi,hoekBrownMi,hoekBrownD,\
                        hoekBrownMb,hoekBrownS,hoekBrownA,hoekBrownMr,hoekBrownSr,hoekBrownAr,\
-                       urPiHB,rpl,picr,ldpVlachBegin,ldpVlachEnd,anidrite)\
+                       urPiHB,rpl,picr,ldpVlachBegin,ldpVlachEnd,anidrite,k0_min,k0_max,perc)\
                        values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,\
-                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                       ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                        bbt_evalparameters)
         conn.commit()
         conn.close()

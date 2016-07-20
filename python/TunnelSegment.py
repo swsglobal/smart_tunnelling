@@ -31,6 +31,31 @@ def probabilityAftes2012(percent):
         x=percent-0.5
     return y0+slope*x
 
+def impact(ratio):
+    if ratio <= 0.:
+        x = 0.
+        y0 = 0.
+        slope = 0.
+    elif ratio <=.05:
+        y0=0.
+        slope=1./(.05)
+        x=ratio
+    elif ratio <=.1:
+        y0=1.
+        slope=1./.05
+        x=ratio-.05
+    elif ratio <=.5:
+        y0=2.
+        slope=1./(.4)
+        x=ratio-.1
+    else:
+        y0 = 3
+        slope = 1./.5
+        x = ratio-.5
+    impact = min(5., y0+slope*x)
+    return impact
+
+
 def impactOnDelay(tDays):
     days=max(0., tDays)
     if days==0.:

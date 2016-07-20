@@ -259,8 +259,9 @@ def build_bbtparameter4seg(bbt_parameter, bbtparametereval):
     rmr =  bbtparametereval.rmr
     gsi = bbtparametereval.gsi
     sti = bbtparametereval.sigma_ti
-    k0 = bbtparametereval.k0
-    bbtparameter4seg = BbtParameter4Seg(bbt_parameter.inizio,bbt_parameter.fine,length,bbt_parameter.he,bbt_parameter.hp,bbt_parameter.co,gamma,sci,mi,ei,cai ,gsi, rmr, bbt_parameter.profilo_id ,bbt_parameter.geoitem_id, bbt_parameter.title, sti, k0, bbt_parameter.k0_min, bbt_parameter.k0_max, bbt_parameter.wdepth)
+    #k0 = bbtparametereval.k0
+    bbtparameter4seg = BbtParameter4Seg(bbt_parameter.inizio,bbt_parameter.fine,length,bbt_parameter.he,bbt_parameter.hp,bbt_parameter.co,gamma,sci,mi,ei,cai ,gsi, rmr, bbt_parameter.profilo_id ,bbt_parameter.geoitem_id, bbt_parameter.title, sti,# k0,
+                                        bbt_parameter.k0_min, bbt_parameter.k0_max, bbt_parameter.wdepth)
     return bbtparameter4seg
 
 def build_bbtparameterVal4seg(bbt_parameterVal):
@@ -273,12 +274,13 @@ def build_bbtparameterVal4seg(bbt_parameterVal):
     rmr =  bbt_parameterVal.rmr
     gsi = bbt_parameterVal.gsi
     sti = bbt_parameterVal.sigma_ti
-    k0 = bbt_parameterVal.k0
+    #k0 = bbt_parameterVal.k0
     bbtparameter4seg = BbtParameter4Seg(bbt_parameterVal.inizio,bbt_parameterVal.fine,length,
                                         bbt_parameterVal.he,bbt_parameterVal.hp,
                                         bbt_parameterVal.co,gamma,sci,mi,ei,cai ,gsi, rmr,
                                         bbt_parameterVal.profilo_id ,bbt_parameterVal.geoitem_id,
-                                        bbt_parameterVal.title, sti, k0, bbt_parameterVal.k0_min,
+                                        bbt_parameterVal.title, sti, #k0,
+                                        bbt_parameterVal.k0_min,
                                         bbt_parameterVal.k0_max, bbt_parameterVal.wdepth,
                                         bbt_parameterVal.anidrite)
     return bbtparameter4seg
@@ -293,6 +295,7 @@ def build_bbtparameter4seg_from_bbt_parameter(bbt_parameter, normfunc_dict):
     gsi = normfunc_dict['gsi'].rvs()
     rmr =  normfunc_dict['rmr'].rvs()
     sti = normfunc_dict['sti'].rvs()
-    k0 = normfunc_dict['k0'].rvs()
-    bbtparameter4seg = BbtParameter4Seg(bbt_parameter.inizio,bbt_parameter.fine,length,bbt_parameter.he,bbt_parameter.hp,bbt_parameter.co,gamma,sci,mi,ei,cai ,gsi, rmr, bbt_parameter.profilo_id ,bbt_parameter.geoitem_id, bbt_parameter.title, sti, k0, bbt_parameter.k0_min, bbt_parameter.k0_max, bbt_parameter.wdepth)
+    #k0 = normfunc_dict['k0'].rvs()
+    bbtparameter4seg = BbtParameter4Seg(bbt_parameter.inizio,bbt_parameter.fine,length,bbt_parameter.he,bbt_parameter.hp,bbt_parameter.co,gamma,sci,mi,ei,cai ,gsi, rmr, bbt_parameter.profilo_id ,bbt_parameter.geoitem_id, bbt_parameter.title, sti,# k0,
+                                        bbt_parameter.k0_min, bbt_parameter.k0_max, bbt_parameter.wdepth)
     return bbtparameter4seg

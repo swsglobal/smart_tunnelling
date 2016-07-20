@@ -37,14 +37,15 @@ def insert_georandom(sDBPath,nIter, bbt_parameters, sKey):
             sti = mynorms['sti'].rvs()
             #aghensi@20160715 - inutile, calcolo k0 da k0min e max
             #k0 = mynorms['k0'].rvs()
-            bbt_insertval.append((strnow, n, sKey, sKey, bbt_parameter.fine, bbt_parameter.he,
+            bbt_insertval.append((strnow, n, sKey, sKey, bbt_parameter.inizio, bbt_parameter.fine, bbt_parameter.he,
                                   bbt_parameter.hp, bbt_parameter.co, bbt_parameter.wdepth,
                                   gamma, sci, mi, ei, cai, gsi,
                                   rmr, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                   bbt_parameter.profilo_id, bbt_parameter.geoitem_id,
                                   bbt_parameter.title, sti, 0,
                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, bbt_parameter.anidrite))
+                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, bbt_parameter.anidrite,
+                                  bbt_parameter.k0_min,bbt_parameter.k0_max,bbt_parameter.perc))
         if (idx+1) % 100 == 0:
             insert_eval4Geo(sDBPath,bbt_insertval)
             bbt_insertval = []
@@ -72,7 +73,7 @@ def createLogger(indx=0, logger_name="main_loop"):
         # aghensi@20160502 - messaggi critici anche su stdout
         stdout_handler = logging.StreamHandler(sys.stdout)
         stdout_handler.setLevel(logging.INFO)
-        stdout_formatter = logging.Formatter('%(name)s - %(levelname)s - %(funcName)s - %(message)s')
+        stdout_formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
         stdout_handler.setFormatter(stdout_formatter)
         logger.addHandler(stdout_handler)
         logger.handler_set = True
@@ -83,7 +84,7 @@ def createLogger(indx=0, logger_name="main_loop"):
 # danzi.tn@20151117 versione multithread
 # danzi.tn@20151118 gestione loop per singola TBM
 def mp_producer(parms):
-    idWorker,  nIter, sDBPath, loopTbms, sKey = parms
+    idWorker,  nIter, sDBPath, loopTbms, sKey, np = parms
     # ritardo per evitare conflitti su DB
     # commentare per velocizzare debug in single thread
     tsleep(idWorker*10+1)
@@ -127,8 +128,8 @@ def mp_producer(parms):
     liningRelaxationRatio = bbtConfig.getfloat('TBM', 'liningRelaxationRatio')
 
     alnAll = []
-    aln=InfoAlignment('GL Sud', 'GLSUD', inizio_GLSUD, fine_GLSUD,fCCutterMode, fCShiledMode)
-    alnAll.append(aln)
+#    aln=InfoAlignment('GL Sud', 'GLSUD', inizio_GLSUD, fine_GLSUD,fCCutterMode, fCShiledMode)
+#    alnAll.append(aln)
     aln=InfoAlignment('CE', 'CE', delta_GLEST_CE - fine_CE, delta_GLEST_CE - inizio_CE , fCCutterMode, fCShiledMode)
     alnAll.append(aln)
     aln=InfoAlignment('GL Nord', 'GLNORD',inizio_GLEST, fine_GLEST, fCCutterMode, fCShiledMode)
@@ -141,7 +142,7 @@ def mp_producer(parms):
     for iIterationNo in range(nIter):
         mainIterationNo = idWorker*nIter + iIterationNo
         # genero valore probabilità in base all'iterazione
-        par_prob = float(iIterationNo)/float(nIter)
+        par_prob = float(mainIterationNo+1)/float(nIter*np)
         tbmSegmentCum = 0
         iter_start_time = ttime()
         bbttbmkpis = []
@@ -164,9 +165,12 @@ def mp_producer(parms):
                     # aghensi@20160704 - ci sono più bbt_parameter multipli per la stessa pk - inizio
                     cur_fine = float("inf")
                     par_found = False
+                    cum_prob = 0
                     matches_params = [bpar for bpar in bbt_bbtparameterseval[mainIterationNo] if alnCurr.pkStart <= bpar.inizio and bpar.fine <= alnCurr.pkEnd]
                     for bbt_parameter in matches_params:
                         if bbt_parameter.fine != cur_fine:
+                            if not par_found and cur_fine != float("inf"):
+                                main_logger.error("non ho trovato il title per la pk %s", cur_fine)
                             # nuova pk, resetto variabili controllo
                             cur_fine = bbt_parameter.fine
                             par_found = False
@@ -174,7 +178,7 @@ def mp_producer(parms):
                         if not par_found:
                             # non ho ancora trovato la pk con la giusta probabilità, controllo
                             cum_prob += bbt_parameter.perc
-                            if par_prob < cum_prob:
+                            if par_prob - cum_prob <= 0.001:
                                 par_found = True
                                 # aghensi@20160704 - ci sono più bbt_parameter multipli per la stessa pk - fine
                                 bbtparameter4seg = build_bbtparameterVal4seg(bbt_parameter)
@@ -199,7 +203,7 @@ def mp_producer(parms):
                                     main_logger.error("[%d] bbtparameter4seg = %s", idWorker, str(bbtparameter4seg))
                                     continue
                                 kpiTbm.setKPI4SEG(alnCurr,tbmsect,bbtparameter4seg)
-                                #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
+                                #☻danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
                                 bbt_evalparameters.append((
                                     strnow, mainIterationNo, alnCurr.description, tbmKey,
                                     bbt_parameter.fine, bbt_parameter.he, bbt_parameter.hp,
@@ -253,6 +257,7 @@ def mp_producer(parms):
                                     tbmsect.sigma_v_max_lining, bbtparameter4seg.anidrite,
                                     alnCurr.frictionCoeff
                                     ))
+
                     kpiTbm.updateKPI(alnCurr)
                     bbttbmkpis += kpiTbm.getBbtTbmKpis()
                     sys.stdout.flush()
@@ -363,7 +368,7 @@ if __name__ == "__main__":
             main_logger.info( tbk )
         list_a = range(mp_np)
         start_time = ttime()
-        job_args = [(i, nIter, sDBPath, loopTbms, sKey) for i, item_a in enumerate(list_a)]
+        job_args = [(i, nIter, sDBPath, loopTbms, sKey, mp_np) for i, item_a in enumerate(list_a)]
 
         # aghensi@20160603 singolo thread per debug - inizio
         workers = Pool(processes=mp_np)

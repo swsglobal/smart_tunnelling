@@ -66,22 +66,22 @@ tbm1.dotationForProspection=1. # da 0 a 1 se e' per niente o molto dotata
 tbms[tbm1.name] = tbm1
 
 #TBM 2
-tbm2 = deepcopy(tbm1)
-tbm2.name = 'GL_DS_HRK_10.60_03'
-tbm2.overcut=0.03
-tbms[tbm2.name] = tbm2
-
-#TBM 3
-tbm3 = deepcopy(tbm1)
-tbm3.name = 'GL_DS_HRK_10.60_06'
-tbm3.overcut=0.06
-tbms[tbm3.name] = tbm3
-
-#TBM 4
-tbm4 = deepcopy(tbm1)
-tbm4.name = 'GL_DS_HRK_10.60_09'
-tbm4.overcut=0.09
-tbms[tbm4.name] = tbm4
+#tbm2 = deepcopy(tbm1)
+#tbm2.name = 'GL_DS_HRK_10.60_03'
+#tbm2.overcut=0.03
+#tbms[tbm2.name] = tbm2
+#
+##TBM 3
+#tbm3 = deepcopy(tbm1)
+#tbm3.name = 'GL_DS_HRK_10.60_06'
+#tbm3.overcut=0.06
+#tbms[tbm3.name] = tbm3
+#
+##TBM 4
+#tbm4 = deepcopy(tbm1)
+#tbm4.name = 'GL_DS_HRK_10.60_09'
+#tbm4.overcut=0.09
+#tbms[tbm4.name] = tbm4
 
 #TBM 5
 tbm5 = deepcopy(tbm1)
@@ -122,22 +122,22 @@ tbm10.dotationForProspection=1. # da 0 a 1 se e' per niente o molto dotata
 tbms[tbm10.name] = tbm10
 
 #TBM 11
-tbm11 = deepcopy(tbm10)
-tbm11.name = 'GL_DS_RBS_10.56_03'
-tbm11.overcut=0.03
-tbms[tbm11.name] = tbm11
-
-#TBM 12
-tbm12 = deepcopy(tbm10)
-tbm12.name = 'GL_DS_RBS_10.56_06'
-tbm12.overcut=0.06
-tbms[tbm12.name] = tbm12
-
-#TBM 13
-tbm13 = deepcopy(tbm10)
-tbm13.name = 'GL_DS_RBS_10.56_09'
-tbm13.overcut=0.09
-tbms[tbm13.name] = tbm13
+#tbm11 = deepcopy(tbm10)
+#tbm11.name = 'GL_DS_RBS_10.56_03'
+#tbm11.overcut=0.03
+#tbms[tbm11.name] = tbm11
+#
+##TBM 12
+#tbm12 = deepcopy(tbm10)
+#tbm12.name = 'GL_DS_RBS_10.56_06'
+#tbm12.overcut=0.06
+#tbms[tbm12.name] = tbm12
+#
+##TBM 13
+#tbm13 = deepcopy(tbm10)
+#tbm13.name = 'GL_DS_RBS_10.56_09'
+#tbm13.overcut=0.09
+#tbms[tbm13.name] = tbm13
 
 #TBM 14
 tbm14 = deepcopy(tbm10)
@@ -178,22 +178,22 @@ tbm51.dotationForProspection=1. # da 0 a 1 se e' per niente o molto dotata
 tbms[tbm51.name] = tbm51
 
 #tbm52
-tbm52 = deepcopy(tbm51)
-tbm52.name = 'CE_DS_HRK_6.82_03'
-tbm52.overcut=0.03
-tbms[tbm52.name] = tbm52
-
-#tbm53
-tbm53 = deepcopy(tbm51)
-tbm53.name = 'CE_DS_HRK_6.82_06'
-tbm53.overcut=0.06
-tbms[tbm53.name] = tbm53
-
-#tbm54
-tbm54 = deepcopy(tbm51)
-tbm54.name = 'CE_DS_HRK_6.82_09'
-tbm54.overcut=0.09
-tbms[tbm54.name] = tbm54
+#tbm52 = deepcopy(tbm51)
+#tbm52.name = 'CE_DS_HRK_6.82_03'
+#tbm52.overcut=0.03
+#tbms[tbm52.name] = tbm52
+#
+##tbm53
+#tbm53 = deepcopy(tbm51)
+#tbm53.name = 'CE_DS_HRK_6.82_06'
+#tbm53.overcut=0.06
+#tbms[tbm53.name] = tbm53
+#
+##tbm54
+#tbm54 = deepcopy(tbm51)
+#tbm54.name = 'CE_DS_HRK_6.82_09'
+#tbm54.overcut=0.09
+#tbms[tbm54.name] = tbm54
 
 #tbm55
 tbm55 = deepcopy(tbm51)
@@ -232,22 +232,22 @@ tbm23.cutterheadThickness=1.
 tbms[tbm23.name] = tbm23
 
 #tbm24
-tbm24 = deepcopy(tbm51)
-tbm24.name = 'CE_DS_RBS_6.73_03'
-tbm24.overcut=0.03
-tbms[tbm24.name] = tbm24
-
-#tbm25
-tbm25 = deepcopy(tbm51)
-tbm25.name = 'CE_DS_RBS_6.73_06'
-tbm25.overcut=0.06
-tbms[tbm25.name] = tbm25
-
-#tbm26
-tbm26 = deepcopy(tbm51)
-tbm26.name = 'CE_DS_RBS_6.73_09'
-tbm26.overcut=0.09
-tbms[tbm26.name] = tbm26
+#tbm24 = deepcopy(tbm51)
+#tbm24.name = 'CE_DS_RBS_6.73_03'
+#tbm24.overcut=0.03
+#tbms[tbm24.name] = tbm24
+#
+##tbm25
+#tbm25 = deepcopy(tbm51)
+#tbm25.name = 'CE_DS_RBS_6.73_06'
+#tbm25.overcut=0.06
+#tbms[tbm25.name] = tbm25
+#
+##tbm26
+#tbm26 = deepcopy(tbm51)
+#tbm26.name = 'CE_DS_RBS_6.73_09'
+#tbm26.overcut=0.09
+#tbms[tbm26.name] = tbm26
 
 #tbm27
 tbm27 = deepcopy(tbm51)

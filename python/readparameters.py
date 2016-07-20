@@ -12,6 +12,7 @@ from matplotlib.ticker import FuncFormatter
 
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 #def get_stress(cur):
@@ -32,9 +33,23 @@ import matplotlib.pyplot as plt
 #        bbtresults = cur.fetchall()
 #        for bbt_parametereval in bbtresults:
 
+def get_xstrati(cur):
+    sSql = """select distinct inizio from bbtgeoitem union select max(fine)
+            from bbtgeoitem order by inizio"""
+    cur.execute(sSql)
+    bbtresults = cur.fetchall()
+    return [record[0] for record in bbtresults]
 
-
-
+def get_strata_labels(xstrati, xcampioni):
+    xlabels = []
+    for i, tick in enumerate(xstrati):
+        if tick < xcampioni[0] and xstrati[i+1] > xcampioni[0]:
+            xlabels.append(tick)
+        elif xcampioni[0] <= tick <= xcampioni[-1]:
+            xlabels.append(tick)
+        elif tick > xcampioni[-1] and xstrati[i-1] < xcampioni[-1]:
+            xlabels.append(tick)
+    return xlabels
 
 
 # qui vedi come leggere i parametri dal Database bbt_mules_2-3.db
@@ -61,6 +76,8 @@ def main(argv):
     bShowDetailKPI = False
     bGroupTypes = False
     bShowAdvance = False
+    probability = False
+    greaterThan = False
     for k in parmDict:
         sParm += "\t%s - %s\r\n" % (k,parmDict[k][0])
     sParm += "\n t,tbmcode  in \n"
@@ -75,7 +92,7 @@ def main(argv):
     sParm += "\n\t-m => per tipologia di TBM indicata viene eseguito raggruppamento per Produttore\n"
     sParm += "\n\t-s => per segmento progressivo indicata con km+m\n"
     try:
-        opts, args = getopt.getopt(argv,"hp:t:rkadicm:s:o:",["parameter=","tbmcode=","radar","kpi","allkpi","detailkpi","histograms","compact_types","bytype","segment","probability"])
+        opts, args = getopt.getopt(argv,"hp:t:rkadicm:s:o:g:",["parameter=","tbmcode=","radar","kpi","allkpi","detailkpi","histograms","compact_types","bytype","segment","probability","greater_than"])
     except getopt.GetoptError:
         print "readparameters.py -p <parameter> [-t <tbmcode>] [-rkai]\r\n where\r\n %s" % sParm
         sys.exit(2)
@@ -118,6 +135,10 @@ def main(argv):
         elif opt in ("-o", "--probability"):
             probability = True
             sParameterToShow = arg
+        elif opt in ("-g", "--greater_than"):
+            greaterThan = True
+            threshold = float(arg)
+
 
     if len(sTypeToGroup) >0 and sTypeToGroup not in ('DS','S','O'):
         print "Wrong TBM Type -m=%s!\nreadparameters.py -p <parameter> [-t <tbmcode>] [-rkai]\r\n where\r\n %s" % (sTypeToGroup,sParm)
@@ -157,90 +178,94 @@ def main(argv):
     M_Max = float(bbtresult[0]) + 1.0
     print "Numero massimo di iterazioni presenti %d" % M_Max
     # Legge tutti i Tunnell
-#    sSql = """SELECT distinct
-#            bbtTbmKpi.tunnelName
-#            FROM
-#            bbtTbmKpi
-#            ORDER BY bbtTbmKpi.tunnelName"""
-#    cur.execute(sSql)
-#    bbtresults = cur.fetchall()
-#    print "Sono presenti %d diverse Gallerie" % len(bbtresults)
-#    tunnelArray = []
-#    for bbtr in bbtresults:
-#        tunnelArray.append(bbtr[0])
-    tunnelArray = ['CE', 'GL Nord']
+    sSql = """SELECT distinct
+            bbtTbmKpi.tunnelName
+            FROM
+            bbtTbmKpi
+            ORDER BY bbtTbmKpi.tunnelName"""
+    cur.execute(sSql)
+    bbtresults = cur.fetchall()
+    print "Sono presenti %d diverse Gallerie" % len(bbtresults)
+    tunnelArray = []
+    for bbtr in bbtresults:
+        tunnelArray.append(bbtr[0])
+#    tunnelArray = ['CE', 'GL Nord']
     # Legge tutte le TBM solo per associare i colori in maniera univoca
-#    sSql = """SELECT bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer, count(*) as cnt
-#            FROM
-#            bbtTbmKpi
-#			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-#			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
-#            ORDER BY bbtTbmKpi.tbmName"""
-#    if bGroupTypes:
-#        sSql = """SELECT BbtTbm.type, count(*) as cnt
-#                FROM
-#                bbtTbmKpi
-#    			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-#    			GROUP BY BbtTbm.type
-#                ORDER BY BbtTbm.type"""
-#    cur.execute(sSql)
-#    bbtresults = cur.fetchall()
+    sSql = """SELECT bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer, count(*) as cnt
+            FROM
+            bbtTbmKpi
+			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
+            ORDER BY bbtTbmKpi.tbmName"""
+    if bGroupTypes:
+        sSql = """SELECT BbtTbm.type, count(*) as cnt
+                FROM
+                bbtTbmKpi
+    			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+    			GROUP BY BbtTbm.type
+                ORDER BY BbtTbm.type"""
+    cur.execute(sSql)
+    bbtresults = cur.fetchall()
     # HACK
-    tbmfilter = ['CE_DS_HRK_6.82_00', 'CE_DS_HRK_6.82_112', 'CE_DS_RBS_6.73_00', 'CE_DS_RBS_6.73_12',
-                 'GL_DS_HRK_10.60_00', 'GL_DS_HRK_10.60_112', 'GL_DS_RBS_10.56_00', 'GL_DS_RBS_10.56_12']
+#    tbmfilter = ['CE_DS_HRK_6.82_00', 'CE_DS_HRK_6.82_112', 'CE_DS_RBS_6.73_00', 'CE_DS_RBS_6.73_12',
+#                 'GL_DS_HRK_10.60_00', 'GL_DS_HRK_10.60_112', 'GL_DS_RBS_10.56_00', 'GL_DS_RBS_10.56_12']
     # associare un colore diverso ad ogni TBM
     tbmColors = {}
-    for bbtr in tbmfilter:
+    for bbtr in bbtresults:
         #tbmColors[bbtr[0]] = main_colors.pop(0)
         tbmColors[bbtr] = main_colors.pop(0)
     bShowlTunnel = False
+
+    xstrati = get_xstrati(cur)
+    sns.set(style="white", context="talk")
+
     for tun in tunnelArray:
         allTbmData = []
         print "\r\n%s" % tun
-        sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
-                FROM bbtTbmKpi JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-                WHERE bbtTbmKpi.tunnelName = '{0}' AND bbtTbmKpi.tbmName in ('{1}')
-                GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
-                ORDER BY bbtTbmKpi.tbmName""".format(tun, "', '".join(tbmfilter))
-
 #        sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
-#                FROM
-#                bbtTbmKpi
-#                JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-#                WHERE bbtTbmKpi.tunnelName = '"""+tun+"""'
+#                FROM bbtTbmKpi JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+#                WHERE bbtTbmKpi.tunnelName = '{0}' AND bbtTbmKpi.tbmName in ('{1}')
 #                GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
-#                ORDER BY bbtTbmKpi.tbmName"""
-#        # Filtro sulla eventuale TBM passata come parametro
-#        if len(sTbmCode) > 0:
-#            sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
-#                    FROM
-#                    bbtTbmKpi
-#        			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-#                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""' AND BbtTbm.name = '"""+sTbmCode+"""'
-#        			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
-#                    ORDER BY bbtTbmKpi.tbmName"""
-#        # Filtro sulla eventuale Tipologia passata come parametro
-#        elif len(sTypeToGroup) > 0:
-#            sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
-#                    FROM
-#                    bbtTbmKpi
-#        			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
-#                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""' AND BbtTbm.type = '"""+sTypeToGroup+"""'
-#        			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
-#                    ORDER BY bbtTbmKpi.tbmName"""
-#        # Raggruppamento per Tipo TBM
-#        elif bGroupTypes:
-#            sSql = """SELECT BbtTbm.type, count(*) as cnt_tbmtype
-#                    FROM
-#                    BbtTbm
-#					WHERE
-#					BbtTbm.name IN (
-#                    SELECT DISTINCT BbtTbmKpi.tbmName
-#					FROM bbtTbmKpi
-#                    WHERE
-#                    bbtTbmKpi.tunnelName = '"""+tun+"""')
-#        			GROUP BY BbtTbm.type
-#                    ORDER BY BbtTbm.type"""
+#                ORDER BY bbtTbmKpi.tbmName""".format(tun, "', '".join(tbmfilter))
+
+        sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
+                FROM
+                bbtTbmKpi
+                JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+                WHERE bbtTbmKpi.tunnelName = '"""+tun+"""'
+                GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
+                ORDER BY bbtTbmKpi.tbmName"""
+        # Filtro sulla eventuale TBM passata come parametro
+        if len(sTbmCode) > 0:
+            sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
+                    FROM
+                    bbtTbmKpi
+        			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""' AND BbtTbm.name = '"""+sTbmCode+"""'
+        			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
+                    ORDER BY bbtTbmKpi.tbmName"""
+        # Filtro sulla eventuale Tipologia passata come parametro
+        elif len(sTypeToGroup) > 0:
+            sSql = """SELECT bbtTbmKpi.tbmName, count(*) as cnt, BbtTbm.type, BbtTbm.manufacturer
+                    FROM
+                    bbtTbmKpi
+        			JOIN BbtTbm on BbtTbm.name = bbtTbmKpi.tbmName
+                    WHERE bbtTbmKpi.tunnelName = '"""+tun+"""' AND BbtTbm.type = '"""+sTypeToGroup+"""'
+        			GROUP BY bbtTbmKpi.tbmName, BbtTbm.type, BbtTbm.manufacturer
+                    ORDER BY bbtTbmKpi.tbmName"""
+        # Raggruppamento per Tipo TBM
+        elif bGroupTypes:
+            sSql = """SELECT BbtTbm.type, count(*) as cnt_tbmtype
+                    FROM
+                    BbtTbm
+					WHERE
+					BbtTbm.name IN (
+                    SELECT DISTINCT BbtTbmKpi.tbmName
+					FROM bbtTbmKpi
+                    WHERE
+                    bbtTbmKpi.tunnelName = '"""+tun+"""')
+        			GROUP BY BbtTbm.type
+                    ORDER BY BbtTbm.type"""
         cur.execute(sSql)
         bbtresults = cur.fetchall()
         print "Sono presenti %d diverse TBM" % len(bbtresults)
@@ -280,7 +305,7 @@ def main(argv):
                         num_bins = 50
                         fig = plt.figure(figsize=(32, 20), dpi=100)
                         ax1 = fig.add_subplot(111)
-                        title("%s - %s" % (tun,replaceTBMName(tbmKey)))
+                        fig.suptitle("%s - %s" % (tun,replaceTBMName(tbmKey)))
                         weights = np.ones_like(pValues)/float(len(pValues))
                         n, bins, patches = ax1.hist(pValues,num_bins , normed=1, histtype ='stepfilled', weights=weights , color=tbmColors[tbmKey], alpha=0.3)
                         tbmMean = np.mean(pValues)
@@ -291,8 +316,8 @@ def main(argv):
                         ax1.set_ylabel("Probabilita'(%)")
                         ax1.axvline(tbmMean, color='r', linewidth=2)
                         ax1.yaxis.grid(True)
-                        sFileNAme = "bbt_%s_%s_%s_%s_hist.svg" % ( tun.replace (" ", "_"), replaceTBMName(tbmKey),sParameterToShow,sProg)
-                        outputFigure(sDiagramsFolderPath, sFileNAme, format="svg")
+#                        sFileNAme = "bbt_%s_%s_%s_%s_hist.svg" % ( tun.replace (" ", "_"), replaceTBMName(tbmKey),sParameterToShow,sProg)
+#                        outputFigure(sDiagramsFolderPath, sFileNAme, format="svg")
 #                        print "Output su %s disponibile" % sFileNAme
                         sFileNAme = "%s_%s_%s_%s_hist.png" % (tun.replace(" ", "_"), tbmKey, sParameterToShow, sProg)
                         outputFigure(sDiagramsFolderPath, sFileNAme)
@@ -330,20 +355,22 @@ def main(argv):
                 bbtresults = cur.fetchall()
                 # recupero tutti i parametri e li metto in una lista
                 N = len(bbtresults)/M # No di segmenti
-                pi = zeros(shape=(N,), dtype=float)
-                he = zeros(shape=(N,), dtype=float)
-                hp = zeros(shape=(N,), dtype=float)
-                ti = zeros(shape=(N,), dtype=float)
-                parm2show = zeros(shape=(N,M), dtype=float)
-                mean2Show = zeros(shape=(N,3), dtype=float)
-                tti = zeros(shape=(N,M), dtype=float)
-                xti = zeros(shape=(N,M), dtype=float)
+                pi = np.zeros(shape=(N,))
+                he = np.zeros(shape=(N,))
+                hp = np.zeros(shape=(N,))
+                #ti = np.zeros(shape=(N,), dtype=float)
+                parm2show = np.zeros(shape=(N,M))
+                mean2Show = np.zeros(shape=(N,3))
+                tti = np.zeros(shape=(N,M))
+                xti = np.zeros(shape=(N,M))
+                percOverThreshold = np.zeros(shape=(N,))
                 i = 0
                 pj = 0
                 prev = 0.0
                 outValues =[]
-                if tun not in ('GL Sud'):
-                    bbtresults.reverse()
+#                if tun not in ('GL Sud'):
+#                    bbtresults.reverse()
+                maxval = 0
                 for bbt_parametereval in bbtresults:
                     j = int(bbt_parametereval['iteration_no'])
                     if pj != j:
@@ -368,63 +395,115 @@ def main(argv):
 #                        outValues.append([float(bbt_parametereval['fine']),
 #                                          float(bbt_parametereval['he']),
 #                                          float(bbt_parametereval['hp'])])
-                    outValues.append([int(bbt_parametereval['iteration_no']),
-                                      float(bbt_parametereval['fine']),
-                                      float(bbt_parametereval['he']),
-                                      float(bbt_parametereval['hp']),pVal])
+                    if not greaterThan:
+                        outValues.append([int(bbt_parametereval['iteration_no']),
+                                         float(bbt_parametereval['fine']),
+                                         float(bbt_parametereval['he']),
+                                         float(bbt_parametereval['hp']),pVal])
+                        maxval = max(maxval, pVal)
                     parm2show[i][j] = pVal
                     i += 1
                 for i in range(int(N)):
-                    # aghensi@20160714 calcolo 5°, 50° e 95° percentile effettivo sui campioni
-                    # TODO: si possono calcolare i percentili di tutto param2show usando axis=...
-                    mean2Show[i] = list(np.nanpercentile(parm2show[i,:],(5,50,95)))
-                    outValues[i].append(mean2Show[i][1])
-                    outValues[i].append(mean2Show[i][0])
-                    outValues[i].append(mean2Show[i][2])
-                    #pki_mean = np.nanmean(parm2show[i,:])
-                    #pki_std = np.nanstd(parm2show[i,:])
-                    #mean2Show[i][0] = pki_mean - 2*pki_std
-                    #mean2Show[i][1] = pki_mean
-                    #mean2Show[i][2] = pki_mean + 2*pki_std
+                    if greaterThan:
+                        # percentuale superamento di un certo valore
+                        percOverThreshold[i] = (float(np.sum(parm2show[i, :] > threshold))/float(M))
+                        maxval = max(maxval, percOverThreshold[i])
+                    else:
+                        # aghensi@20160714 calcolo 5°, 50° e 95° percentile effettivo sui campioni
+                        # TODO: si possono calcolare i percentili di tutto param2show usando axis=...
+                        mean2Show[i] = list(np.nanpercentile(parm2show[i,:],(5,50,95)))
+                        outValues[i].append(mean2Show[i][1])
+                        outValues[i].append(mean2Show[i][0])
+                        outValues[i].append(mean2Show[i][2])
+                        #pki_mean = np.nanmean(parm2show[i,:])
+                        #pki_std = np.nanstd(parm2show[i,:])
+                        #mean2Show[i][0] = pki_mean - 2*pki_std
+                        #mean2Show[i][1] = pki_mean
+                        #mean2Show[i][2] = pki_mean + 2*pki_std
+
                 if N==0:
                     print "\tPer TBM %s non ci sono dati in %s" % (tbmKey, tun)
+                elif greaterThan and maxval == 0:
+                    print "\tPer TBM %s non ci sono valori in %s oltre %f" % (tbmKey, tun, threshold)
                 else:
-                    ylimInf = parmDict[sParameterToShow][2]
-                    ylimSup = parmDict[sParameterToShow][3]
-                    ymainInf = min(he)
-                    fig = plt.figure(figsize=(32, 20), dpi=100)
+                    if greaterThan:
+                        ylimInf = 0
+                        ylimSup = min(maxval * 1.01, 1)
+                    else:
+                        ylimInf = parmDict[sParameterToShow][2]
+                        ylimSup = max(maxval * 1.01, parmDict[sParameterToShow][3])
+
+                    fig = plt.figure(figsize=(60, 10), dpi=100)
+
                     matplotlib.rcParams.update({'font.size': 18})
                     ax1 = fig.add_subplot(111)
-                    ax1.set_ylim(0,max(he)+100)
-                    title("%s - %s" % (tun,tbmKey))
-                    ax1.plot(pi,he,'b-', linewidth=1)
+
+                    ax1.spines["top"].set_visible(False)
+                    ax1.spines["bottom"].set_visible(greaterThan)
+                    ax1.spines["right"].set_visible(False)
+                    ax1.spines["left"].set_visible(False)
+                    ax1.get_xaxis().tick_bottom()
+                    ax1.get_yaxis().tick_left()
+
+                    ax1.set_ylim(min(he)-100, max(he)+100)
+                    fig.suptitle("%s - %s" % (tun,tbmKey))
+                    ax1.plot(pi, he,'b-', linewidth=0.5, alpha=0.6)
                     if bShowlTunnel:
-                        ax1.plot(pi,hp,'k-', linewidth=1)
+                        ax1.plot(pi, hp,'k-', linewidth=0.5, alpha=0.6)
                     ax1.set_xlabel('Station (m)')
                     ax1.set_ylabel('Elevation (m)', color='b')
+                    #########
+                    ax2 = ax1.twinx()
+                    #ax2.yaxis.grid(True)
+                    ax2.spines["top"].set_visible(False)
+                    ax2.spines["bottom"].set_visible(greaterThan)
+                    ax2.spines["right"].set_visible(False)
+                    ax2.spines["left"].set_visible(False)
+                    ax2.get_xaxis().tick_bottom()
+                    ax2.get_yaxis().tick_right()
+
+                    ax2.set_ylim(ylimInf, ylimSup)
+                    if greaterThan:
+                        ax2.bar(pi, percOverThreshold, align='center')
+                        ax2.set_ylabel("%s (probability over %f)" % (parmDict[sParameterToShow][0], threshold))
+                    else:
+                        ax2.plot(pi, parm2show, 'r.', markersize=3.0, alpha=0.5)
+                        ax2.plot(pi, mean2Show[:,0], 'm-', linewidth=1, alpha=0.4)
+                        ax2.plot(pi, mean2Show[:,1], 'g-', linewidth=2, alpha=0.6)
+                        ax2.plot(pi, mean2Show[:,2], 'c-', linewidth=1, alpha=0.4)
+                        ax2.set_ylabel("%s (%s)" % (parmDict[sParameterToShow][0],parmDict[sParameterToShow][1]), color='r')
+
                     for tl in ax1.get_yticklabels():
                         tl.set_color('b')
-                    ##########
-                    ax2 = ax1.twinx()
-                    ax2.yaxis.grid(True)
-                    if ylimSup > 0:
-                        ax2.set_ylim(ylimInf, ylimSup)
-                    ax2.plot(pi, parm2show, 'r.', markersize=1.0)
-                    ax2.plot(pi, mean2Show[:,0], 'm-', linewidth=0.5, alpha=0.4)
-                    ax2.plot(pi, mean2Show[:,1], 'g-', linewidth=2, alpha=0.6)
-                    ax2.plot(pi, mean2Show[:,2], 'c-', linewidth=0.5, alpha=0.4)
-                    ax2.set_ylabel("%s (%s)" % (parmDict[sParameterToShow][0],parmDict[sParameterToShow][1]), color='r')
                     for tl in ax2.get_yticklabels():
                         tl.set_color('r')
-                    #outputFigure(sDiagramsFolderPath,"%s_%s_%s.svg" % (tun.replace(" ", "_"), tbmKey, sParameterToShow), "svg")
-                    outputFigure(sDiagramsFolderPath,"%s_%s_%s.png" % (tun.replace(" ", "_"), tbmKey, sParameterToShow))
+
+                    xlabels = get_strata_labels(xstrati, pi)
+                    ax1.set_xlim(xlabels[0],xlabels[-1])
+                    plt.xticks(xlabels, rotation='vertical')
+                    yticks = np.around(np.arange(ylimInf, ylimSup, (ylimSup-ylimInf)/10.),2)
+                    plt.yticks(yticks)
+                    for y in yticks:
+                        plt.plot(xlabels, [y] * len(xlabels), "--", lw=0.5, color="black", alpha=0.4)
+
+                        # visualizzo valori asse ma senza tacche
+    #                    plt.tick_params(axis="both", which="both", bottom="off", top="off",
+    #                                    labelbottom="on", left="off", right="off", labelleft="on")
+                        plt.tight_layout(h_pad=3)
+                    if greaterThan:
+                        outfilename = "%s_%s_%s-%.2f.png" % (tun.replace(" ", "_"), tbmKey, sParameterToShow, threshold)
+                    else:
+                        outfilename = "%s_%s_%s.png" % (tun.replace(" ", "_"), tbmKey, sParameterToShow)
+#                    outputFigure(sDiagramsFolderPath,"%s_%s_%s.svg" % (tun.replace(" ", "_"), tbmKey, sParameterToShow), "svg")
+                    outputFigure(sDiagramsFolderPath,outfilename)
                     plt.close(fig)
-                    # esporto in csv i valori di confronto
-                    csvfname=os.path.join(sDiagramsFolderPath,"%s_%s_%s.csv" % ( tun.replace(" ", "_"), tbmKey, sParameterToShow))
-                    with open(csvfname, 'wb') as f:
-                        writer = csv.writer(f,delimiter=";")
-                        writer.writerow(('iterazione','fine','he','hp',sParameterToShow, '50perc', '5perc', '95perc'))
-                        writer.writerows(outValues)
+                    if not greaterThan:
+                        # esporto in csv i valori di confronto
+                        csvfname=os.path.join(sDiagramsFolderPath,"%s_%s_%s.csv" % ( tun.replace(" ", "_"), tbmKey, sParameterToShow))
+                        with open(csvfname, 'wb') as f:
+                            writer = csv.writer(f,delimiter=";")
+                            writer.writerow(('iterazione','fine','he','hp',sParameterToShow, '50perc', '5perc', '95perc'))
+                            writer.writerows(outValues)
             # aghensi@20160715 - aggiunto istogramma probabilità ristretta su pk in cui è maggiore di 0
             elif probability:
                 sSql = """SELECT * FROM(
@@ -433,35 +512,59 @@ def main(argv):
                     WHERE tunnelname = '{1}' AND tbmname = '{2}'
                     GROUP BY fine
                     ORDER BY fine
-                    ) WHERE probability > 0""".format(sParameterToShow, tun, tbmKey)
+                    ) WHERE probability > {3}""".format(sParameterToShow, tun, tbmKey, 0.0)
                 cur.execute(sSql)
                 bbtresults = cur.fetchall()
                 N = len(bbtresults)
                 if N > 0:
-                    if tun not in ('GL Sud'):
-                        bbtresults.reverse()
+#                    if tun not in ('GL Sud'):
+#                        bbtresults.reverse()
                     # recupero tutti i parametri e li metto in una lista
-                    xsequence = np.r_[0:N:1]
-                    xlabels = zeros(shape=(N), dtype=float)
-                    parm2show = zeros(shape=(N), dtype=float)
+                    xvalues = np.zeros(shape=(N), dtype=float)
+                    parm2show = np.zeros(shape=(N), dtype=float)
                     outValues = []
                     ymax = 0
                     for i, bbt_parametereval in enumerate(bbtresults):
-                        xlabels[i] = bbt_parametereval['fine']
-                        parm2show[i] = float(bbt_parametereval['probability'])
+                        xvalues[i] = bbt_parametereval['fine']
+                        parm2show[i] = float(bbt_parametereval['probability'])*100
                         outValues.append([bbt_parametereval['fine'], bbt_parametereval['probability']])
-                        ymax = max(ymax, bbt_parametereval['probability'])
-                    fig = plt.figure(figsize=(32, 20), dpi=100)
-                    matplotlib.rcParams.update({'font.size': 18})
+                        ymax = max(ymax, parm2show[i])
+
+                    xlabels = get_strata_labels(xstrati, xvalues)
+
+                    # creo grafico
+                    fig = plt.figure(figsize=(60, 10), dpi=100)
+                    plt.rcParams.update({'font.size': 18})
                     ax1 = fig.add_subplot(111)
                     ax1.set_ylim(0,ymax*1.1)
-                    title("%s - %s" % (tun,tbmKey))
-                    ax1.bar(xsequence, parm2show, align='center')
-                    plt.xticks(xsequence, xlabels, rotation='vertical')
+                    ax1.set_xlim(xlabels[0],xlabels[-1])
+                    # titolo ed etichette
+                    fig.suptitle("%s - %s" % (tun,tbmKey))
                     ax1.set_xlabel('Station (m)')
-                    ax1.set_ylabel("%s (probability)" % (parmDict[sParameterToShow][0]), color='b')
-                    for tl in ax1.get_yticklabels():
-                        tl.set_color('b')
+                    ax1.set_ylabel("%s (probability)" % (parmDict[sParameterToShow][0]))
+
+
+                    plt.xticks(xlabels, rotation='vertical')
+                    yticks = np.around(np.arange(0, ymax+1, ymax/10),1)
+                    plt.yticks(yticks, [str(x) + "%" for x in yticks])
+                    for y in yticks:
+                        plt.plot(xlabels, [y] * len(xlabels), "--", lw=0.5, color="black", alpha=0.4)
+
+                    # tolgo bordi
+                    ax1.spines["top"].set_visible(False)
+                    ax1.spines["bottom"].set_visible(True)
+                    ax1.spines["right"].set_visible(False)
+                    ax1.spines["left"].set_visible(False)
+                    # visualizzo valori asse ma senza tacche
+                    ax1.get_xaxis().tick_bottom()
+                    ax1.get_yaxis().tick_left()
+                    plt.tick_params(axis="both", which="both", bottom="off", top="off",
+                                    labelbottom="on", left="off", right="off", labelleft="on")
+
+                    # plotto grafico
+                    ax1.bar(xvalues, parm2show, align='center')
+
+                    plt.tight_layout(h_pad=3)
                     ##########
 
                     #outputFigure(sDiagramsFolderPath,"%s_%s_%s.svg" % (tun.replace(" ", "_"), tbmKey, sParameterToShow), "svg")

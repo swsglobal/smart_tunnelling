@@ -13,15 +13,12 @@ BbtReliability = namedtuple('BbtReliability',['id','inizio','fine','gmr_class','
 BbtParameterEvalMin = namedtuple('BbtParameterEvalMin',['gamma','sigma','mi','ei','cai','rmr', 'gsi','sigma_ti', 'k0' ,'profilo_id'])
 # aghensi@20160704 rollback per far funzionare main_loop_pool; aggiunto perc
 BbtParameterEvalMain = namedtuple('BbtParameterEvalMain',[
-    'inizio', 'fine', 'est', 'nord', 'he', 'hp','co','tipo','g_med','g_stddev','sigma_ci_avg',
-    'sigma_ci_stdev','mi_med','mi_stdev','ei_med','ei_stdev','cai_med','cai_stdev','gsi_med',
-    'gsi_stdev','rmr_med','rmr_stdev','profilo_id','geoitem_id','title','sigma_ti_min',
-    'sigma_ti_max','k0_min','k0_max', 'perc', 'wdepth',
-    'gamma','sigma','mi','ei','cai','rmr', 'gsi', 'sigma_ti', 'k0', 'iteration_no', 'insertdate', 'anidrite'
+    'inizio', 'fine', 'he', 'hp','co','profilo_id','geoitem_id','title', 'perc', 'wdepth', 'gamma','sigma','mi','ei','cai','rmr', 'gsi', 'sigma_ti', 'iteration_no', 'insertdate', 'anidrite','k0_min','k0_max'
     ])
 #danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
 BbtParameterEval =  namedtuple('BbtParameterEval',[ 'insertdate',
                                                     'iteration_no',\
+                                                    'inizio',\
                                                     'fine',\
                                                     'he',\
                                                     'hp',\
@@ -70,7 +67,8 @@ BbtParameterEval =  namedtuple('BbtParameterEval',[ 'insertdate',
 BbtParameter4Seg =  namedtuple('BbtParameter4Seg',['inizio', 'fine', 'length', 'he', 'hp', 'co',
                                                    'gamma', 'sci', 'mi', 'ei', 'cai', 'gsi', 'rmr',
                                                    'profilo_id', 'geoitem_id', 'descr', 'sti',
-                                                   'k0', 'k0_min', 'k0_max', 'wdepth', 'anidrite'])
+                                                   #'k0',
+                                                   'k0_min', 'k0_max', 'wdepth', 'anidrite'])
 BbtTbmKpi = namedtuple('BbtTbmKpi',['tunnelName', 'tbmName', 'iterationNo', 'kpiKey', 'kpiDescr',
                                     'minImpact', 'maxImpact', 'avgImpact', 'appliedLength',
                                     'percentOfApplication','probabilityScore','totalImpact'])
