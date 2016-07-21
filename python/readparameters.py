@@ -12,7 +12,7 @@ from matplotlib.ticker import FuncFormatter
 
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
+#import seaborn as sns
 
 
 #def get_stress(cur):
@@ -50,6 +50,18 @@ def get_strata_labels(xstrati, xcampioni):
         elif tick > xcampioni[-1] and xstrati[i-1] < xcampioni[-1]:
             xlabels.append(tick)
     return xlabels
+
+def beautify_axis(ax):
+    '''
+    impostazioni di base per un bel grafico
+    '''
+    ax.set_axis_bgcolor('white')
+    ax.spines["top"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.grid(color='black', linestyle='--', linewidth=0.5, alpha=0.4)
+    ax.get_xaxis().tick_bottom()
 
 
 # qui vedi come leggere i parametri dal Database bbt_mules_2-3.db
@@ -217,7 +229,7 @@ def main(argv):
     bShowlTunnel = False
 
     xstrati = get_xstrati(cur)
-    sns.set(style="white", context="talk")
+    #sns.set(style="white", context="talk")
 
     for tun in tunnelArray:
         allTbmData = []
@@ -435,23 +447,18 @@ def main(argv):
 
                     fig = plt.figure(figsize=(60, 10), dpi=100)
 
-                    matplotlib.rcParams.update({'font.size': 18})
+                    plt.rcParams.update({'font.size': 18})
                     ax1 = fig.add_subplot(111)
-
-                    ax1.spines["top"].set_visible(False)
-                    ax1.spines["bottom"].set_visible(greaterThan)
-                    ax1.spines["right"].set_visible(False)
-                    ax1.spines["left"].set_visible(False)
-                    ax1.get_xaxis().tick_bottom()
-                    ax1.get_yaxis().tick_left()
-
-                    ax1.set_ylim(min(he)-100, max(he)+100)
+                    beautify_axis(ax1)
                     fig.suptitle("%s - %s" % (tun,tbmKey))
+                    ax1.get_yaxis().tick_left()
+                    ax1.set_ylim(min(he)-100, max(he)+100)
                     ax1.plot(pi, he,'b-', linewidth=0.5, alpha=0.6)
                     if bShowlTunnel:
                         ax1.plot(pi, hp,'k-', linewidth=0.5, alpha=0.6)
                     ax1.set_xlabel('Station (m)')
                     ax1.set_ylabel('Elevation (m)', color='b')
+                    ax1.grid(False)
                     #########
                     ax2 = ax1.twinx()
                     #ax2.yaxis.grid(True)
@@ -461,10 +468,11 @@ def main(argv):
                     ax2.spines["left"].set_visible(False)
                     ax2.get_xaxis().tick_bottom()
                     ax2.get_yaxis().tick_right()
+                    ax2.grid(color='black', linestyle='--', linewidth=0.5, alpha=0.4)
 
                     ax2.set_ylim(ylimInf, ylimSup)
                     if greaterThan:
-                        ax2.bar(pi, percOverThreshold, align='center')
+                        ax2.bar(pi, percOverThreshold, align='center', color="lightgray", edgecolor="lightgray")
                         ax2.set_ylabel("%s (probability over %f)" % (parmDict[sParameterToShow][0], threshold))
                     else:
                         ax2.plot(pi, parm2show, 'r.', markersize=3.0, alpha=0.5)
@@ -483,13 +491,12 @@ def main(argv):
                     plt.xticks(xlabels, rotation='vertical')
                     yticks = np.around(np.arange(ylimInf, ylimSup, (ylimSup-ylimInf)/10.),2)
                     plt.yticks(yticks)
-                    for y in yticks:
-                        plt.plot(xlabels, [y] * len(xlabels), "--", lw=0.5, color="black", alpha=0.4)
+
 
                         # visualizzo valori asse ma senza tacche
     #                    plt.tick_params(axis="both", which="both", bottom="off", top="off",
     #                                    labelbottom="on", left="off", right="off", labelleft="on")
-                        plt.tight_layout(h_pad=3)
+                    plt.tight_layout(h_pad=3)
                     if greaterThan:
                         outfilename = "%s_%s_%s-%.2f.png" % (tun.replace(" ", "_"), tbmKey, sParameterToShow, threshold)
                     else:
@@ -547,8 +554,7 @@ def main(argv):
                     plt.xticks(xlabels, rotation='vertical')
                     yticks = np.around(np.arange(0, ymax+1, ymax/10),1)
                     plt.yticks(yticks, [str(x) + "%" for x in yticks])
-                    for y in yticks:
-                        plt.plot(xlabels, [y] * len(xlabels), "--", lw=0.5, color="black", alpha=0.4)
+                    ax1.grid(color='black', linestyle='--', linewidth=0.5, alpha=0.4)
 
                     # tolgo bordi
                     ax1.spines["top"].set_visible(False)
@@ -562,7 +568,7 @@ def main(argv):
                                     labelbottom="on", left="off", right="off", labelleft="on")
 
                     # plotto grafico
-                    ax1.bar(xvalues, parm2show, align='center')
+                    ax1.bar(xvalues, parm2show, align='center', color="lightgray", edgecolor="lightgray")
 
                     plt.tight_layout(h_pad=3)
                     ##########
