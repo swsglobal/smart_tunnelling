@@ -78,7 +78,7 @@ hi = ['S','N','F']
 #tre opzioni S = Sfavorevole, N = Neutro, F = Favorevole
 hixk = np.arange(3)
 #la distribuzione delle tre opzioni
-hipk = (0.2,0.4,0.3)
+hipk = (0.3, 0.4, 0.3)
 #Custom made discrete distribution for Human Factor - da chiamare con hi[hcustm.rvs()] restituisce S N o F sulla base della distribuzione
 hcustm = rv_discrete(name='custm', values=(hixk, hipk))
 

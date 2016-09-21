@@ -14,25 +14,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 #import seaborn as sns
 
-
-#def get_stress(cur):
-#    for param in ("lining","front_shield","tail_skin"):
-#        strSql="""SELECT a.*
-#            FROM bbtparametereval a
-#            INNER JOIN (
-#                SELECT tunnelname, tbmname, min(sigma_v_max_{0}) min_par1, max(sigma_v_max_{0}) max_par1, min(sigma_h_max_{0}) min_par2, max(sigma_h_max_{0}) max_par2
-#                FROM bbtparametereval
-#                where tunnelname != 'XXX' and sigma_v_max_{0} > 0 and sigma_h_max_{0} > 0
-#                GROUP BY tunnelname, tbmname
-#            ) b
-#            ON a.tunnelname = b.tunnelname AND a.tbmname = b.tbmname AND (
-#            a.sigma_v_max_{0} = b.min_par1 OR a.sigma_v_max_{0} = b.max_par1
-#            OR a.and sigma_h_max_{0} = b.min_par2 OR a.and sigma_h_max_{0} = b.max_par2)
-#            order by a.tunnelname, a.tbmname, a.sigma_v_max_{0}, a.and sigma_h_max_{0}""".format(param)
-#        cur.execute(strSql)
-#        bbtresults = cur.fetchall()
-#        for bbt_parametereval in bbtresults:
-
 def get_xstrati(cur):
     sSql = """select distinct inizio from bbtgeoitem union select max(fine)
             from bbtgeoitem order by inizio"""

@@ -6,6 +6,13 @@ from bbtnamedtuples import *
 def getDBConnection(sDBPath):
     return sqlite3.connect(sDBPath, timeout=30.0)
 
+def check_journal_mode(sDBPath):
+    conn = getDBConnection(sDBPath)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("PRAGMA journal_mode")
+    return cur.fetchone()[0]
+
 def get_bbtparameterseval(sDBPath):
     conn = getDBConnection(sDBPath)
     conn.row_factory = bbtparametereval_factory

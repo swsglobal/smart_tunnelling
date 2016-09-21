@@ -16,7 +16,7 @@ import bbtutils
 from bbt_database import getDBConnection
 from readparameters import get_xstrati, get_strata_labels, beautify_axis
 
-SIGMA_DS = [.4, .5, 1., 1.5]
+SIGMA_DS = [.4, .5, 1., 1.5, 2, 2.5]
 
 
 def calculate_pk_risks(impacts, probs, risks, sigmas, tot_samples):

@@ -12,7 +12,7 @@ from tbmkpi import *
 from collections import namedtuple
 from pprint import pprint
 from tbmkpi import FrictionCoeff
-from multiprocessing import cpu_count, Pool
+from multiprocessing import cpu_count, Pool, Lock
 from logging import handlers
 from time import time as ttime
 from time import sleep as tsleep
@@ -73,21 +73,26 @@ def createLogger(indx=0, logger_name="main_loop"):
         # aghensi@20160502 - messaggi critici anche su stdout
         stdout_handler = logging.StreamHandler(sys.stdout)
         stdout_handler.setLevel(logging.INFO)
-        stdout_formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+        stdout_formatter = logging.Formatter('%(levelname)s - %(message)s')
         stdout_handler.setFormatter(stdout_formatter)
         logger.addHandler(stdout_handler)
         logger.handler_set = True
     return logger
 
+# aghensi@20160810 aggiunta gestione accessi concorrenziali a DB
+# http://stackoverflow.com/a/25558333/4904470
+def init_mp(lock):
+    global mutex
+    mutex = lock
 
 # danzi.tn@20151114 gestione main e numero di iterazioni da linea comando
 # danzi.tn@20151117 versione multithread
 # danzi.tn@20151118 gestione loop per singola TBM
+# aghensi@20160810 aggiunta gestione accessi concorrenziali a DB
 def mp_producer(parms):
-    idWorker,  nIter, sDBPath, loopTbms, sKey, np = parms
+    idWorker,  nIter, sDBPath, loopTbms, sKey, np, wal_journal = parms
     # ritardo per evitare conflitti su DB
-    # commentare per velocizzare debug in single thread
-    tsleep(idWorker*10+1)
+    #tsleep(idWorker*10+1)
     start_time = ttime()
     now = datetime.datetime.now()
     strnow = now.strftime("%Y%m%d%H%M%S")
@@ -137,7 +142,13 @@ def mp_producer(parms):
 
     kpiTbmList = []
     main_logger.debug("[%d]############################# Inizia a recuperare le iterazioni di %s dalla %d alla %d" % (idWorker,sKey,idWorker*nIter, (idWorker+1)*nIter))
+    # Ottengo il lock del thread se il journal non è WAL;
+    # se è WAL posso leggere con tutti i thread e scrivere con uno solo
+    if not wal_journal:
+        mutex.acquire()
     bbt_bbtparameterseval = get_mainbbtparameterseval(sDBPath, sKey, idWorker*nIter, (idWorker+1)*nIter)
+    if not wal_journal:
+        mutex.release()
     main_logger.debug("[%d]############################# ...recuperate %d iterazioni, memoria totale" % (idWorker,len(bbt_bbtparameterseval)))
     for iIterationNo in range(nIter):
         mainIterationNo = idWorker*nIter + iIterationNo
@@ -264,7 +275,8 @@ def mp_producer(parms):
         iter_end_time = ttime()
         main_logger.info("[%d]#### iteration %d - %d terminated in %d seconds (%d)" % (idWorker, iIterationNo, mainIterationNo, iter_end_time-iter_start_time, tbmSegmentCum))
         main_logger.debug("[%d]### Start inserting %d (%d) Parameters and %d (21x%d) KPIs" % (idWorker, len(bbt_evalparameters),iCheckEvalparameters,len(bbttbmkpis),iCheckBbttbmkpis))
-        insert_eval4Iter(sDBPath,bbt_evalparameters,bbttbmkpis)
+        with mutex:
+            insert_eval4Iter(sDBPath,bbt_evalparameters,bbttbmkpis)
         insert_end_time = ttime()
         main_logger.info("[%d]]### Insert terminated in %d seconds" % (idWorker,insert_end_time-iter_end_time))
     now = datetime.datetime.now()
@@ -331,6 +343,8 @@ if __name__ == "__main__":
         main_logger.info("Database utilizzato %s" % sDBPath )
         if not os.path.isfile(sDBPath):
             main_logger.error( "Errore! File %s inesistente!" % sDBPath)
+        # aghensi@20160810 controllo se è abilitato il WAL journal per permettere accessi concorrenziali in lettura e una sola scrittura
+        wal_journal = check_journal_mode() == "WAL"
         bbt_parameters = []
         bbt_parameters = get_bbtparameters(sDBPath)
         if len(bbt_parameters) == 0:
@@ -368,11 +382,13 @@ if __name__ == "__main__":
             main_logger.info( tbk )
         list_a = range(mp_np)
         start_time = ttime()
-        job_args = [(i, nIter, sDBPath, loopTbms, sKey, mp_np) for i, item_a in enumerate(list_a)]
+        job_args = [(i, nIter, sDBPath, loopTbms, sKey, mp_np, wal_journal) for i, item_a in enumerate(list_a)]
 
         # aghensi@20160603 singolo thread per debug - inizio
-        workers = Pool(processes=mp_np)
-        main_logger.info("Istanziati %d processi" % mp_np  )
+        # aghensi@20160810 aggiunta gestione accessi concorrenziali a DB
+        lock = Lock()
+        workers = Pool(processes=mp_np, initializer=init_mp, initargs=(lock,))
+        main_logger.info("Istanziati %d processi", mp_np)
         results = workers.map(mp_producer, job_args)
         workers.close()
         workers.join()
