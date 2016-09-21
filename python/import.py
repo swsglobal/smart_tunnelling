@@ -18,28 +18,30 @@ path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 ########## File vari: DB e file excel
 # aghensi@20160715 - in import prendo database vuoto e lo sostituisco a database pieno (backup!)
+db_folder = os.path.join(os.path.abspath('..'), bbtConfig.get('Database','dbfolder'))
 empty_db_name = bbtConfig.get('Database','empty_dbname')
-empty_db_path = os.path.join(os.path.abspath('..'), bbtConfig.get('Database','dbfolder'), empty_db_name)
+empty_db_path = os.path.join(db_folder, empty_db_name)
 if not os.path.isfile(empty_db_path):
     print "Errore! File %s inesistente!" % empty_db_path
     exit(1)
 sDBName = bbtConfig.get('Database','dbname')
-sDBPath = os.path.join(os.path.abspath('..'), bbtConfig.get('Database','dbfolder'), sDBName)
+sDBPath = os.path.join(db_folder, sDBName)
 if os.path.isfile(sDBPath):
     os.rename(sDBPath,
               "{}_{}.db".format(os.path.splitext(sDBPath)[0],
                                 datetime.datetime.now().strftime("%Y%m%d%H%M%S")))
 copyfile(empty_db_path, sDBPath)
 
-sGeoReliability_XLS = os.path.join(os.path.abspath('..'),bbtConfig.get('Import','folder'),bbtConfig.get('Import','valutazione'))
+import_folder = os.path.join(os.path.abspath('..'),bbtConfig.get('Import','folder'))
+sGeoReliability_XLS = os.path.join(import_folder, bbtConfig.get('Import','valutazione'))
 if not os.path.isfile(sGeoReliability_XLS):
     print "Errore! File %s inesistente!" % sGeoReliability_XLS
     exit(2)
-sCE_XLS = os.path.join(os.path.abspath('..'),bbtConfig.get('Import','folder'),bbtConfig.get('Import','geo'))
+sCE_XLS = os.path.join(import_folder, bbtConfig.get('Import','geo'))
 if not os.path.isfile(sCE_XLS):
     print "Errore! File %s inesistente!" % sCE_XLS
     exit(3)
-sProfilo_XLS =os.path.join(os.path.abspath('..'),bbtConfig.get('Import','folder'),bbtConfig.get('Import','profilo'))
+sProfilo_XLS =os.path.join(import_folder, bbtConfig.get('Import','profilo'))
 if not os.path.isfile(sProfilo_XLS):
     print "Errore! File %s inesistente!" % sProfilo_XLS
     exit(4)

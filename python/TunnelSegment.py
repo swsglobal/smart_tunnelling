@@ -562,8 +562,8 @@ class TBMSegment:
     def __init__(self, segment, tbm, fiRi, frictionCoeff, minRequiredContactThrustRatio, liningRelaxationRatio): # gabriele@20151114 friction parametrica
         gamma = segment.gamma
         ni = .2
-        e = segment.ei*1000.
-        ucs = segment.sci
+        e = segment.ei # *1000. # per alborz ho già valori in kPa
+        ucs = segment.sci # kPa
         st = segment.sti
         mi = segment.mi
         overburden = segment.co
