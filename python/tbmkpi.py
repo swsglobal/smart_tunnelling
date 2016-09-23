@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from TunnelSegment import PerformanceIndex
 from bbtutils import *
 from bbtnamedtuples import *
@@ -9,7 +10,6 @@ import sqlite3, os
 # danzi.tn@20151115 recepimento modifiche gabriele
 
 class FrictionCoeff:
-
     def __init__(self,minVal,avgVal,maxVal):
         self.minVal = minVal
         self.avgVal = avgVal
@@ -17,7 +17,7 @@ class FrictionCoeff:
         self.c = (avgVal-minVal)/(maxVal-minVal)
         self.loc = minVal
         self.scale = maxVal-minVal
-        self.triangFunc = triang(self.c, loc=self.loc,scale=self.scale)
+        self.triangFunc = triang(self.c, loc=self.loc, scale=self.scale)
 
     def rvs(self):
         return self.triangFunc.rvs()
@@ -113,34 +113,36 @@ class KpiTbm4Tunnel:
 
     def setKPI4SEG(self,alnCurr, tbmsect, p):
         # aggiorno indici produzione. l'impatto medio dovra' poi essere diviso per la lunghezza del tracciato
+        length = abs(p.fine-p.inizio)
+
         pCur=tbmsect.P1.probability
         iCur=tbmsect.P1.impact
-        self.kpis['P1'].updateIndex(pCur, iCur, p.length)
+        self.kpis['P1'].updateIndex(pCur, iCur, length)
 
         pCur=tbmsect.P3.probability
         iCur=tbmsect.P3.impact
-        self.kpis['P3'].updateIndex(pCur, iCur, p.length)
+        self.kpis['P3'].updateIndex(pCur, iCur, length)
 
         pCur=tbmsect.P4.probability
         iCur=tbmsect.P4.impact
-        self.kpis['P4'].updateIndex(pCur, iCur, p.length)
+        self.kpis['P4'].updateIndex(pCur, iCur, length)
 
         pCur=tbmsect.P5.probability
         iCur=tbmsect.P5.impact
-        self.kpis['P5'].updateIndex(pCur, iCur, p.length)
+        self.kpis['P5'].updateIndex(pCur, iCur, length)
 
         # aggiorno indici geotecnici
         pCur=tbmsect.G1.probability
         iCur=tbmsect.G1.impact
-        self.kpis['G1'].updateIndex(pCur, iCur, p.length)
+        self.kpis['G1'].updateIndex(pCur, iCur, length)
 
         pCur=tbmsect.G2.probability
         iCur=tbmsect.G2.impact
-        self.kpis['G2'].updateIndex(pCur, iCur, p.length)
+        self.kpis['G2'].updateIndex(pCur, iCur, length)
 
         pCur=tbmsect.G5.probability
         iCur=tbmsect.G5.impact
-        self.kpis['G5'].updateIndex(pCur, iCur, p.length)
+        self.kpis['G5'].updateIndex(pCur, iCur, length)
 
         pCur=tbmsect.G6.probability
         iCur=tbmsect.G6.impact
@@ -152,7 +154,7 @@ class KpiTbm4Tunnel:
             prob=.005 #classe 1 aftes perche' noto da cunicolo
         elif alnCurr.tbmKey =='GLSUD':
             prob=.005 #classe 1 aftes perche' noto da cunicolo
-        self.kpis['G6'].updateIndex(pCur, iCur, prob*p.length)
+        self.kpis['G6'].updateIndex(pCur, iCur, prob*length)
 
         pCur=tbmsect.G7.probability
         iCur=tbmsect.G7.impact
@@ -164,7 +166,7 @@ class KpiTbm4Tunnel:
             prob=.005 # drenato dal cunicolo
         elif alnCurr.tbmKey =='GLSUD':
             prob=.005 # drenato dal cunicolo
-        self.kpis['G7'].updateIndex(pCur, iCur, prob*p.length)
+        self.kpis['G7'].updateIndex(pCur, iCur, prob*length)
 
         pCur=tbmsect.G8.probability
         iCur=tbmsect.G8.impact
@@ -176,19 +178,19 @@ class KpiTbm4Tunnel:
             prob=.005
         elif alnCurr.tbmKey =='GLSUD':
             prob=0.
-        self.kpis['G8'].updateIndex(pCur, iCur, prob*p.length)
+        self.kpis['G8'].updateIndex(pCur, iCur, prob*length)
 
         pCur=tbmsect.G11.probability
         iCur=tbmsect.G11.impact
-        self.kpis['G11'].updateIndex(pCur, iCur, p.length)
+        self.kpis['G11'].updateIndex(pCur, iCur, length)
 
         pCur=tbmsect.G12.probability
         iCur=tbmsect.G12.impact
-        self.kpis['G12'].updateIndex(pCur, iCur, p.length)
+        self.kpis['G12'].updateIndex(pCur, iCur, length)
 
         pCur=tbmsect.G13.probability
         iCur=tbmsect.G13.impact
-        self.kpis['G13'].updateIndex(pCur, iCur, p.length)
+        self.kpis['G13'].updateIndex(pCur, iCur, length)
 
     def updateKPI(self, alnCurr):
         self.kpis['P1'].finalizeIndex(alnCurr.length)
@@ -236,17 +238,55 @@ class KpiTbm4Tunnel:
             print '%s;%s;%d;%s;%s;%f;%f;%f;%f;%f;%f;%f' \
                 % (self.tunnelName, self.tbmName,self.iterationNo,key, _kpi.definition, _kpi.minImpact, _kpi.maxImpact, _kpi.avgImpact, _kpi.appliedLength, _kpi.percentOfApplication, _kpi.probabilityScore, _kpi.totalImpact)
 
-def build_normfunc_dict(bbt_parameter,nIter=1000):
-    gamma = get_my_norm(bbt_parameter.g_med,bbt_parameter.g_stddev,'gamma',nIter)
-    sci = get_my_norm(bbt_parameter.sigma_ci_avg,bbt_parameter.sigma_ci_stdev,'sigma',nIter)
-    mi = get_my_norm(bbt_parameter.mi_med,bbt_parameter.mi_stdev,'mi',nIter)
-    ei = get_my_norm(bbt_parameter.ei_med,bbt_parameter.ei_stdev,'ei',nIter)
-    cai = get_my_norm(bbt_parameter.cai_med,bbt_parameter.cai_stdev,'cai',nIter)
-    gsi = get_my_norm(bbt_parameter.gsi_med,bbt_parameter.gsi_stdev,'gsi',nIter)
-    rmr =  get_my_norm(bbt_parameter.rmr_med,bbt_parameter.rmr_stdev,'rmr')
-    sti = get_my_norm_min_max(bbt_parameter.sigma_ti_min,bbt_parameter.sigma_ti_max,'sigma_ti',nIter,95)
-    k0 = get_my_norm_min_max(bbt_parameter.k0_min,bbt_parameter.k0_max,'k0',nIter,95)
-    return {'gamma':gamma,'sci':sci,'mi':mi,'ei':ei,'cai':cai,'gsi':gsi,'rmr':rmr,'sti':sti,'k0':k0}
+
+def build_normfunc_dict(bbt_parameter, var_to_find, nIter=1000):
+    """Return a dictionary of distrubutions for the values of bbt_parameters
+
+    It handles different distributions based on the type of input values"""
+    return {param:handle_param_distribution(bbt_parameter, param, nIter)
+            for param in var_to_find}
+
+
+def handle_param_distribution(rs_item, param, nIter):
+    """returns the distribution based on the fields found in the namedtuple for that parameter
+
+    param_min, param_max and param_avg => triangular distribution
+    param_min, param_max => truncated normal distribution
+    param_avg, param_std => normal distribution
+    param => constant value
+    """
+    rs_keys = rs_item._fields
+    minkey = "{}_min".format(param)
+    maxkey = "{}_max".format(param)
+    avgkey = "{}_avg".format(param)
+    stdkey = "{}_std".format(param)
+    if rs_keys >= {minkey, maxkey}:
+        #log.debug("found min/max for %s, using truncnorm distribution", param)
+        minvalue = float(getattr(rs_item, minkey))
+        maxvalue = float(getattr(rs_item, maxkey))
+        if avgkey in rs_keys:
+            #log.debug("found min/max/avg for %s, using triangular distribution", param)
+            avgvalue = float(getattr(rs_item, avgkey))
+            func = get_triang(minvalue, avgvalue, maxvalue)
+        else:
+            #log.debug('%s (min=%.2f,max=%.2f)', param, minvalue, maxvalue)
+            func = get_my_norm_min_max(minvalue, maxvalue, param, nIter)
+    elif rs_keys >= {avgkey, stdkey}:
+        #log.debug("found avg/std for %s, using get_truncnorm_avg distribution", param)
+        avgvalue = float(getattr(rs_item, avgkey))
+        stdvalue = float(getattr(rs_item, stdkey))
+        #log.debug('%s (avg=%.2f, std=%.2f)', param, avgvalue, stdvalue)
+        func = get_my_norm(avgvalue, stdvalue, param, nIter)
+    else:
+        value = float(getattr(rs_item, param, None))
+        if value:
+            func = CNorm(value)
+#            log.debug("found nominal value for %s, using CNorm", param)
+        else:
+            print("error, cannot find any value (min/max, min/max/avg, avg/std or nominal) for {}".format(kerr))
+            func = None
+    return func
+
 
 
 def build_bbtparameter4seg(bbt_parameter, bbtparametereval):

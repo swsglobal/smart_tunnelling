@@ -8,10 +8,10 @@ import ConfigParser, os
 # danzi.tn@20151115 colori per nuove TBM
 # danzi.tn@20151118 colori per la nuova TBM
 # danzi.tn@20151124 replaceTBMName
-main_colors = ['#1f77b4',  '#ff7f0e', '#ffbb78',
-                  '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5',
-                  '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f',
-                  '#c7c7c7', '#2ca02c', '#bcbd22', '#dbdb8d', '#B56123', '#aec7e8', '#17becf', '#9edae5','#FCBE01','#44619D']
+main_colors = ['#1f77b4', '#ff7f0e', '#ffbb78', '#98df8a', '#d62728', '#ff9896', '#9467bd',
+               '#c5b0d5', '#8c564b', '#c49c94', '#e377c2', '#f7b6d2', '#7f7f7f', '#c7c7c7',
+               '#2ca02c', '#bcbd22', '#dbdb8d', '#B56123', '#aec7e8', '#17becf', '#9edae5',
+               '#FCBE01','#44619D']
 
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
@@ -30,6 +30,7 @@ def to_percent(y, position):
         return s + r'$\%$'
     else:
         return s + '%'
+
 # funzione che restituisce media e sigma di una gaussiana sulla base di valori minimi e massimi al 95 percentile
 def get_sigma_95(min, max, percentile=95):
     if min==-1 or max == -1:
@@ -41,6 +42,7 @@ def get_sigma_95(min, max, percentile=95):
         #90° percentile = avg+sigma*1.28
         sigma = (max-avg)/1.28
     return avg, sigma
+
 
 #riskvariables (in days/10m)
 r1 = {'min':0.6,'max':1.9}
@@ -82,14 +84,22 @@ hipk = (0.3, 0.4, 0.3)
 #Custom made discrete distribution for Human Factor - da chiamare con hi[hcustm.rvs()] restituisce S N o F sulla base della distribuzione
 hcustm = rv_discrete(name='custm', values=(hixk, hipk))
 
+
 class CNorm:
     mean=0
     def __init__(self, mean):
         self.mean = mean
-    def rvs(self):
+
+    def ppf(self, perc):
         return self.mean
 
-def get_my_norm_func(mean,std,name=''):
+    def rvs(self, size=1):
+        if size > 1:
+            return np.full(size, self.mean)
+        return self.mean
+
+
+def get_my_norm_func(mean, std, name=''):
     if mean==-1 or std==0: return mean
     lower = mean - 3*std
     upper = mean + 3*std
@@ -111,7 +121,7 @@ def get_my_norm_func(mean,std,name=''):
     return myNorm
 
 #danzi.tn@20151113 funzione statistica sulla base del numero di iterazioni
-def get_my_norm(mean,std,name='',nIter=1000):
+def get_my_norm(mean, std, name='', nIter=1000):
     # se la media inesistente o stDev nulla o poche iterazioni, restituisco sempre un valore costante pari alla media
     if mean==-1 or std==0 or nIter<2:
         return CNorm(mean)
@@ -145,7 +155,7 @@ def get_my_norm(mean,std,name='',nIter=1000):
         myNorm = truncnorm(a, b, loc=mean, scale=std)
         return myNorm
 
-def get_my_norm_rvs_min_max(vmin,vmax,name=''):
+def get_my_norm_rvs_min_max(vmin, vmax, name=''):
     mean , std = get_sigma_95(vmin,vmax)
     if mean == -1: return mean
     lower = vmin
@@ -163,9 +173,11 @@ def get_my_norm_rvs_min_max(vmin,vmax,name=''):
     return retVal
 
 #danzi.tn@20151113 funzione statistica sulla base del numero di iterazioni
-def get_my_norm_min_max(vmin,vmax,name='', nIter=1000, percentile=95):
-    if vmin==-1 or vmax==-1:
+def get_my_norm_min_max(vmin, vmax, name='', nIter=1000, percentile=95):
+    if vmin <0 or vmax <0:
         return CNorm(0.0)
+    elif vmin == vmax:
+        return CNorm(vmin)
     elif nIter<2:
         return CNorm((vmin+vmax)/2.0)
     elif nIter < 4:
@@ -173,8 +185,7 @@ def get_my_norm_min_max(vmin,vmax,name='', nIter=1000, percentile=95):
         #la distribuzione delle tre opzioni
         hipk = (0.2,0.6,0.2)
         #Custom made discrete distribution for Human Factor - da chiamare con hi[hcustm.rvs()] restituisce S N o F sulla base della distribuzione
-        myNorm = rv_discrete(name='bbt_%s' % name, values=(hixk, hipk))
-        return myNorm
+        return rv_discrete(name='bbt_%s' % name, values=(hixk, hipk))
     else:
         mean , std = get_sigma_95(vmin,vmax, percentile)
         if mean == -1: return mean
@@ -185,8 +196,24 @@ def get_my_norm_min_max(vmin,vmax,name='', nIter=1000, percentile=95):
             lower = mean - std
             upper = mean + std
         a, b = (lower - mean) / std, (upper - mean) / std
-        myNorm = truncnorm(a, b, loc=mean, scale=std)
-        return myNorm
+        return truncnorm(a, b, loc=mean, scale=std)
+
+
+def get_triang(val1, val2, val3):
+    """
+    crea la distribuzione triangolare ordinando i parametri di input in modo crescente
+
+    Args:
+        val1, val2, val3 (float): valore minimo, medio e massimo in qualsiasi ordine
+    """
+    minval, avgval, maxval = sorted([val1, val2, val3])
+    try:
+        c = (avgval-minval)/(maxval-minval)
+    except ZeroDivisionError:
+        c = 1
+    loc = minval
+    scale = maxval-minval
+    return triang(c, loc=loc,scale=scale)
 
 
 # distribuzione binomiale (tempo di ritorno) di eventi ogni l metri che causano ritardo di N giorni, dove N = il doppio del massimo tra i tempi
