@@ -17,7 +17,7 @@ from tbmconfig import tbms
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
 ########## File vari: DB e file excel
-# aghensi@20160715 - in import prendo database vuoto e lo sostituisco a database pieno (backup!)
+# aghensi@20160715 - in import faccio backup del database e comincio con nuovo db
 db_folder = os.path.join(os.path.abspath('..'), bbtConfig.get('Database','dbfolder'))
 empty_db_name = bbtConfig.get('Database','empty_dbname')
 empty_db_path = os.path.join(db_folder, empty_db_name)
@@ -54,6 +54,8 @@ headrow = xl_sheet.row(3)  # header
 row = xl_sheet.row(4)  # first row
 num_cols = xl_sheet.ncols
 reliability_list = []
+
+
 for row_idx in range(4, xl_sheet.nrows):
     rowvalues=[]
     for col_idx in range(0, num_cols):  # Iterate through columns
@@ -62,7 +64,7 @@ for row_idx in range(4, xl_sheet.nrows):
     reliability_item = BbtReliability(*rowvalues)
     reliability_list.append(reliability_item)
 # salvo in db BbtReliability
-insert_bbtreliability(sDBPath,reliability_list)
+insert_namedtuple(sDBPath,reliability_list, delete=True)
 ######### BbtReliability fine
 
 ########### BbtGeoitem - Acquisisco caratteristiche GEO da tavola
@@ -71,6 +73,11 @@ xl_sheet = book.sheet_by_name(u'geo')
 headrow = xl_sheet.row(2)  # header
 row = xl_sheet.row(3)  # first row
 num_cols = xl_sheet.ncols
+
+#geoseg_list = [BbtGeoitem(*(xl_sheet.cell(row_idx, col_idx).value for col_idx in range(0, num_cols)))
+#               for rownum in range(4, xl_sheet.nrows)]
+#geosec_index = {geoseg.fine:geoseg for geoseg in geoseg_list}
+
 geoseg_list = []
 for row_idx in range(3, xl_sheet.nrows):
     rowvalues=[]
@@ -84,7 +91,7 @@ for row_idx in range(3, xl_sheet.nrows):
 #        print "reliab %d-%s finisce in %f vicino a Geoseg %f" % (reli.id,reli.gmr_class, reli.fine,geoseg.fine)
     geosec_index[geoseg.fine].append(geoseg)
 # salvo in db BbtGeoitem
-insert_geoitems(sDBPath, geoseg_list)
+insert_namedtuple(sDBPath, geoseg_list, delete=True)
 ######### BbtGeoitem fine
 
 ########### BbtProfilo - Acquisisco Profilo
@@ -134,7 +141,7 @@ for row_idx in range(17, civilReport_sheet.nrows):
         bbtpro = BbtProfilo(*rowvalues)
         profilo_list.append(bbtpro)
 # salvo profilo
-insert_profilo(sDBPath,profilo_list)
+insert_namedtuple(sDBPath, profilo_list, delete=True)
 ######### BbtProfilo fine
 
 ######## BbtParameter rappresenta il segmento unitario con i parametri geologici base valorizzati secondo i dati provenienti dalle tavole geologiche
@@ -144,16 +151,10 @@ bbtpar_items = []
 for bbtpro in profilo_list:
     for geosec in geoseg_list:
         if geosec.inizio <=  bbtpro.fine < geosec.fine:
-            tmparr = [bbtpro.inizio , bbtpro.fine, bbtpro.est, bbtpro.nord, bbtpro.he, bbtpro.hp,
-                      bbtpro.co, bbtpro.tipo, bbtpro.wdepth,
-                      geosec.g_med, geosec.g_stddev, geosec.sigma_ci_avg, geosec.sigma_ci_stdev,
-                      geosec.mi_med, geosec.mi_stdev, geosec.ei_med, geosec.ei_stdev,
-                      geosec.cai_med, geosec.cai_stdev, geosec.gsi_med, geosec.gsi_stdev,
-                      geosec.rmr_med, geosec.rmr_stdev, bbtpro.id, geosec.id, geosec.title,
-                      geosec.sigma_ti_min, geosec.sigma_ti_max, geosec.k0_min, geosec.k0_max,
-                      geosec.perc, geosec.anidrite]
-            bbtpar = BbtParameter(*tmparr)
+            # tolgo informazioni ridondanti in geoitems (campi da 1 a 3)
+            bbtpar = BbtParameter(*(bbtpro + geosec[:1] + geosec[4:]))
             bbtpar_items.append(bbtpar)
+
 
 #bbtpar_items = []
 #for k in geoitems:
@@ -192,7 +193,7 @@ for bbtpro in profilo_list:
 # aghensi@20160704 - mantengo tutti i terreni con le loro percentuali - fine
 
 # salvo parametri
-insert_parameters(sDBPath,bbtpar_items)
+insert_namedtuple(sDBPath, bbtpar_items, delete=True)
 ######### BbtParameter fine
 load_tbm_table(sDBPath, tbms)
 print "######### BbtParameter fine"

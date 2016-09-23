@@ -103,7 +103,7 @@ if not os.path.isfile(sDBPath):
     print "Errore! File %s inesistente!" % sDBPath
     exit(1)
 ########## Leggo dal DB BbtParameter
-bbt_parameters = get_bbtparameters(sDBPath)
+bbt_parameters = get_db_namedtuple(sDBPath, BbtParameter, "profilo_id")
 
 
 ########## creo funzioni di distribuzione per ogni segmento

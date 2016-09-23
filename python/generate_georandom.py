@@ -18,40 +18,6 @@ from time import time as ttime
 from time import sleep as tsleep
 import random
 
-# danzi.tn@20151119 generazione variabili random per condizioni geotecniche
-def insert_georandom(sDBPath,nIter, bbt_parameters, sKey):
-    delete_eval4Geo(sDBPath,sKey)
-    now = datetime.datetime.now()
-    strnow = now.strftime("%Y%m%d%H%M%S")
-    bbt_insertval = []
-    for idx, bbt_parameter in enumerate(bbt_parameters):
-        mynorms = build_normfunc_dict(bbt_parameter, nIter)
-        for n in range(nIter):
-            gamma = mynorms['gamma'].rvs()
-            sci = mynorms['sci'].rvs()
-            mi = mynorms['mi'].rvs()
-            ei = mynorms['ei'].rvs()
-            cai = mynorms['cai'].rvs()
-            gsi = mynorms['gsi'].rvs()
-            rmr =  mynorms['rmr'].rvs()
-            sti = mynorms['sti'].rvs()
-            #aghensi@20160715 - inutile, calcolo k0 da k0min e max
-            #k0 = mynorms['k0'].rvs()
-            bbt_insertval.append((strnow, n, sKey, sKey, bbt_parameter.fine, bbt_parameter.he,
-                                  bbt_parameter.hp, bbt_parameter.co, bbt_parameter.wdepth,
-                                  gamma, sci, mi, ei, cai, gsi,
-                                  rmr, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  bbt_parameter.profilo_id, bbt_parameter.geoitem_id,
-                                  bbt_parameter.title, sti, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, bbt_parameter.anidrite))
-        if (idx+1) % 100 == 0:
-            insert_eval4Geo(sDBPath,bbt_insertval)
-            bbt_insertval = []
-    if len(bbt_insertval) > 0:
-        print "ultimi %d da inserire" % len(bbt_insertval)
-        insert_eval4Geo(sDBPath,bbt_insertval)
-
 
 def createLogger(indx=0, logger_name="main_loop"):
     '''
@@ -134,8 +100,7 @@ if __name__ == "__main__":
         main_logger.info("Database utilizzato %s" % sDBPath )
         if not os.path.isfile(sDBPath):
             main_logger.error( "Errore! File %s inesistente!" % sDBPath)
-        bbt_parameters = []
-        bbt_parameters = get_bbtparameters(sDBPath)
+        bbt_parameters = get_db_namedtuple(sDBPath, BbtParameter, "profilo_id")
         if len(bbt_parameters) == 0:
             main_logger.error( "Attenzione! Nel DB %s non ci sono i dati necessari!" % sDBPath)
 

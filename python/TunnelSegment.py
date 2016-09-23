@@ -557,23 +557,34 @@ class TBM:
         self.V5 = V5(self.type)
         self.V6 = V6(self.type)
 
+
 class TBMSegment:
     # definisco la condizione intrinseca (TODO verificare definizione con Luca o Paolo)
     def __init__(self, segment, tbm, fiRi, frictionCoeff, minRequiredContactThrustRatio, liningRelaxationRatio): # gabriele@20151114 friction parametrica
-        gamma = segment.gamma
+        gamma = segment.g
         ni = .2
         e = segment.ei # *1000. # per alborz ho già valori in kPa
-        ucs = segment.sci # kPa
-        st = segment.sti
+        ucs = segment.sigma_ci # kPa
+        try:
+            st = segment.sti
+        except AttributeError:
+            st = 0
         mi = segment.mi
         overburden = segment.co
         # aghensi@20160704 - aggiunta groundwaterdepth
-        groundwaterdepth = segment.wdepth
-        k0min = segment.k0_min
-        k0max = segment.k0_max
+        try:
+            groundwaterdepth = segment.wdepth
+        except AttributeError:
+            groundwaterdepth = overburden
+        try:
+            k0min = segment.k0_min
+            k0max = segment.k0_max
+        except AttributeError:
+            k0max = k0min = 1
+
         gsi = segment.gsi
         rmr = segment.rmr
-        self.segmentLength = segment.length
+        self.segmentLength = abs(segment.fine - segment.inizio)
         excavArea = (tbm.excavationDiam**2)*math.pi/4.
         excavWidth = tbm.excavationDiam
         excavHeight = tbm.excavationDiam
@@ -821,12 +832,12 @@ class TBMSegment:
         #self.P0 = P0(self.t0, self.segmentLength) # giorni di produzione richiesto a scavare un metro del segmento
         self.P1 = P1(impactP1) # impatto sulla produzione
         self.P3 = P3(impactP3) # impatto del rallentamento per rocce dure
-        self.P4 = P4(self.Tbm.type, 1., productionBase,  segment.length)
-        self.P5 = P5(self.Tbm.type, self.cavityStabilityPar, self.frontStability.lambdae, productionBase,  segment.length)
+        self.P4 = P4(self.Tbm.type, 1., productionBase,  self.segmentLength)
+        self.P5 = P5(self.Tbm.type, self.cavityStabilityPar, self.frontStability.lambdae, productionBase,  self.segmentLength)
 
         # tempi di produzione in giorni
-        self.t0= self.segmentLength/(24.*locuf*locp*self.Tbm.rpm*60.) #giorni di scavo del segmento
-        self.t1= self.segmentLength/(24.*locuf*locpBase*self.Tbm.rpm*60.) #giorni di scavo del segmento
+        self.t0 = self.segmentLength/(24.*locuf*locp*self.Tbm.rpm*60.) #giorni di scavo del segmento
+        self.t1 = self.segmentLength/(24.*locuf*locpBase*self.Tbm.rpm*60.) #giorni di scavo del segmento
         self.t3 = self.t0-self.t1 # extra tempo in giorni causato dalle rocce dure
         self.t4 = self.P4.duration
         self.t5 = self.P5.duration
@@ -839,12 +850,12 @@ class TBMSegment:
         # indicatori geotecnici
         self.G1 = G1(self.Tbm.type, self.frontStability.lambdae, self.availableBreakawayTorque-self.frontStabilityBreakawayTorque)
         self.G2 = G2(self.Tbm.type, self.cavityStabilityPar, self.tailCavityStabilityPar, self.contactType)
-        self.G5 = G5(self.Tbm.type, segment.descr, self.frontStability.lambdae)
+        self.G5 = G5(self.Tbm.type, segment.title, self.frontStability.lambdae)
         self.G6 = G6(self.Tbm.type)
         self.G7 = G7(self.Tbm.type)
         self.G8 = G8(self.Tbm.type)
-        self.G11 = G11(self.Tbm.type, segment.descr, self.cavityStabilityPar)
-        self.G12 = G12(self.Tbm.type, segment.descr, self.frontStability.lambdae, self.availableBreakawayTorque-self.frontStabilityBreakawayTorque)
+        self.G11 = G11(self.Tbm.type, segment.title, self.cavityStabilityPar)
+        self.G12 = G12(self.Tbm.type, segment.title, self.frontStability.lambdae, self.availableBreakawayTorque-self.frontStabilityBreakawayTorque)
         self.G13 = G13(self.Tbm.type, self.rockBurst.Val, self.availableBreakawayTorque-self.rockburstBreakawayTorque)
 
     def UrPi_HB(self, pi):
@@ -1560,8 +1571,8 @@ class PerformanceIndex:
 
 class InfoAlignment:
     # gabriele@20151114 friction parametrica
-    def __init__(self, descr, tbmKey, pkStart, pkEnd, fiRi, frictionCoeff):
-        self.description=descr
+    def __init__(self, title, tbmKey, pkStart, pkEnd, fiRi, frictionCoeff):
+        self.description=title
         self.tbmKey=tbmKey
         self.pkStart=pkStart
         self.pkEnd=pkEnd

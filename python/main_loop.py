@@ -185,7 +185,7 @@ def main(argv):
         if not os.path.isfile(sDBPath):
             print "Errore! File %s inesistente!" % sDBPath
             exit(1)
-        bbt_parameters = get_bbtparameters(sDBPath)
+        bbt_parameters = get_db_namedtuple(sDBPath, BbtParameter, "profilo_id")
         if len(bbt_parameters) == 0:
             print "Attenzione! Nel DB %s non ci sono i dati necessari!" % sDBPath
             exit(2)
@@ -193,7 +193,7 @@ def main(argv):
         # lista delle funzioni random per ogni profilo
         normfunc_dicts = {}
         for bbt_parameter in bbt_parameters:
-            normfunc_dict = build_normfunc_dict(bbt_parameter,nIter)
+            mynorms = build_normfunc_dict(bbt_parameter, var_to_randomize, nIter)
             normfunc_dicts[int(bbt_parameter.fine)] = normfunc_dict
 
         # danzi.tn@20151116

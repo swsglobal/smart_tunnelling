@@ -1,77 +1,70 @@
+# -*- coding: utf-8 -*-
 from collections import namedtuple
-# id	inizio	fine	L	perc	type	g_med	g_stddev	sigma_ci_avg	sigma_ci_stdev	mi_med	mi_stdev	ei_med	ei_stdev	cai_med	cai_stdev	gsi_med	gsi_stdev
-BbtGeoitem = namedtuple('BbtGeoitem', ['id','inizio','fine','l','perc','type','g_med','g_stddev','sigma_ci_avg','sigma_ci_stdev','mi_med','mi_stdev','ei_med','ei_stdev','cai_med','cai_stdev','gsi_med','gsi_stdev','rmr_med','rmr_stdev','title','sigma_ti_min','sigma_ti_max','k0_min','k0_max','anidrite'])
-#id=Vertice altimetrico inizio(calcolato)	fine=Progressiva	Est	Nord	he=Quota altimetrica esistente	hp=Progetto quota altimetrica	co=Differenza quota altimetrica	tipo=Tipo di punto
-BbtProfilo = namedtuple('BbtProfilo',['id','inizio','fine','est','nord','he','hp','co','tipo','wdepth'])
-# aghensi@20160704 aggiunto percentuale per segmenti con materiali multipli
-BbtParameter =  namedtuple('BbtParameter',[
-    'inizio','fine','est','nord','he','hp','co','tipo','wdepth','g_med','g_stddev','sigma_ci_avg',
-    'sigma_ci_stdev','mi_med','mi_stdev','ei_med','ei_stdev','cai_med','cai_stdev','gsi_med',
-    'gsi_stdev','rmr_med','rmr_stdev','profilo_id','geoitem_id','title','sigma_ti_min',
-    'sigma_ti_max','k0_min','k0_max','perc','anidrite'])
-BbtReliability = namedtuple('BbtReliability',['id','inizio','fine','gmr_class','gmr_val','reliability','eval_var'])
-BbtParameterEvalMin = namedtuple('BbtParameterEvalMin',['gamma','sigma','mi','ei','cai','rmr', 'gsi','sigma_ti', 'k0' ,'profilo_id'])
-# aghensi@20160704 rollback per far funzionare main_loop_pool; aggiunto perc
-BbtParameterEvalMain = namedtuple('BbtParameterEvalMain',[
-    'inizio', 'fine', 'he', 'hp','co','profilo_id','geoitem_id','title', 'perc', 'wdepth', 'gamma','sigma','mi','ei','cai','rmr', 'gsi', 'sigma_ti', 'iteration_no', 'insertdate', 'anidrite','k0_min','k0_max'
-    ])
-#danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
-BbtParameterEval =  namedtuple('BbtParameterEval',[ 'insertdate',
-                                                    'iteration_no',\
-                                                    'inizio',\
-                                                    'fine',\
-                                                    'he',\
-                                                    'hp',\
-                                                    'co',\
-                                                    'gamma',\
-                                                    'sigma',\
-                                                    'mi',\
-                                                    'ei',\
-                                                    'cai',\
-                                                    'gsi',\
-                                                    'rmr',\
-                                                    'pkgl',\
-                                                    'closure',\
-                                                    'rockburst',\
-                                                    'front_stability_ns',\
-                                                    'front_stability_lambda',\
-                                                    'penetrationRate',\
-                                                    'penetrationRateReduction',\
-                                                    'contactThrust',\
-                                                    'torque',\
-                                                    'frictionForce',\
-                                                    'requiredThrustForce',\
-                                                    'availableThrust',\
-                                                    'dailyAdvanceRate','profilo_id','geoitem_id','title','sigma_ti','k0','t0','t1','t3','t4','t5',\
-                                                    'inSituConditionSigmaV',\
-                                                    'tunnelRadius',\
-                                                    'rockE',\
-                                                    'mohrCoulombPsi',\
-                                                    'rockUcs',\
-                                                    'inSituConditionGsi',\
-                                                    'hoekBrownMi',\
-                                                    'hoekBrownD',\
-                                                    'hoekBrownMb',\
-                                                    'hoekBrownS',\
-                                                    'hoekBrownA',\
-                                                    'hoekBrownMr',\
-                                                    'hoekBrownSr',\
-                                                    'hoekBrownAr',\
-                                                    'urPiHB',\
-                                                    'rpl',\
-                                                    'picr',\
-                                                    'ldpVlachBegin',\
-                                                    'ldpVlachEnd',\
-                                                    ])
 
-BbtParameter4Seg =  namedtuple('BbtParameter4Seg',['inizio', 'fine', 'length', 'he', 'hp', 'co',
-                                                   'gamma', 'sci', 'mi', 'ei', 'cai', 'gsi', 'rmr',
-                                                   'profilo_id', 'geoitem_id', 'descr', 'sti',
-                                                   #'k0',
-                                                   'k0_min', 'k0_max', 'wdepth', 'anidrite'])
+# aghensi@20160922 riorganizzato tuple per una più veloce modifica del codice
+strata_pos_fields = ['inizio', 'fine', 'l']
+fixed_geoitem_fields = ['geoitem_id', 'perc', 'type', 'title', 'anidrite']
+var_geoitem_fields = [
+    'g_min','g_avg', 'g_max',
+    'sigma_ci_min','sigma_ci_avg','sigma_ci_max', #o UCS..
+    'mi_min', 'mi_max',
+    'mr_min', 'mr_max',
+    'ei_min', 'ei_max',
+    #'cai_med', 'cai_stdev',
+    'gsi_min', 'gsi_max',
+    'rmr_min', 'rmr_max',
+    #'sigma_ti_min','sigma_ti_max',
+    #'k0_min','k0_max',
+    "w_in_min", "w_in_max"
+    ]
+geoitem_fields = strata_pos_fields + fixed_geoitem_fields + var_geoitem_fields
+BbtGeoitem = namedtuple('BbtGeoitem', geoitem_fields)
+
+#id=Vertice altimetrico inizio(calcolato)	fine=Progressiva	Est	Nord	he=Quota altimetrica esistente	hp=Progetto quota altimetrica	co=Differenza quota altimetrica	tipo=Tipo di punto
+profile_fields = ['profilo_id','inizio','fine','est','nord','he','hp','co','tipo'] #,'wdepth']
+BbtProfilo = namedtuple('BbtProfilo', profile_fields)
+
+#unione di profilo e geoitem senza informazioni ridondanti
+parameter_fields = profile_fields + fixed_geoitem_fields + var_geoitem_fields
+BbtParameter =  namedtuple('BbtParameter', parameter_fields)
+
+# aghensi@20160922 var_to_randomize per creare la namedtuple e generare i valori random
+iteration_fields = ['insertdate', 'iteration_no', "tunnelname", "tbmname"]
+var_to_randomize = ["g", "sigma_ci", "mi", "mr", "ei", "gsi", "rmr", "w_in"]  #, "mr", "cai", "sigma_ti", "k0"]
+output_fields = ['pkgl', 'closure', 'rockburst', 'front_stability_ns', 'front_stability_lambda',
+                   'penetrationRate', 'penetrationRateReduction', 'contactThrust', 'torque',
+                   'frictionForce', 'requiredThrustForce', 'availableThrust', 'dailyAdvanceRate',
+                   't0','t1','t3','t4','t5', 'inSituConditionSigmaV', 'tunnelRadius', 'rockE',\
+                   'mohrCoulombPsi', 'rockUcs', 'inSituConditionGsi',
+                   'hoekBrownMi', 'hoekBrownD', 'hoekBrownMb', 'hoekBrownS', 'hoekBrownA',
+                   'hoekBrownMr', 'hoekBrownSr', 'hoekBrownAr', 'urPiHB', 'rpl', 'picr',
+                   'ldpVlachBegin', 'ldpVlachEnd', "sigma_v_max_tail_skin",
+                   "sigma_h_max_tail_skin", "sigma_v_max_front_shield", "sigma_h_max_front_shield",
+                   "overcut_required", "auxiliary_thrust_required", "consolidation_required",
+                   "sigma_h_max_lining", "sigma_v_max_lining", "frictionCoeff"]
+par_eval_fields = iteration_fields + profile_fields + fixed_geoitem_fields + var_to_randomize + output_fields
+BbtParameterEval =  namedtuple('BbtParameterEval', par_eval_fields)
+# tupla utile per lo slicing di range_bbt_parameter per la scrittura sul db
+range_bbt_parameter = (len(iteration_fields), len(par_eval_fields)-len(output_fields))
+
+BbtReliability = namedtuple('BbtReliability',['id', 'inizio','fine','gmr_class','gmr_val','reliability','eval_var'])
+BbtParameterEvalMin = namedtuple('BbtParameterEvalMin',['gamma','sigma','mi','ei','cai','rmr', 'gsi','sigma_ti', 'k0' ,'profilo_id'])
+#param4seg_fields =  ['inizio', 'fine', 'length', 'he', 'hp', 'co', 'gamma', 'sci', 'mi', 'ei',
+#                     'cai', 'gsi', 'rmr', 'profilo_id', 'geoitem_id', 'descr', 'sti', #'k0',
+#                     'k0_min', 'k0_max', 'wdepth', 'anidrite']
+#BbtParameter4Seg =  namedtuple('BbtParameter4Seg', param4seg_fields)
+
 BbtTbmKpi = namedtuple('BbtTbmKpi',['tunnelName', 'tbmName', 'iterationNo', 'kpiKey', 'kpiDescr',
                                     'minImpact', 'maxImpact', 'avgImpact', 'appliedLength',
                                     'percentOfApplication','probabilityScore','totalImpact'])
+
+
+
+def nt_factory(named_tuple):
+    def namedtuple_facotry(cursor, row):
+        return named_tuple(*row)
+    ntf = namedtuple_facotry
+    return ntf
 
 def bbtparameter_factory(cursor, row):
     return BbtParameter(*row)
@@ -91,8 +84,6 @@ def bbttbmkpi_factory(cursor, row):
 def bbtParameterEvalMin_factory(cursor, row):
     return BbtParameterEvalMin(*row)
 
-def bbtParameterEvalMain_factory(cursor, row):
-    return BbtParameterEvalMain(*row)
 
 bbtClassReliabilityList = []
 BbtClassReliability = namedtuple('BbtClassReliability',['code','reliability','gmr_min','gmr_max','min_val','max_val'])

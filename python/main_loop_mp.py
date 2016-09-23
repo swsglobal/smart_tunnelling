@@ -167,7 +167,9 @@ def mp_producer(idWorker,  nIter,bbt_parameters,normfunc_dicts,loopTbms):
         iter_end_time = time.time()
         main_logger.debug("[%d]#### iteration %d - %d terminated in %d seconds" % (idWorker, iIterationNo, idWorker*nIter + iIterationNo, iter_end_time-iter_start_time))
         main_logger.debug("[%d]### Start inserting %d (%d) Parameters and %d (21x%d) KPIs" % (idWorker, len(bbt_evalparameters),iCheckEvalparameters,len(bbttbmkpis),iCheckBbttbmkpis))
-        insert_eval4Iter(sDBPath,bbt_evalparameters,bbttbmkpis)
+        if len(bbt_evalparameters) > 0 and len(bbttbmkpis) > 0:
+            insert_namedtuple(db_path, bbttbmkpis)
+            insert_namedtuple(db_path, bbt_evalparameters)
         insert_end_time = time.time()
         main_logger.debug("[%d]]### Insert terminated in %d seconds" % (idWorker,insert_end_time-iter_end_time))
     now = datetime.datetime.now()
@@ -229,7 +231,7 @@ if __name__ == "__main__":
         main_logger.info("Database utilizzato %s" % sDBPath )
         if not os.path.isfile(sDBPath):
             main_logger.error( "Errore! File %s inesistente!" % sDBPath)
-        bbt_parameters = get_bbtparameters(sDBPath)
+        bbt_parameters = get_db_namedtuple(sDBPath, BbtParameter, "profilo_id")
         if len(bbt_parameters) == 0:
             main_logger.error( "Attenzione! Nel DB %s non ci sono i dati necessari!" % sDBPath)
 
@@ -237,7 +239,7 @@ if __name__ == "__main__":
         # lista delle funzioni random per ogni profilo
         normfunc_dicts = {}
         for bbt_parameter in bbt_parameters:
-            normfunc_dict = build_normfunc_dict(bbt_parameter,nIter)
+            mynorms = build_normfunc_dict(bbt_parameter, var_to_randomize, nIter)
             normfunc_dicts[int(bbt_parameter.fine)] = normfunc_dict
         # danzi.tn@20151116
         if bPerformTBMClean:

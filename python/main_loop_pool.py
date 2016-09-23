@@ -1,57 +1,38 @@
 # -*- coding: utf-8 -*-
-import sys, getopt, logging, datetime , sqlite3
+import sys, getopt, logging, datetime
+import os
 from TunnelSegment import *
 from tbmconfig import *
 from pylab import *
-import matplotlib.pyplot as plt
 from bbt_database import *
-import os,  csv
 from bbtutils import *
 from bbtnamedtuples import *
 from tbmkpi import *
-from collections import namedtuple
-from pprint import pprint
 from tbmkpi import FrictionCoeff
 from multiprocessing import cpu_count, Pool, Lock
-from logging import handlers
 from time import time as ttime
-from time import sleep as tsleep
-import random
 
 # danzi.tn@20151119 generazione variabili random per condizioni geotecniche
-def insert_georandom(sDBPath,nIter, bbt_parameters, sKey):
+def insert_georandom(sDBPath, nIter, bbt_parameters, sKey):
     delete_eval4Geo(sDBPath,sKey)
     now = datetime.datetime.now()
     strnow = now.strftime("%Y%m%d%H%M%S")
+
     bbt_insertval = []
     for idx, bbt_parameter in enumerate(bbt_parameters):
-        mynorms = build_normfunc_dict(bbt_parameter, nIter)
+        mynorms = build_normfunc_dict(bbt_parameter, var_to_randomize, nIter)
         for n in range(nIter):
-            gamma = mynorms['gamma'].rvs()
-            sci = mynorms['sci'].rvs()
-            mi = mynorms['mi'].rvs()
-            ei = mynorms['ei'].rvs()
-            cai = mynorms['cai'].rvs()
-            gsi = mynorms['gsi'].rvs()
-            rmr =  mynorms['rmr'].rvs()
-            sti = mynorms['sti'].rvs()
-            #aghensi@20160715 - inutile, calcolo k0 da k0min e max
-            #k0 = mynorms['k0'].rvs()
-            bbt_insertval.append((strnow, n, sKey, sKey, bbt_parameter.inizio, bbt_parameter.fine, bbt_parameter.he,
-                                  bbt_parameter.hp, bbt_parameter.co, bbt_parameter.wdepth,
-                                  gamma, sci, mi, ei, cai, gsi,
-                                  rmr, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  bbt_parameter.profilo_id, bbt_parameter.geoitem_id,
-                                  bbt_parameter.title, sti, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, bbt_parameter.anidrite,
-                                  bbt_parameter.k0_min,bbt_parameter.k0_max,bbt_parameter.perc))
+            randoms = {key:func.rvs() for key, func in mynorms.iteritems()}
+            bbt_insertval.append(BbtParameterEval(*((strnow, n, sKey, sKey) + bbt_parameter[:14] + \
+                                                  tuple(randoms[key] for key in var_to_randomize) + \
+                                                  (None, )* 47)))
         if (idx+1) % 100 == 0:
-            insert_eval4Geo(sDBPath,bbt_insertval)
+            print "inserimento %d elementi" % len(bbt_insertval)
+            insert_namedtuple(sDBPath, bbt_insertval)
             bbt_insertval = []
     if len(bbt_insertval) > 0:
         print "ultimi %d da inserire" % len(bbt_insertval)
-        insert_eval4Geo(sDBPath,bbt_insertval)
+        insert_namedtuple(sDBPath, bbt_insertval)
 
 
 def createLogger(indx=0, logger_name="main_loop"):
@@ -101,16 +82,17 @@ def mp_producer(parms):
     #with plock:
     #    print "[%d]############################# Starts at %s" % (idWorker,strnow)
 
+    # TODO: spostare queste informazioni in params per non continuare a leggerle
 
     #inizializzo le info sui tracciati dai file di configurazione
-    inizio_GLEST = bbtConfig.getfloat('Import','inizio_GLEST')
-    fine_GLEST = bbtConfig.getfloat('Import','fine_GLEST')
-    inizio_GLSUD = bbtConfig.getfloat('Import','inizio_GLSUD')
-    fine_GLSUD = bbtConfig.getfloat('Import','fine_GLSUD')
-    inizio_CE = bbtConfig.getfloat('Import','inizio_CE')
-    fine_CE = bbtConfig.getfloat('Import','fine_CE')
-    #differenza tra CE e GLEST in modo tale che GLNORD = delta_GLEST_CE - CE
-    delta_GLEST_CE =  bbtConfig.getfloat('Import','delta_GLEST_CE')
+#    inizio_GLEST = bbtConfig.getfloat('Import','inizio_GLEST')
+#    fine_GLEST = bbtConfig.getfloat('Import','fine_GLEST')
+#    inizio_GLSUD = bbtConfig.getfloat('Import','inizio_GLSUD')
+#    fine_GLSUD = bbtConfig.getfloat('Import','fine_GLSUD')
+#    inizio_CE = bbtConfig.getfloat('Import','inizio_CE')
+#    fine_CE = bbtConfig.getfloat('Import','fine_CE')
+#    #differenza tra CE e GLEST in modo tale che GLNORD = delta_GLEST_CE - CE
+#    delta_GLEST_CE =  bbtConfig.getfloat('Import','delta_GLEST_CE')
     projectRefCost = bbtConfig.getfloat('Import','project_ref_cost') # mln di euro
 
     # danzi.tn@20151115 recepimento modifiche su InfoAlignment fatte da Garbriele
@@ -135,13 +117,16 @@ def mp_producer(parms):
     alnAll = []
 #    aln=InfoAlignment('GL Sud', 'GLSUD', inizio_GLSUD, fine_GLSUD,fCCutterMode, fCShiledMode)
 #    alnAll.append(aln)
-    aln=InfoAlignment('CE', 'CE', delta_GLEST_CE - fine_CE, delta_GLEST_CE - inizio_CE , fCCutterMode, fCShiledMode)
-    alnAll.append(aln)
-    aln=InfoAlignment('GL Nord', 'GLNORD',inizio_GLEST, fine_GLEST, fCCutterMode, fCShiledMode)
+#    aln=InfoAlignment('CE', 'CE', delta_GLEST_CE - fine_CE, delta_GLEST_CE - inizio_CE , fCCutterMode, fCShiledMode)
+#    alnAll.append(aln)
+    aln=InfoAlignment('GL', 'GL', 0, 6384.25, fCCutterMode, fCShiledMode)
     alnAll.append(aln)
 
+    # TODO: fin qui spostare queste informazioni in params per non continuare a leggerle
+
+
     kpiTbmList = []
-    main_logger.debug("[%d]############################# Inizia a recuperare le iterazioni di %s dalla %d alla %d" % (idWorker,sKey,idWorker*nIter, (idWorker+1)*nIter))
+    main_logger.debug("[%d]############################# Inizia a recuperare le iterazioni di %s dalla %d alla %d", idWorker,sKey,idWorker*nIter, (idWorker+1)*nIter)
     # Ottengo il lock del thread se il journal non è WAL;
     # se è WAL posso leggere con tutti i thread e scrivere con uno solo
     if not wal_journal:
@@ -149,7 +134,7 @@ def mp_producer(parms):
     bbt_bbtparameterseval = get_mainbbtparameterseval(sDBPath, sKey, idWorker*nIter, (idWorker+1)*nIter)
     if not wal_journal:
         mutex.release()
-    main_logger.debug("[%d]############################# ...recuperate %d iterazioni, memoria totale" % (idWorker,len(bbt_bbtparameterseval)))
+    main_logger.debug("[%d]############################# ...recuperate %d iterazioni, memoria totale %d bytes", idWorker,len(bbt_bbtparameterseval), sys.getsizeof(bbt_bbtparameterseval))
     for iIterationNo in range(nIter):
         mainIterationNo = idWorker*nIter + iIterationNo
         # genero valore probabilità in base all'iterazione
@@ -161,7 +146,8 @@ def mp_producer(parms):
         iCheckEvalparameters = 0
         iCheckBbttbmkpis = 0
         # Per tutti i Tunnel
-        main_logger.info("[%d]########### iteration %d - %d" % (idWorker, iIterationNo, mainIterationNo))        #with plock:
+        main_logger.info("[%d]########### iteration %d - %d", idWorker, iIterationNo, mainIterationNo)
+        #with plock:
         #    print "[%d]########### iteration %d - %d" % (idWorker, iIterationNo, mainIterationNo)
         for alnCurr in alnAll:
             for tbmKey in loopTbms:
@@ -192,11 +178,11 @@ def mp_producer(parms):
                             if par_prob - cum_prob <= 0.001:
                                 par_found = True
                                 # aghensi@20160704 - ci sono più bbt_parameter multipli per la stessa pk - fine
-                                bbtparameter4seg = build_bbtparameterVal4seg(bbt_parameter)
+#                                bbtparameter4seg = build_bbtparameterVal4seg(bbt_parameter)
                                 iCheckEvalparameters += 1
-                                if bbtparameter4seg == None:
-                                    main_logger.error("[%d] %s, %s per pk %d parametri Geo non trovati" % (idWorker, alnCurr.description, tbmKey, bbt_parameter.fine) )
-                                    continue
+#                                if bbtparameter4seg == None:
+#                                    main_logger.error("[%d] %s, %s per pk %d parametri Geo non trovati" % (idWorker, alnCurr.description, tbmKey, bbt_parameter.fine) )
+#                                    continue
                                 # danzi.tn@20151115 recepimento modifiche su InfoAlignment fatte da Garbriele
                                 if iIterationNo > 2:
                                     alnCurr.frictionCoeff = fcShield.rvs()
@@ -206,22 +192,21 @@ def mp_producer(parms):
                                     alnCurr.fiRi = fCCutterMode
                                 try:
                                     tbmSegBefore = ttime()
-                                    tbmsect = TBMSegment(bbtparameter4seg, tbm, alnCurr.fiRi, alnCurr.frictionCoeff, minRequiredContactThrustRatio, liningRelaxationRatio)
+                                    tbmsect = TBMSegment(bbt_parameter, tbm, alnCurr.fiRi, alnCurr.frictionCoeff, minRequiredContactThrustRatio, liningRelaxationRatio)
                                     tbmSegAfter = ttime()
                                     tbmSegmentCum += (tbmSegAfter - tbmSegBefore)
                                 except Exception as e:
                                     main_logger.error("[%d] %s, %s per pk %d TBMSegment va in errore: %s", idWorker, alnCurr.description, tbmKey, bbt_parameter.fine, e)
-                                    main_logger.error("[%d] bbtparameter4seg = %s", idWorker, str(bbtparameter4seg))
+                                    main_logger.error("[%d] bbt_parameter = %s", idWorker, str(bbt_parameter))
                                     continue
-                                kpiTbm.setKPI4SEG(alnCurr,tbmsect,bbtparameter4seg)
+                                kpiTbm.setKPI4SEG(alnCurr, tbmsect, bbt_parameter)
                                 #☻danzi.tn@20151114 inseriti nuovi parametri calcolati su TunnelSegment
-                                bbt_evalparameters.append((
-                                    strnow, mainIterationNo, alnCurr.description, tbmKey,
-                                    bbt_parameter.fine, bbt_parameter.he, bbt_parameter.hp,
-                                    bbt_parameter.co, bbt_parameter.wdepth, bbtparameter4seg.gamma,
-                                    bbtparameter4seg.sci, bbtparameter4seg.mi, bbtparameter4seg.ei,
-                                    bbtparameter4seg.cai,bbtparameter4seg.gsi,bbtparameter4seg.rmr,\
-                                    tbmsect.pkCe2Gl(bbt_parameter.fine),
+
+                                bbt_evalparameters.append(BbtParameterEval(*((
+                                    strnow, mainIterationNo, alnCurr.description, tbmKey) + \
+                                    # se si aggiungono variabili in input devo aumentare l'indice di bbt_parameter
+                                    bbt_parameter[range_bbt_parameter[0]:range_bbt_parameter[1]] + \
+                                    (tbmsect.pkCe2Gl(bbt_parameter.fine),
                                     tbmsect.TunnelClosureAtShieldEnd*1000., tbmsect.rockBurst.Val,\
                                     tbmsect.frontStability.Ns, tbmsect.frontStability.lambdae,\
                                     tbmsect.penetrationRate*1000.,
@@ -231,11 +216,7 @@ def mp_producer(parms):
                                     tbmsect.requiredThrustForce,
                                     tbmsect.availableThrust,
                                     tbmsect.dailyAdvanceRate,
-                                    bbt_parameter.profilo_id,
-                                    bbt_parameter.geoitem_id,
-                                    bbt_parameter.title,
-                                    bbtparameter4seg.sti,
-                                    tbmsect.InSituCondition.K0,
+                                    #tbmsect.InSituCondition.K0,
                                     tbmsect.t0,
                                     tbmsect.t1,
                                     tbmsect.t3,
@@ -265,9 +246,9 @@ def mp_producer(parms):
                                     tbmsect.sigma_v_max_front_shield, tbmsect.sigma_h_max_front_shield,
                                     tbmsect.overcut_required, tbmsect.auxiliary_thrust_required,
                                     tbmsect.consolidation_required, tbmsect.sigma_h_max_lining,
-                                    tbmsect.sigma_v_max_lining, bbtparameter4seg.anidrite,
+                                    tbmsect.sigma_v_max_lining,
                                     alnCurr.frictionCoeff
-                                    ))
+                                    ))))
 
                     kpiTbm.updateKPI(alnCurr)
                     bbttbmkpis += kpiTbm.getBbtTbmKpis()
@@ -275,8 +256,10 @@ def mp_producer(parms):
         iter_end_time = ttime()
         main_logger.info("[%d]#### iteration %d - %d terminated in %d seconds (%d)" % (idWorker, iIterationNo, mainIterationNo, iter_end_time-iter_start_time, tbmSegmentCum))
         main_logger.debug("[%d]### Start inserting %d (%d) Parameters and %d (21x%d) KPIs" % (idWorker, len(bbt_evalparameters),iCheckEvalparameters,len(bbttbmkpis),iCheckBbttbmkpis))
-        with mutex:
-            insert_eval4Iter(sDBPath,bbt_evalparameters,bbttbmkpis)
+        if len(bbt_evalparameters) > 0 and len(bbttbmkpis) > 0:
+            with mutex:
+                insert_namedtuple(sDBPath, bbttbmkpis)
+                insert_namedtuple(sDBPath, bbt_evalparameters)
         insert_end_time = ttime()
         main_logger.info("[%d]]### Insert terminated in %d seconds" % (idWorker,insert_end_time-iter_end_time))
     now = datetime.datetime.now()
@@ -344,9 +327,8 @@ if __name__ == "__main__":
         if not os.path.isfile(sDBPath):
             main_logger.error( "Errore! File %s inesistente!" % sDBPath)
         # aghensi@20160810 controllo se è abilitato il WAL journal per permettere accessi concorrenziali in lettura e una sola scrittura
-        wal_journal = check_journal_mode() == "WAL"
-        bbt_parameters = []
-        bbt_parameters = get_bbtparameters(sDBPath)
+        wal_journal = check_journal_mode(sDBPath) == "WAL"
+        bbt_parameters = get_db_namedtuple(sDBPath, BbtParameter, order="profilo_id")
         if len(bbt_parameters) == 0:
             main_logger.error( "Attenzione! Nel DB %s non ci sono i dati necessari!" % sDBPath)
 
@@ -354,7 +336,7 @@ if __name__ == "__main__":
         totIterations = mp_np*nIter
         if bGeorandom:
             geo_start_time = ttime()
-            insert_georandom(sDBPath,totIterations, bbt_parameters, sKey)
+            insert_georandom(sDBPath, totIterations, bbt_parameters, sKey)
             geo_tot_time = ttime() - geo_start_time
             main_logger.info("Generazione dei parametri geotecnici per %d iterazioni su %d segmenti ha richiesto %d secondi" % (totIterations,len(bbt_parameters) ,geo_tot_time ) )
         else:
@@ -379,23 +361,24 @@ if __name__ == "__main__":
         deleteEval4Tbm(sDBPath,loopTbms)
         main_logger.info("Analisi per %d TBM" % len(loopTbms) )
         for tbk in loopTbms:
-            main_logger.info( tbk )
+            main_logger.info(tbk)
         list_a = range(mp_np)
         start_time = ttime()
         job_args = [(i, nIter, sDBPath, loopTbms, sKey, mp_np, wal_journal) for i, item_a in enumerate(list_a)]
 
-        # aghensi@20160603 singolo thread per debug - inizio
         # aghensi@20160810 aggiunta gestione accessi concorrenziali a DB
         lock = Lock()
+        # aghensi@20160603 singolo thread per debug - inizio
         workers = Pool(processes=mp_np, initializer=init_mp, initargs=(lock,))
         main_logger.info("Istanziati %d processi", mp_np)
         results = workers.map(mp_producer, job_args)
         workers.close()
         workers.join()
-
+        #####
+#        init_mp(lock)
 #        for ja in job_args:
 #            mp_producer(ja)
-        # aghensi@20160603 singolo thread per debug - fine
+#         aghensi@20160603 singolo thread per debug - fine
 
         end_time = ttime()
         main_logger.info("Tutti i processi terminati, tempo totale %d secondi (in minuti = %f , in ore = %f ore)" % (end_time-start_time,(end_time-start_time)/60.,(end_time-start_time)/3600.))
