@@ -7,8 +7,7 @@ from bbtnamedtuples import *
 import matplotlib.mlab as mlab
 from readkpis import *
 from collections import defaultdict
-from bbt_database import load_tbm_table, getDBConnection
-from matplotlib.ticker import FuncFormatter
+from bbt_database import getDBConnection
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -454,12 +453,19 @@ def main(argv):
                     ax2.set_ylim(ylimInf, ylimSup)
                     if greaterThan:
                         ax2.bar(pi, percOverThreshold, align='center', color="lightgray", edgecolor="lightgray")
-                        ax2.set_ylabel("%s (probability over %f)" % (parmDict[sParameterToShow][0], threshold))
+                        ax2.set_ylabel("%s (probability over %.2f)" % (parmDict[sParameterToShow][0], threshold))
                     else:
                         ax2.plot(pi, parm2show, 'r.', markersize=3.0, alpha=0.5)
                         ax2.plot(pi, mean2Show[:,0], 'm-', linewidth=1, alpha=0.4)
                         ax2.plot(pi, mean2Show[:,1], 'g-', linewidth=2, alpha=0.6)
                         ax2.plot(pi, mean2Show[:,2], 'c-', linewidth=1, alpha=0.4)
+                        limits = getattr(tbms[tbmKey], "{}Limits".format(sParameterToShow), None)
+                        if limits:
+                            for limit in limits:
+                                if ylimInf <= limit <= ylimSup:
+                                    # In alternativa uso le bande colorate
+                                    ax2.axhline(limit, linestyle="dashed", color="maroon", linewidth=1, alpha=0.6)
+
                         ax2.set_ylabel("%s (%s)" % (parmDict[sParameterToShow][0],parmDict[sParameterToShow][1]), color='r')
 
                     for tl in ax1.get_yticklabels():
@@ -470,6 +476,8 @@ def main(argv):
                     xlabels = get_strata_labels(xstrati, pi)
                     ax1.set_xlim(xlabels[0],xlabels[-1])
                     plt.xticks(xlabels, rotation='vertical')
+                    if ylimInf == ylimSup:
+                        ylimSup = ylimInf + 1
                     yticks = np.around(np.arange(ylimInf, ylimSup, (ylimSup-ylimInf)/10.),2)
                     plt.yticks(yticks)
 
