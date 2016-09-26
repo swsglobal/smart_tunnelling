@@ -12,13 +12,13 @@ REM python readparameters.py -p rockE
 REM python readparameters.py -p rockUcs
 REM python readparameters.py -p pkgl
 REM python readparameters.py -p penetrationRate
-REM python readparameters.py -p LocFt
-
 
 REM python readparameters.py -p closure
 REM python readparameters.py -p contactThrust
-REM python readparameters.py -p frictionForce
 REM python readparameters.py -p requiredThrustForce
+
+REM python readparameters.py -p LocFt
+REM python readparameters.py -p frictionForce
 REM python readparameters.py -p availableThrust
 REM python readparameters.py -p dailyAdvanceRate
 echo sigma v max tailskin...
