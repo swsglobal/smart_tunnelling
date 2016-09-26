@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 #from scipy.stats import *
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
-from pylab import *
-from scipy.stats import *
+#from pylab import *
+from scipy import stats
 import ConfigParser, os
 # danzi.tn@20151115 colori per nuove TBM
 # danzi.tn@20151118 colori per la nuova TBM
@@ -49,22 +50,22 @@ r1 = {'min':0.6,'max':1.9}
 eimin = r1['min']
 eimax = r1['max']
 avg, sigma = get_sigma_95(eimin,eimax)
-tnorm_r1 = truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
+tnorm_r1 = stats.truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
 r2 = {'min':0.7,'max':2.4}
 eimin = r2['min']
 eimax = r2['max']
 avg, sigma = get_sigma_95(eimin,eimax)
-tnorm_r2 = truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
+tnorm_r2 = stats.truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
 r3 = {'min':0.9,'max':2.8}
 eimin = r3['min']
 eimax = r3['max']
 avg, sigma = get_sigma_95(eimin,eimax)
-tnorm_r3 = truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
+tnorm_r3 = stats.truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
 r4 = {'min':0.5,'max':0.9}
 eimin = r4['min']
 eimax = r4['max']
 avg, sigma = get_sigma_95(eimin,eimax)
-tnorm_r4 = truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
+tnorm_r4 = stats.truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
 ar =[r1,r2,r3,r4]
 
 #parametri base fattore imprevisti
@@ -82,7 +83,7 @@ hixk = np.arange(3)
 #la distribuzione delle tre opzioni
 hipk = (0.3, 0.4, 0.3)
 #Custom made discrete distribution for Human Factor - da chiamare con hi[hcustm.rvs()] restituisce S N o F sulla base della distribuzione
-hcustm = rv_discrete(name='custm', values=(hixk, hipk))
+hcustm = stats.rv_discrete(name='custm', values=(hixk, hipk))
 
 
 class CNorm:
@@ -111,7 +112,7 @@ def get_my_norm_func(mean, std, name=''):
             # print "2 -lower = %f < 0 for %s with input %f and %f" % (lower,name,mean,std)
             lower = mean - std
             upper = mean + std
-    myNorm = normal(mean, std)
+    myNorm = stats.normal(mean, std)
     if myNorm < lower:
         myNorm = lower
     if myNorm > upper:
@@ -131,7 +132,7 @@ def get_my_norm(mean, std, name='', nIter=1000):
         #la distribuzione delle tre opzioni
         hipk = (0.2,0.6,0.2)
         #Custom made discrete distribution for Human Factor - da chiamare con hi[hcustm.rvs()] restituisce S N o F sulla base della distribuzione
-        myNorm = rv_discrete(name='bbt_%s' % name, values=(hixk, hipk))
+        myNorm = stats.rv_discrete(name='bbt_%s' % name, values=(hixk, hipk))
         return myNorm
     else:
         lower = mean - 3*std
@@ -152,7 +153,7 @@ def get_my_norm(mean, std, name='', nIter=1000):
         a, b = (lower - mean) / std, (upper - mean) / std
 
 
-        myNorm = truncnorm(a, b, loc=mean, scale=std)
+        myNorm = stats.truncnorm(a, b, loc=mean, scale=std)
         return myNorm
 
 def get_my_norm_rvs_min_max(vmin, vmax, name=''):
@@ -165,7 +166,7 @@ def get_my_norm_rvs_min_max(vmin, vmax, name=''):
         lower = mean - std
         upper = mean + std
     a, b = (lower - mean) / std, (upper - mean) / std
-    myNorm = truncnorm(a, b, loc=mean, scale=std)
+    myNorm = stats.truncnorm(a, b, loc=mean, scale=std)
     retVal = myNorm.rvs()
     if retVal < 0:
         print "retVal = %f < 0 for %s ith input %f and %f" % (retVal,name,mean,std)
@@ -185,7 +186,7 @@ def get_my_norm_min_max(vmin, vmax, name='', nIter=1000, percentile=95):
         #la distribuzione delle tre opzioni
         hipk = (0.2,0.6,0.2)
         #Custom made discrete distribution for Human Factor - da chiamare con hi[hcustm.rvs()] restituisce S N o F sulla base della distribuzione
-        return rv_discrete(name='bbt_%s' % name, values=(hixk, hipk))
+        return stats.rv_discrete(name='bbt_%s' % name, values=(hixk, hipk))
     else:
         mean , std = get_sigma_95(vmin,vmax, percentile)
         if mean == -1: return mean
@@ -196,7 +197,7 @@ def get_my_norm_min_max(vmin, vmax, name='', nIter=1000, percentile=95):
             lower = mean - std
             upper = mean + std
         a, b = (lower - mean) / std, (upper - mean) / std
-        return truncnorm(a, b, loc=mean, scale=std)
+        return stats.truncnorm(a, b, loc=mean, scale=std)
 
 
 def get_triang(val1, val2, val3):
@@ -213,12 +214,12 @@ def get_triang(val1, val2, val3):
         c = 1
     loc = minval
     scale = maxval-minval
-    return triang(c, loc=loc,scale=scale)
+    return stats.triang(c, loc=loc,scale=scale)
 
 
 # distribuzione binomiale (tempo di ritorno) di eventi ogni l metri che causano ritardo di N giorni, dove N = il doppio del massimo tra i tempi
 def evento_eccezionale(l,ecc):
-    ret = binom(l,ecc)
+    ret = stats.binom(l,ecc)
     try:
         retval = ret.rvs()
         print "binom %f " % retval
@@ -233,7 +234,7 @@ def calcola_ritardo_eventi_straordinari(l):
     eimin = ehumi[hi[hcusti]]['min']
     eimax = ehumi[hi[hcusti]]['max']
     avg, sigma = get_sigma_95(eimin,eimax)
-    tnorm = truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
+    tnorm = stats.truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
     ecc = tnorm.rvs()
     return evento_eccezionale(l,ecc)
 
@@ -244,7 +245,7 @@ def geo_ritardo_eventi_straordinari(l,rmr):
         eimin = r[2]
         eimax = r[3]
     avg, sigma = get_sigma_95(eimin,eimax)
-    tnorm = truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
+    tnorm = stats.truncnorm((eimin - avg) / sigma, (eimax - avg) / sigma, loc=avg, scale=sigma)
     ecc = tnorm.rvs()
     print "ecc %f" % ecc
     return evento_eccezionale(l,ecc)
@@ -255,7 +256,7 @@ def outputFigure(sDiagramsFolderPath, sFilename, format="png"):
     imagefname=os.path.join(sDiagramsFolderPath,sFilename)
     if os.path.exists(imagefname):
         os.remove(imagefname)
-    plt.savefig(imagefname,format=format, bbox_inches='tight', pad_inches=0, dpi=300)
+    plt.savefig(imagefname, format=format, bbox_inches='tight', pad_inches=0, dpi=300)
 
 
 def replaceTBMName(inputStr):
