@@ -16,11 +16,9 @@ def get_strata_summary():
     restituisce una tabella con pressioni agenti sull'anello, modulo elastico e k0 relativi,
     oltre alle dimensioni dell'anello (r = raggio, d = spessore, l = lunghezza)
     '''
-    tunnelArray = ['CE', 'GL Nord']
-    tbmfilter = {'CE': ['CE_DS_HRK_6.82_00', 'CE_DS_HRK_6.82_112', 'CE_DS_RBS_6.73_00', 'CE_DS_RBS_6.73_12'],
-                 'GL Nord': ['GL_DS_HRK_10.60_00', 'GL_DS_HRK_10.60_112', 'GL_DS_RBS_10.56_00', 'GL_DS_RBS_10.56_12']}
-    dimensions = {'CE': {'r':(10.17+9.27)/4,'d':(10.17-9.27)/2,'l':1.5},
-                 'GL Nord': {'r':(6.42+5.82)/4,'d':(6.42-5.82)/2,'l':1.5}}
+    tunnelArray = ['GL']
+    tbmfilter = {'GL': ['TEST_5', 'TEST_10', 'TEST_12']}
+    dimensions = {'GL': {'r':11.9/2+0.55,'d':0.55,'l':1.5}}
 
 
     outfoldername = bbtutils.bbtConfig.get('Diagrams','folder')
