@@ -511,14 +511,14 @@ class TBM:
         self.rop= array((1.2904525, 1.2904525,1.540995,1.7915375,1.97058,2.1246225,2.187465,2.2253075,1.97355,1.7217925, 1.7217925)) # m/h metri di scavo all'ora
         self.penetrationPerRevolution = self.rop/60./self.rpm  #in m per rivoluzione
         # definisco l'Utilization Factor
-        uf0=array((0.110166666666667, 0.110166666666667,0.159111111111111,0.208055555555556,0.288194444444445,0.368333333333333,0.4335, \
+        ufO=array((0.110166666666667, 0.110166666666667,0.159111111111111,0.208055555555556,0.288194444444445,0.368333333333333,0.4335, \
                     0.498666666666667, 0.498666666666667,0.498666666666667,0.498666666666667))
         ufS=array((0.154166666666667,0.154166666666667,0.189583333333333,0.225,0.285416666666667,0.345833333333333, \
                     0.377083333333333,0.408333333333333,0.408333333333333,0.408333333333333,0.408333333333333))
         ufDS=array((0.15,0.15,0.219166666666667,0.288333333333333,0.354722222222222,0.421111111111111,0.442361111111111, \
                     0.463611111111111,0.463611111111111,0.463611111111111,0.463611111111111))
         if self.type == 'O': # per ogni decina di rmr: 0, 10, 20, 30.....100
-            self.uf = uf0
+            self.uf = ufO
         elif self.type =='S':
             self.uf = ufS
         elif self.type == 'DS':
@@ -529,7 +529,7 @@ class TBM:
         productionMax = 0.
         for iii in range(0, 10):
             irop = self.rop[iii]
-            iuf = max(uf0[iii], ufS[iii], ufDS[iii])
+            iuf = max(ufO[iii], ufS[iii], ufDS[iii])
             productionMax = max(productionMax, 24.*irop*iuf)
         self.maxProduction = productionMax
         # angolo da definire in base alla macchina
@@ -779,7 +779,12 @@ class TBMSegment:
         i_1 = int(math.floor(RMR/10.0))
         i = i_1+1
         locpBase = rate[i_1]+(rate[i]-rate[i-1])/10.0*(RMR-i_1*10)
-        locuf = uf[i_1]+(uf[i]-uf[i-1])/10.0*(RMR-i_1*10)
+
+        # aghensi@20160926 - se trovo informazioni di riduzione di efficienza in parametri geo uso quelli
+        try:
+            locuf = segment.eff_factor * 20/24 * segment.tbm_eff
+        except AttributeError:
+            locuf = uf[i_1]+(uf[i]-uf[i-1])/10.0*(RMR-i_1*10)
         locfi = math.acos((self.Tbm.CutterRadius-locpBase)/self.Tbm.CutterRadius)
         locP0 = 2.12*math.pow((self.Tbm.CutterSpacing*(ucs**2)*sigmat/(locfi*math.sqrt(self.Tbm.CutterRadius*self.Tbm.CutterThickness))), 1.0/3.0)
         locFt = 1000.0*locP0*locfi*self.Tbm.CutterRadius*self.Tbm.CutterThickness/(1.0+psi) # in kN

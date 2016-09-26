@@ -23,9 +23,10 @@ def insert_georandom(sDBPath, nIter, bbt_parameters, sKey):
         mynorms = build_normfunc_dict(bbt_parameter, var_to_randomize, nIter)
         for n in range(nIter):
             randoms = {key:func.rvs() for key, func in mynorms.iteritems()}
-            bbt_insertval.append(BbtParameterEval(*((strnow, n, sKey, sKey) + bbt_parameter[:14] + \
-                                                  tuple(randoms[key] for key in var_to_randomize) + \
-                                                  (None, )* 47)))
+            bbt_insertval.append(BbtParameterEval(*((strnow, n, sKey, sKey) + \
+                                                    bbt_parameter[:georandom_geoitem_len] + \
+                                                    tuple(randoms[key] for key in var_to_randomize) + \
+                                                    (None, )* len(output_fields))))
         if (idx+1) % 100 == 0:
             print "inserimento %d elementi" % len(bbt_insertval)
             insert_namedtuple(sDBPath, bbt_insertval)

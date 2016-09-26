@@ -152,7 +152,7 @@ for bbtpro in profilo_list:
     for geosec in geoseg_list:
         if geosec.inizio <=  bbtpro.fine < geosec.fine:
             # tolgo informazioni ridondanti in geoitems (campi da 1 a 3)
-            bbtpar = BbtParameter(*(bbtpro + geosec[:1] + geosec[4:]))
+            bbtpar = BbtParameter(*(bbtpro + geosec[len(strata_pos_fields):]))
             bbtpar_items.append(bbtpar)
 
 

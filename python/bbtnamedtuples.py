@@ -3,7 +3,7 @@ from collections import namedtuple
 
 # aghensi@20160922 riorganizzato tuple per una più veloce modifica del codice
 strata_pos_fields = ['inizio', 'fine', 'l']
-fixed_geoitem_fields = ['geoitem_id', 'perc', 'type', 'title', 'anidrite']
+fixed_geoitem_fields = ['geoitem_id', 'perc', 'type', 'title', 'anidrite', 'eff_factor', 'tbm_eff']
 var_geoitem_fields = [
     'g_min','g_avg', 'g_max',
     'sigma_ci_min','sigma_ci_avg','sigma_ci_max', #o UCS..
@@ -27,7 +27,8 @@ BbtProfilo = namedtuple('BbtProfilo', profile_fields)
 #unione di profilo e geoitem senza informazioni ridondanti
 parameter_fields = profile_fields + fixed_geoitem_fields + var_geoitem_fields
 BbtParameter =  namedtuple('BbtParameter', parameter_fields)
-
+# uso questa variabile per la creazione dei georandom
+georandom_geoitem_len = len(profile_fields)+len(fixed_geoitem_fields)
 # aghensi@20160922 var_to_randomize per creare la namedtuple e generare i valori random
 iteration_fields = ['insertdate', 'iteration_no', "tunnelname", "tbmname"]
 var_to_randomize = ["g", "sigma_ci", "mi", "mr", "ei", "gsi", "rmr", "w_in"]  #, "mr", "cai", "sigma_ti", "k0"]
@@ -47,7 +48,7 @@ BbtParameterEval =  namedtuple('BbtParameterEval', par_eval_fields)
 # tupla utile per lo slicing di range_bbt_parameter per la scrittura sul db
 range_bbt_parameter = (len(iteration_fields), len(par_eval_fields)-len(output_fields))
 
-BbtReliability = namedtuple('BbtReliability',['id', 'inizio','fine','gmr_class','gmr_val','reliability','eval_var'])
+BbtReliability = namedtuple('BbtReliability', ['id', 'inizio','fine','gmr_class','gmr_val','reliability','eval_var'])
 BbtParameterEvalMin = namedtuple('BbtParameterEvalMin',['gamma','sigma','mi','ei','cai','rmr', 'gsi','sigma_ti', 'k0' ,'profilo_id'])
 #param4seg_fields =  ['inizio', 'fine', 'length', 'he', 'hp', 'co', 'gamma', 'sci', 'mi', 'ei',
 #                     'cai', 'gsi', 'rmr', 'profilo_id', 'geoitem_id', 'descr', 'sti', #'k0',
@@ -96,7 +97,7 @@ bbtClassReliabilityList.append(bbtcls)
 bbtcls = BbtClassReliability('D','Non affidabile',0,2.5,400,200)
 bbtClassReliabilityList.append(bbtcls)
 
-
+# TODO: far diventare la descrizione un dizionario con testi in lingue differenti?
 parmDict = {
     'iteration_no': ("Numero Iterazioni", "N", 0, 0),
     'fine':("Progressiva", "m", 0, 0),
@@ -122,10 +123,10 @@ parmDict = {
     'rockburst':("Rockburst", "-", 0, 0.6),
     'front_stability_ns':("xxx", "GPa", 0, 1.2),
     'front_stability_lambda':("Panet Method (Lambda E)", "-", 0, 3.2),
-    'penetrationRate':("xxx", "GPa", 0, 0),
-    'penetrationRateReduction':("xxx", "GPa", 0, 0),
+    'penetrationRate':("Penetration Rate", "mm/min", 0, 0),
+    'penetrationRateReduction':("Penetration Rate Reduction", "mm/min", 0, 0),
     'contactThrust':("Contact thrust", "kN", 0, 0),
-    'torque':("xxx", "GPa", 0, 0),
+    'torque':("Torque", "kNm", 0, 0),
     'frictionForce':("Friction Force", "kN", 0, 0),
     'requiredThrustForce':("Required thrust force", "kN", 0, 0),
     'availableThrust':("Available thrust force", "kN", 0, 0),
@@ -149,6 +150,7 @@ parmDict = {
     'overcut_required': ("Overcut richiesto", "", -.1, 1.1),
     'auxiliary_thrust_required': ("Auxiliary Thrust richiesta", "", -.1, 1.1),
     'consolidation_required': ("Consolidamento richiesto", "", -.1, 1.1),
-    'sigma_h_max_lining': ("Pressione verticale sull'anello", "MPa", 0, 0),
-    'sigma_v_max_lining': ("Pressione verticale sull'o scudo anteriore'anello", "MPa", 0, 0)
+    'sigma_h_max_lining': ("Pressione orizzontale sull'anello", "MPa", 0, 0),
+    'sigma_v_max_lining': ("Pressione verticale sull'anello", "MPa", 0, 0),
+    "w_in": ("Water inflow", "l/s", 0, 0)
     }
