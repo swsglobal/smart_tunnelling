@@ -251,12 +251,11 @@ def geo_ritardo_eventi_straordinari(l,rmr):
     return evento_eccezionale(l,ecc)
 
 
-
-def outputFigure(sDiagramsFolderPath, sFilename, format="png"):
-    imagefname=os.path.join(sDiagramsFolderPath,sFilename)
+def outputFigure(sDiagramsFolderPath, sFilename, frmt="png"):
+    imagefname=os.path.join(sDiagramsFolderPath,"{}.{}".format(sFilename, frmt))
     if os.path.exists(imagefname):
         os.remove(imagefname)
-    plt.savefig(imagefname, format=format, bbox_inches='tight', pad_inches=0, dpi=300)
+    plt.savefig(imagefname, format=frmt, pad_inches=0, dpi=300) #bbox_inches='tight',
 
 
 def replaceTBMName(inputStr):
