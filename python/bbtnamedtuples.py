@@ -42,7 +42,7 @@ output_fields = ['pkgl', 'closure', 'rockburst', 'front_stability_ns', 'front_st
                    'ldpVlachBegin', 'ldpVlachEnd', "sigma_v_max_tail_skin",
                    "sigma_h_max_tail_skin", "sigma_v_max_front_shield", "sigma_h_max_front_shield",
                    "overcut_required", "auxiliary_thrust_required", "consolidation_required",
-                   "sigma_h_max_lining", "sigma_v_max_lining", "frictionCoeff"]
+                   "sigma_h_max_lining", "sigma_v_max_lining", "frictionCoeff","contact_on_shield"]
 par_eval_fields = iteration_fields + profile_fields + fixed_geoitem_fields + var_to_randomize + output_fields
 BbtParameterEval =  namedtuple('BbtParameterEval', par_eval_fields)
 # tupla utile per lo slicing di range_bbt_parameter per la scrittura sul db
@@ -100,9 +100,9 @@ bbtClassReliabilityList.append(bbtcls)
 # TODO: far diventare la descrizione un dizionario con testi in lingue differenti?
 parmDict = {
     'iteration_no': ("Numero Iterazioni", "N", 0, 0),
-    'fine':("Progressiva", "m", 0, 0),
+    'fine':("Station", "m", 0, 0),
     'he':("Elevation", "m", 0, 0),
-    'hp':("Quota di progetto", "m", 0, 0),
+    'hp':("Project Elevation", "m", 0, 0),
     'co':("Overburden", "m", 0, 0),
     'hw':("Quota Falda", "m", 0, 0),
     'wdepth':("Profondita falda", "m", 0, 0),
@@ -121,8 +121,8 @@ parmDict = {
     'ldpVlachBegin':("Convergenza al fronte", "cm", 0, 0.1),
     'ldpVlachEnd':("Convergenza a fine scudo", "cm", 0, 0.1),
     'rockburst':("Rockburst", "-", 0, 0.6),
-    'front_stability_ns':("xxx", "GPa", 0, 1.2),
-    'front_stability_lambda':("Panet Method (Lambda E)", "-", 0, 3.2),
+    'front_stability_ns':("Panet Method (Ns)", "-", 0, 1.2),
+    'front_stability_lambda':("Panet Method (Lambda E)", "-", 0, 0),
     'penetrationRate':("Penetration Rate", "mm/min", 0, 0),
     'penetrationRateReduction':("Penetration Rate Reduction", "mm/min", 0, 0),
     'contactThrust':("Contact thrust", "kN", 0, 0),
@@ -143,14 +143,15 @@ parmDict = {
     'LocFt':("Per-cutter force", 'kN', 0, 0),
     'pvcTubeDiameter': ("dewatering tube diameter - PVC", "m", 0, 0),
     'clsTubeDiameter': ("dewatering tube diameter - concrete", "m", 0, 0),
-    'sigma_v_max_tail_skin': ("Pressione verticale sulla tailskin", "MPa", 0, 0),
+    'sigma_v_max_tail_skin': ("vertical stress on tailskin", "MPa", 0, 0),
     'sigma_h_max_tail_skin': ("Pressione orizzontale sulla tailskin", "MPa", 0, 0),
-    'sigma_v_max_front_shield': ("Pressione verticale sullo scudo anteriore", "MPa", 0, 0),
+    'sigma_v_max_front_shield': ("vertical stress on front shield", "MPa", 0, 0),
     'sigma_h_max_front_shield': ("Pressione orizzontale sullo scudo anteriore", "MPa", 0, 0),
-    'overcut_required': ("Overcut richiesto", "", -.1, 1.1),
+    'overcut_required': ("Overcut required", "", -.1, 1.1),
     'auxiliary_thrust_required': ("Auxiliary Thrust richiesta", "", -.1, 1.1),
     'consolidation_required': ("Consolidamento richiesto", "", -.1, 1.1),
     'sigma_h_max_lining': ("Pressione orizzontale sull'anello", "MPa", 0, 0),
-    'sigma_v_max_lining': ("Pressione verticale sull'anello", "MPa", 0, 0),
-    "w_in": ("Water inflow", "l/s", 0, 0)
+    'sigma_v_max_lining': ("vertical stress on lining", "MPa", 0, 0),
+    "w_in": ("Water inflow", "l/s", 0, 0),
+    "contact_on_shield": ("Contact on shield", "", -.1, 1.1)
     }
