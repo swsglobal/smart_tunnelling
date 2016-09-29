@@ -248,7 +248,7 @@ def mp_producer(parms):
                                     tbmsect.overcut_required, tbmsect.auxiliary_thrust_required,
                                     tbmsect.consolidation_required, tbmsect.sigma_h_max_lining,
                                     tbmsect.sigma_v_max_lining,
-                                    alnCurr.frictionCoeff
+                                    alnCurr.frictionCoeff, tbmsect.contact_on_shield
                                     ))))
 
                     kpiTbm.updateKPI(alnCurr)

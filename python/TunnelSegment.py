@@ -256,7 +256,7 @@ class InSituCondition:
             self.K0 = self.Ka*(1.0+math.sin(math.radians(fi)))
 
 class HoekBrown:	#caratteristiche ammasso secondo Hoek e Brown
-    def __init__(self, gamma, ucs, mi, e, gsi, d, sv):
+    def __init__(self, gamma, ucs, mi, gsi, d, sv):
         self.gsi = max(5., gsi)
         self.Mi = mi
         self.D = d
@@ -494,8 +494,9 @@ class TBM:
         self.dotation = tbmData.dotationForProspection #numero tra 0 e 1 dove 0 e' la meno dotata
         self.name = tbmData.name
         self.weight = tbmData.weight
-        self.gap = tbmData.overcut + (self.excavationDiam-tbmData.tailShieldDiameter)/2. #gap in m
-        self.gap1 = tbmData.overcut + (self.excavationDiam-tbmData.frontShieldDiameter)/2. #gap in m del primo scudo (per le DS)
+        self.overcut = tbmData.overcut
+        self.gap = self.overcut + (self.excavationDiam-self.tailShieldDiameter)/2. #gap in m
+        self.gap1 = self.overcut + (self.excavationDiam-self.frontShieldDiameter)/2. #gap in m del primo scudo (per le DS)
         self.CutterNo = tbmData.cutterCount # numebr of cutters
         self.CutterRadius = tbmData.cutterSize/2.  #Cutter radius
         self.CutterThickness = tbmData.cutterThickness #Cutterthickness
@@ -563,12 +564,12 @@ class TBMSegment:
     def __init__(self, segment, tbm, fiRi, frictionCoeff, minRequiredContactThrustRatio, liningRelaxationRatio): # gabriele@20151114 friction parametrica
         gamma = segment.g
         ni = .2
-        e = segment.ei # *1000. # per alborz ho già valori in kPa
-        ucs = segment.sigma_ci # kPa
+        e = segment.ei # *1000. # per alborz ho già valori in MPa
+        ucs = segment.sigma_ci # MPa
         try:
             st = segment.sti
         except AttributeError:
-            st = 0
+            st = -1
         mi = segment.mi
         overburden = segment.co
         # aghensi@20160704 - aggiunta groundwaterdepth
@@ -600,7 +601,7 @@ class TBMSegment:
             self.D = 0.0
         else:
             self.D = 0.2
-        self.HoekBrown = HoekBrown(gamma, ucs, mi, e, self.InSituCondition.Gsi, self.D, self.InSituCondition.SigmaV)
+        self.HoekBrown = HoekBrown(gamma, ucs, mi, self.InSituCondition.Gsi, self.D, self.InSituCondition.SigmaV)
         self.MohrCoulomb = MohrCoulomb()
         self.MohrCoulomb.SetRock(self.HoekBrown, ucs)
 
@@ -725,16 +726,24 @@ class TBMSegment:
             self.availableThrust = max(0., self.Tbm.installedThrustForce - self.frictionForce)
             self.availableAuxiliaryThrust = max(0., self.Tbm.installedAuxiliaryThrustForce - self.frictionForce)
             if self.sigma_v_max_tail_skin <= 0 and self.sigma_v_max_front_shield <= 0:
-                self.overcut_required = 0
+                self.contact_on_shield = 0
             else:
+                self.contact_on_shield = 1
+            if ((self.Tbm.gap1 - self.Tbm.overcut) < self.TunnelClosureAtShieldEnd1) or ((self.Tbm.gap - self.Tbm.overcut) < self.TunnelClosureAtShieldEnd):
                 self.overcut_required = 1
+            else:
+                self.overcut_required = 0
         else:
             self.availableThrust = max(0., self.Tbm.installedThrustForce - self.frictionForce - self.Tbm.BackupDragForce)
             self.availableAuxiliaryThrust = max(0., self.Tbm.installedAuxiliaryThrustForce - self.frictionForce - self.Tbm.BackupDragForce)
             if self.sigma_v_max_front_shield <= 0:
-                self.overcut_required = 0
+                self.contact_on_shield = 0
             else:
+                self.contact_on_shield = 1
+            if (self.Tbm.gap - self.Tbm.overcut) < self.TunnelClosureAtShieldEnd:
                 self.overcut_required = 1
+            else:
+                self.overcut_required = 0
         # aghensi@20160713 - aggiunti i parametri di sigma_v e _h sugli scudi - fine
 
         # se non mi rimane thurst devo consolidare o sbloccare la macchina
@@ -763,7 +772,7 @@ class TBMSegment:
         else:
             self.sigma_v_max_lining = self.PiUr(self.Tbm.gap+liningRelaxationRatio*(dClosure))
             self.sigma_h_max_lining = self.sigma_v_max_lining * self.InSituCondition.K0
-                    # aghensi@20160713 - aggiunto contributo anidriti
+        # aghensi@20160713 - aggiunto contributo anidriti
         if segment.anidrite > 0.02:
             self.sigma_v_max_lining += 0.3 #MPa
 
@@ -808,6 +817,7 @@ class TBMSegment:
         self.penetrationRateReduction = pRateReduction
         self.contactThrust = self.Tbm.CutterNo*locFn # in kN
         self.torque = 0.3*(self.Tbm.excavationDiam+2.0*self.Tbm.gap)*self.Tbm.CutterNo*locFr # in kNm
+#        print "pk %d: torque = %.2f, locFr=%.2f, cutterNo=%d" % (segment.inizio, self.torque, locFr, self.Tbm.CutterNo)
         self.availableBreakawayTorque = self.Tbm.breakawayTorque - self.torque
         self.torque+=self.breakawayTorque
         dar = 24.*locuf*locp*self.Tbm.rpm*60. # in m/gg con anni di 365 gg
