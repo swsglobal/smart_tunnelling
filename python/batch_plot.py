@@ -10,10 +10,10 @@ import strata_summary
 
 # lista di tuple del tipo nomeparmetro, greatherThan, lessThan, threshold
 PARAMS_TO_PLOT = [
-    ("front_stability_lambda", False, True, (0.3, 0.6), "TEST_5"),
+    ("front_stability_lambda", False, True, (0.3,), "TEST_5"),
     ("front_stability_ns", False, False, None, "TEST_5"), #(1, 2, 5)
-    ("requiredThrustForce", True, False, (80000, 130000), "TEST_5"),
-    ("torque", True, False, (20000, 30000), "TEST_5"),
+    ("requiredThrustForce", True, False, (130000,), "TEST_5"),
+    ("torque", True, False, (30000), "TEST_5"),
     ("closure", False, False, None, "TEST_5"),
     ("contact_on_shield", True, False, (0, ), "TEST_5"),
     ("overcut_required", True, False, (0, ), "TEST_5"),
@@ -21,7 +21,7 @@ PARAMS_TO_PLOT = [
     ("sigma_v_max_lining", True, False, (1,), ""),
     ("w_in", False, False, None, "TEST_5"),
     ("dailyAdvanceRate", False, False, None, "TEST_5"),
-#    ("rockburst", False, False, None, "TEST_5"),
+    ("rockburst", False, False, None, "TEST_5"),
     ]
 
 for parm in PARAMS_TO_PLOT:
@@ -31,4 +31,4 @@ for parm in PARAMS_TO_PLOT:
             readparameters.plotparams(sParameterToShow=parm[0], bShowProfile=True,
                                       greaterThan=parm[1], lessThan=parm[2],
                                       threshold=threshold, sTbmCode=parm[4], frmt="dxf")
-#strata_summary.get_strata_summary()
+strata_summary.get_strata_summary()

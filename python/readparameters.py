@@ -122,6 +122,8 @@ def plot_graph_dxf(suffix, pks, profile, sections, options, outputdir, out_filen
         elif campo["style"] == "bar":
             for cur_x, pk in enumerate(scaled_pks):
                 modelspace.add_line((pk, 0), (pk, (campo["valori"][cur_x]- options["min"])*values_y_ratio), dxfattribs={'layer': 'Bars'})
+            modelspace.add_text("{},{}".format(max(pks), options["max"]), dxfattribs={'layer': 'Bars'}).set_pos((options["width"], options["height"]), align='left')
+            modelspace.add_text("{},{}".format(min(pks), options["min"]), dxfattribs={'layer': 'Bars'}).set_pos((0,0), align='right')
 
     outpath = os.path.join(outputdir, "{}.dxf".format(out_filename))
     if os.path.exists(outpath):
@@ -508,6 +510,10 @@ def plotparams(bGroupTypes=False, sTbmCode="", sParameterToShow="", bShowProfile
                     if greaterThan or lessThan:
                         ylimInf = 0
                         ylimSup = min(maxval * 1.01, 1)
+                        # HACK
+                        if sParameterToShow == "torque":
+                            ylimSup = 0.956
+                        # HACK - fine
                         if greaterThan:
                             text = "over"
                         else:
@@ -521,8 +527,10 @@ def plotparams(bGroupTypes=False, sTbmCode="", sParameterToShow="", bShowProfile
                     else:
                         ylimInf = parmDict[sParameterToShow][2]
                         ylimSup = max(maxval * 1.01, parmDict[sParameterToShow][3])
+                        # HACK
                         if sParameterToShow == "closure":
                             ylimSup = 1800.
+                        # HACK - fine
                         if ylimInf == ylimSup:
                             ylimSup = ylimInf + 1
                         limits = getattr(tbms[tbmKey], "{}Limits".format(sParameterToShow), None)
