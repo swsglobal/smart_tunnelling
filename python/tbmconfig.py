@@ -152,11 +152,11 @@ tbm51.name = 'CE_DS_HRK_6.82_00'
 tbm51.alignmentCode='CE'
 tbm51.manifacturer='Herrenknecht'
 tbm51.type='DS' # O = open, S = single shield, DS = double shield
-tbm51.shieldLength=11.8+.8 #11.83+1.
+tbm51.shieldLength=11.83+.8 #11.83+1.
 tbm51.frontShieldLength=4.6+.8 #1.85+1 #4.59+1.
-tbm51.frontShieldDiameter=6.77
+tbm51.frontShieldDiameter=6.82
 tbm51.tailShieldDiameter=6.63
-tbm51.excavationDiameter=6.82
+tbm51.excavationDiameter=6.87
 tbm51.nominalThrustForce=42750.
 tbm51.auxiliaryThrustForce=66350. #a velocita' ridotta!
 tbm51.overcut=0. #fino a 0.112

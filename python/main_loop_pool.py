@@ -344,7 +344,7 @@ if __name__ == "__main__":
         if not os.path.isfile(sDBPath):
             main_logger.error( "Errore! File %s inesistente!" % sDBPath)
         # aghensi@20160810 controllo se è abilitato il WAL journal per permettere accessi concorrenziali in lettura e una sola scrittura
-        wal_journal = check_journal_mode() == "WAL"
+        wal_journal = check_journal_mode(sDBPath) == "WAL"
         bbt_parameters = []
         bbt_parameters = get_bbtparameters(sDBPath)
         if len(bbt_parameters) == 0:
