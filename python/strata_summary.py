@@ -4,6 +4,8 @@ Created on Thu Jul 21 17:37:33 2016
 
 @author: aghensi
 """
+from __future__ import division
+
 import sqlite3
 import os
 import csv
@@ -39,7 +41,8 @@ def get_strata_summary():
     csv_header = ['inizio', 'fine', 'title', 'lung', 'iterazioni',
                   'contatto', 'sv_gt_400_Kpa', 'sv_gt_500_Kpa', 'sv_gt_1000_Kpa', 'sv_gt_1500_Kpa',
                   'sv_gt_2000_Kpa', 'sv_gt_2500_Kpa', 'sv_lt_1000_Kpa',
-                  "sigma_v_90", "sigma_v_95", "sigma_v_98", "sigma_v_99", "sigma_v_99.5", 'sigma_v_max',
+                  "sigma_v_front_90", "sigma_v_front_95", "sigma_v_front_98", "sigma_v_front_99", "sigma_v_front_99.5", 'sigma_v_front_max',
+                  "sigma_v_tail_90", "sigma_v_tail_95", "sigma_v_tail_98", "sigma_v_tail_99", "sigma_v_tail_99.5", 'sigma_v_tail_max',
                   "req_thrust_90", "req_thrust_95", "req_thrust_98", "req_thrust_99", "req_thrust_99.5", 'req_thrust_max']
     for tun in tunnelArray:
         # dovrei filtrare i filtri tbm in base al tun...
@@ -54,7 +57,8 @@ def get_strata_summary():
                 cur.execute(sql_query)
                 bbtresult = cur.fetchall()
                 if len(bbtresult) > 0:
-                    sigma_v_max = 0.
+                    sigma_v_max_front = 0.
+                    sigma_v_max_tail = 0.
                     iter_count = len(bbtresult)
                     contatto = 0.
                     sv_gt_400_Kpa = 0.
@@ -66,15 +70,20 @@ def get_strata_summary():
                     sv_lt_1000_Kpa = 0.
                     thurst_max = 0.
 
-                    sigmas = np.zeros(len(bbtresult))
+                    sigmas_front = np.zeros(len(bbtresult))
+                    sigmas_tail = np.zeros(len(bbtresult))
                     thrusts = np.zeros(len(bbtresult))
                     for idx, item in enumerate(bbtresult):
                         contatto += item['overcut_required']
-                        sigma_v = max(item['sigma_v_max_front_shield'], item['sigma_v_max_tail_skin'])
+                        sigma_v_front = item['sigma_v_max_front_shield']
+                        sigma_v_tail = item['sigma_v_max_tail_skin']
                         thurst_max = max(thurst_max, item["requiredThrustForce"])
                         thrusts[idx] = item["requiredThrustForce"]
-                        sigmas[idx] = sigma_v
-                        sigma_v_max = max(sigma_v, sigma_v_max)
+                        sigmas_front[idx] = sigma_v_front
+                        sigmas_tail[idx] = sigma_v_tail
+                        sigma_v_max_front = max(sigma_v_front, sigma_v_max_front)
+                        sigma_v_max_tail = max(sigma_v_tail, sigma_v_max_tail)
+                        sigma_v = max(sigma_v_front, sigma_v_tail)
                         if sigma_v > 0.4:
                             sv_gt_400_Kpa += 1.
                         if sigma_v > .5:
@@ -89,8 +98,9 @@ def get_strata_summary():
                             sv_gt_2500_Kpa += 1.
                         elif sigma_v > 0.:
                             sv_lt_1000_Kpa += 1.
-
-                    percentiles = np.nanpercentile(sigmas, (90, 95, 98, 99, 99.5))
+                            
+                    percentiles_front = np.nanpercentile(sigmas_front, (90, 95, 98, 99, 99.5))
+                    percentiles_tail = np.nanpercentile(sigmas_tail, (90, 95, 98, 99, 99.5))
                     thurst_percentiles = np.nanpercentile(thrusts, (90, 95, 98, 99, 99.5))
                     # calcolo probabilità superamento
                     sv_gt_400_Kpa /= float(iter_count)
@@ -106,13 +116,8 @@ def get_strata_summary():
                     outvalues.append([strata['inizio'], strata['fine'], strata['title'], lung,
                                       iter_count, contatto, sv_gt_400_Kpa, sv_gt_500_Kpa, sv_gt_1000_Kpa,
                                       sv_gt_1500_Kpa, sv_gt_2000_Kpa, sv_gt_2500_Kpa,
-                                      sv_lt_1000_Kpa,
-                                      percentiles[0], percentiles[1], percentiles[2],
-                                      percentiles[3], percentiles[4], sigma_v_max,
-                                      thurst_percentiles[0], thurst_percentiles[1],
-                                      thurst_percentiles[2], thurst_percentiles[3],
-                                      thurst_percentiles[4], thurst_max,
-                                      ])
+                                      sv_lt_1000_Kpa] + percentiles_front + [sigma_v_max_front] + percentiles_tail + \
+                                      [sigma_v_max_tail] + thurst_percentiles + [thurst_max])
             if len(outvalues) > 0:
                 csvfname=os.path.join(outfolder,"%s_%s_strata_summary.csv" % (tun.replace(" ", "_"), tbm))
                 with open(csvfname, 'wb') as f:
